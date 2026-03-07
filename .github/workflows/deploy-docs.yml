@@ -124,7 +124,7 @@ jobs:
       - name: Configure ossutil
         run: |
           ./ossutil64 config \
-            -e oss-${{ secrets.ALIYUN_OSS_REGION }}.aliyuncs.com \
+            -e oss-${{ vars.ALIYUN_OSS_REGION }}.aliyuncs.com \
             -i ${{ secrets.ALIYUN_ACCESS_KEY_ID }} \
             -k ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }} \
             -L CH -c /tmp/ossutil.conf
@@ -132,7 +132,7 @@ jobs:
       - name: Sync to OSS dev bucket
         run: |
           ./ossutil64 -c /tmp/ossutil.conf sync -f ./docs-dist \
-            oss://${{ secrets.ALIYUN_OSS_BUCKET }}${{ secrets.ALIYUN_OSS_PATH }}/
+            oss://${{ vars.ALIYUN_OSS_BUCKET }}${{ vars.ALIYUN_OSS_PATH }}/
 
       - name: Refresh CDN dev cache
         env:
@@ -140,7 +140,7 @@ jobs:
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
         run: |
           aliyun cdn RefreshObjectCaches \
-            --ObjectPath "https://${{ secrets.ALIYUN_CDN_DOMAIN }}${{ secrets.ALIYUN_OSS_PATH }}/" \
+            --ObjectPath "https://${{ vars.ALIYUN_CDN_DOMAIN }}${{ vars.ALIYUN_OSS_PATH }}/" \
             --ObjectType Directory \
             --region cn-hangzhou || echo "::warning::CDN refresh failed (non-fatal — content is in OSS)"
 
@@ -151,8 +151,8 @@ jobs:
           echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Environment | dev |" >> $GITHUB_STEP_SUMMARY
-          echo "| Bucket | ${{ secrets.ALIYUN_OSS_BUCKET }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| CDN Domain | ${{ secrets.ALIYUN_CDN_DOMAIN }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Bucket | ${{ vars.ALIYUN_OSS_BUCKET }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| CDN Domain | ${{ vars.ALIYUN_CDN_DOMAIN }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Commit | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Triggered By | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Time | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
@@ -219,7 +219,7 @@ jobs:
       - name: Configure ossutil
         run: |
           ./ossutil64 config \
-            -e oss-${{ secrets.ALIYUN_OSS_REGION }}.aliyuncs.com \
+            -e oss-${{ vars.ALIYUN_OSS_REGION }}.aliyuncs.com \
             -i ${{ secrets.ALIYUN_ACCESS_KEY_ID }} \
             -k ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }} \
             -L CH -c /tmp/ossutil.conf
@@ -227,7 +227,7 @@ jobs:
       - name: Sync to OSS prod bucket
         run: |
           ./ossutil64 -c /tmp/ossutil.conf sync -f ./docs-dist \
-            oss://${{ secrets.ALIYUN_OSS_BUCKET }}${{ secrets.ALIYUN_OSS_PATH }}/
+            oss://${{ vars.ALIYUN_OSS_BUCKET }}${{ vars.ALIYUN_OSS_PATH }}/
 
       - name: Refresh CDN prod cache
         env:
@@ -235,7 +235,7 @@ jobs:
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
         run: |
           aliyun cdn RefreshObjectCaches \
-            --ObjectPath "https://${{ secrets.ALIYUN_CDN_DOMAIN }}${{ secrets.ALIYUN_OSS_PATH }}/" \
+            --ObjectPath "https://${{ vars.ALIYUN_CDN_DOMAIN }}${{ vars.ALIYUN_OSS_PATH }}/" \
             --ObjectType Directory \
             --region cn-hangzhou || echo "::warning::CDN refresh failed (non-fatal — content is in OSS)"
 
@@ -246,8 +246,8 @@ jobs:
           echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Environment | prod |" >> $GITHUB_STEP_SUMMARY
-          echo "| Bucket | ${{ secrets.ALIYUN_OSS_BUCKET }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| CDN Domain | ${{ secrets.ALIYUN_CDN_DOMAIN }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Bucket | ${{ vars.ALIYUN_OSS_BUCKET }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| CDN Domain | ${{ vars.ALIYUN_CDN_DOMAIN }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Commit | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Triggered By | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Time | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY

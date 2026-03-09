@@ -749,18 +749,43 @@ export class FeimaChatEndpoint {
 							continue;
 						}
 
+						// Separate JSON parse errors (skip bad chunk) from provider/logic errors (abort stream)
+						let parsed: unknown;
 						try {
-							const parsed = JSON.parse(data);
-							
+							parsed = JSON.parse(data);
+						} catch (jsonErr) {
+							const jsonErrMsg = jsonErr instanceof Error ? jsonErr.message : String(jsonErr);
+							this.log.error(`[FeimaChatEndpoint] Failed to parse SSE JSON: ${jsonErrMsg}. Data: ${data}`);
+							continue;
+						}
+						try {
+							interface SSEToolCall {
+								index?: number;
+								id?: string;
+								function?: { name?: string; arguments?: string };
+							}
+							interface SSEChunk {
+								error?: { message?: string; code?: unknown; http_code?: unknown };
+								choices?: Array<{
+									delta: {
+										content?: string;
+										reasoning_content?: string;
+										tool_calls?: SSEToolCall[];
+									};
+									finish_reason?: string;
+								}>;
+							}
+							const chunk = parsed as SSEChunk;
+
 							// Check if this is an error response (not a normal choice response)
-							if (parsed.error) {
-								const errorMsg = parsed.error.message || 'Unknown error';
-								const errorCode = parsed.error.code || parsed.error.http_code || 'unknown';
+							if (chunk.error) {
+								const errorMsg = chunk.error.message || 'Unknown error';
+								const errorCode = chunk.error.code || chunk.error.http_code || 'unknown';
 								this.log.error(`[FeimaChatEndpoint] API Error from provider: ${errorCode} - ${errorMsg}`);
 								throw new Error(`Provider error: ${errorMsg}`);
 							}
-							
-							const choice = parsed.choices?.[0];
+
+							const choice = chunk.choices?.[0];
 							if (!choice) {
 								this.log.debug(`[FeimaChatEndpoint] Chunk #${chunkCount}: No choice[0] in choices array. Full chunk: ${JSON.stringify(parsed).substring(0, 300)}`);
 								continue;
@@ -824,8 +849,13 @@ export class FeimaChatEndpoint {
 							}
 
 						} catch (e) {
+							// Re-throw provider errors — they abort the stream and surface as error responses.
+							// Only swallow unexpected/logic errors to avoid crashing the whole stream.
 							const errorMsg = e instanceof Error ? e.message : String(e);
-							this.log.error(`[FeimaChatEndpoint] Failed to parse SSE data: ${errorMsg}. Data: ${data}`);
+							if (e instanceof Error && e.message.startsWith('Provider error:')) {
+								throw e;
+							}
+							this.log.error(`[FeimaChatEndpoint] Unexpected error handling SSE chunk: ${errorMsg}. Data: ${data}`);
 						}
 					}
 				}

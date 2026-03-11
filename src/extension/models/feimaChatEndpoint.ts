@@ -591,11 +591,12 @@ export class FeimaChatEndpoint {
 			// Get headers (need to await since it's async)
 			const baseHeaders = await this.getHeaders();
 			
-			// P2 #11: Add 30-second timeout to fetch request
+			// Use configurable timeout (feima.api.requestTimeout setting, default 5 min)
+			const timeoutMs = getResolvedConfig().requestTimeout * 1000;
 			const controller = new AbortController();
-			const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+			const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 			
-			this.log.debug(`[FeimaChatEndpoint] Sending POST to ${this.apiUrl}`);
+			this.log.debug(`[FeimaChatEndpoint] Sending POST to ${this.apiUrl} (timeout=${timeoutMs / 1000}s)`);
 			
 			let response: Response;
 			try {

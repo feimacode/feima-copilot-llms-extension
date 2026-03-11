@@ -66,6 +66,7 @@
 	"settings.showQuotaInStatusBar.description": "Show remaining request quota in status bar",
 	"settings.warnWhenQuotaLow.description": "Show warning when remaining requests drop below this number",
 	"settings.apiEndpoint.description": "Feima API service endpoint (debug only)",
+	"settings.api.requestTimeout.description": "Timeout in seconds for API requests (default: 300).",
 	
 	"settings.auth.baseUrl.description": "OAuth2 authentication server base URL (overrides region default)",
 	"settings.api.baseUrl.description": "Model inference API server base URL (overrides region default)",

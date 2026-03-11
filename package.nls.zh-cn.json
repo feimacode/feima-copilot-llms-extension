@@ -20,6 +20,7 @@
 	"error.unknownRegion": "未知区域：{0}",
 	"error.failedToParseToken": "无法解析存储的令牌",
 	
+	"settings.api.requestTimeout.description": "LLM API 请求的超时时间（秒）。对于慢速模型或复杂推理任务，可适当增大此值。最小值：30。",
 	"command.triggerCompletion.title": "触发代码补全",
 	"command.triggerCompletion.description": "从飞码扣触发代码补全建议",
 	
@@ -37,6 +38,7 @@
 	"settings.auth.clientId.description": "用于认证的 OAuth2 客户端 ID（覆盖区域默认值）",
 	"settings.auth.issuer.description": "OAuth2 发行者 URL（覆盖区域默认值）",
 	"settings.promotionUrl.description": "额度促销页面 URL（余额不足时显示）",
+	"settings.api.requestTimeout.description": "LLM API 请求的超时时间（秒）。对于慢速模型或复杂推理任务，可适当增大此值。最小值：30。",
 	"default.auth.baseUrl": "https://auth.feimacode.cn",
 	"default.api.baseUrl": "https://api.feimacode.cn/v1",
 	"default.auth.issuer": "https://auth.feimacode.cn",
@@ -75,8 +77,7 @@
 	"settings.auth.issuer.description": "OAuth2 发行者 URL（覆盖区域默认值）",
 	"settings.showQuotaInStatusBar.description": "在状态栏显示剩余请求配额",
 	"settings.warnWhenQuotaLow.description": "当剩余请求少于此数量时显示警告",
-	"settings.apiEndpoint.description": "飞码 API 服务端点（仅供调试）",
-	
+	"settings.apiEndpoint.description": "飞码 API 服务端点（仅供调试）",	"settings.api.requestTimeout.description": "API 请求超时时间（秒），默认值：300。",	
 	"error.insufficientBalance": "飞码扣额度已耗尽。公测期间可免费领取更多额度。",
 	"error.insufficientBalance.action": "领取额度",
 	"error.auth.failed": "认证失败",

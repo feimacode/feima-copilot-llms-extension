@@ -344,8 +344,8 @@ class BuildSystem {
 		try {
 			console.log(`🔍 Validating VSIX...`);
 			
-			// Run vsce ls to validate
-			const cmd = `npx @vscode/vsce ls --packagePath "${vsixPath}"`;
+			// Run vsce ls to validate (use --package-path with hyphens)
+			const cmd = `npx @vscode/vsce ls --package-path "${vsixPath}"`;
 			execSync(cmd, { cwd: PROJECT_ROOT, stdio: 'pipe' });
 			
 			console.log(`✅ VSIX validation passed`);

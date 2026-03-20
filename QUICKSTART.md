@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- ✅ feima-idp running at https://idp.feima.tech
+- ✅ feima-idp running at https://auth.feimacode.cn
 - ✅ Python 3.11+ with feima-idp dependencies
 - ✅ VS Code 1.85+
 - ✅ Node.js 18+
@@ -11,7 +11,7 @@
 
 ```bash
 # Check feima-idp is accessible
-curl https://idp.feima.tech/.well-known/openid-configuration
+curl https://auth.feimacode.cn/.well-known/openid-configuration
 ```
 
 **No configuration needed!** This extension reuses the `vscode-feima-client` OAuth client from feima-code.

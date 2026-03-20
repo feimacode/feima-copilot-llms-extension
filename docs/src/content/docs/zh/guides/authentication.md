@@ -45,7 +45,7 @@ description: 为飞码扣设置 OAuth2 认证
    - 输入 "Feima: 登录"
 
 2. **在浏览器中授权**
-   - 浏览器窗口将在 `https://idp.feima.tech/oauth/authorize` 打开
+   - 浏览器窗口将在 `https://idp.feimacode.cn/oauth/authorize` 打开
    - 选择您的登录方式：微信或微博
    - 扫描二维码或输入您的凭据
 
@@ -168,7 +168,7 @@ description: 为飞码扣设置 OAuth2 认证
 
 **解决方案**：
 1. 检查网络连接
-2. 验证 feima-idp 是否可访问：`curl https://idp.feima.tech/.well-known/openid-configuration`
+2. 验证 feima-idp 是否可访问：`curl https://idp.feimacode.cn/.well-known/openid-configuration`
 3. 重新登录以获取新代码
 
 ### 令牌没有自动刷新
@@ -207,4 +207,4 @@ description: 为飞码扣设置 OAuth2 认证
 
 - 🐛 [报告问题](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [讨论](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [邮件支持](mailto:support@feima.tech)
+- 📧 [邮件支持](mailto:support@feimacode.cn)

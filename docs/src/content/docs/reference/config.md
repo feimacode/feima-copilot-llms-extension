@@ -259,7 +259,7 @@ Custom API endpoint.
 **Example**:
 ```json
 {
-  "feima.apiEndpoint": "https://api.feima.tech"
+  "feima.apiEndpoint": "https://api.feimacode.cn"
 }
 ```
 
@@ -278,7 +278,7 @@ Custom authentication endpoint.
 **Example**:
 ```json
 {
-  "feima.authEndpoint": "https://idp.feima.tech"
+  "feima.authEndpoint": "https://idp.feimacode.cn"
 }
 ```
 
@@ -501,4 +501,4 @@ To reset all settings to defaults:
 
 - 🐛 [Report Issues](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [Discussions](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [Email Support](mailto:support@feima.tech)
+- 📧 [Email Support](mailto:support@feimacode.cn)

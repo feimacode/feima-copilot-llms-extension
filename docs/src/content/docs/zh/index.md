@@ -74,7 +74,7 @@ description: 为 GitHub Copilot 提供中国 AI 模型支持的 VS Code 扩展
 
 - 🐛 [报告问题](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [功能建议](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [邮件支持](mailto:support@feima.tech)
+- 📧 [邮件支持](mailto:support@feimacode.cn)
 
 ---
 

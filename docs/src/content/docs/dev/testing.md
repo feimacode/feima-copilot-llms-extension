@@ -202,7 +202,7 @@ describe('OAuth Integration Tests', () => {
 
     // Start sign in
     const authUrl = await service.getAuthorizationUrl();
-    expect(authUrl).toContain('idp.feima.tech');
+    expect(authUrl).toContain('idp.feimacode.cn');
 
     // Simulate callback
     const code = 'mock-authorization-code';
@@ -344,7 +344,7 @@ it('should sign in user', async () => {
 // Bad - tests implementation
 it('should call API with correct endpoint', async () => {
   await service.signIn();
-  expect(mockApi.calledWith).toBe('https://idp.feima.tech');
+  expect(mockApi.calledWith).toBe('https://idp.feimacode.cn');
 });
 ```
 
@@ -483,4 +483,4 @@ afterEach(() => {
 
 - 🐛 [Report Issues](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [Discussions](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [Email Support](mailto:support@feima.tech)
+- 📧 [Email Support](mailto:support@feimacode.cn)

@@ -13,7 +13,7 @@ Before you begin, make sure you have:
 
 - ✅ **VS Code** >= 1.85.0
 - ✅ **GitHub Copilot Chat** extension installed (required)
-- ✅ **Feima Account** (sign up at [feima.tech](https://feimacode.cn))
+- ✅ **Feima Account** (sign up at [feimacode.cn](https://feimacode.cn))
 
 ## Installation
 
@@ -93,7 +93,7 @@ Try this simple example to verify everything is working:
 
 ### Token exchange failed
 
-- Verify feima-idp is accessible: `curl https://idp.feima.tech/.well-known/openid-configuration`
+- Verify feima-idp is accessible: `curl https://idp.feimacode.cn/.well-known/openid-configuration`
 - Check your network connectivity
 
 ## What's Next?
@@ -107,4 +107,4 @@ Try this simple example to verify everything is working:
 
 - 🐛 [Report Issues](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [Discussions](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [Email Support](mailto:support@feima.tech)
+- 📧 [Email Support](mailto:support@feimacode.cn)

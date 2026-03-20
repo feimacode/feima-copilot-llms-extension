@@ -45,7 +45,7 @@ Feima Copilot uses the **OAuth2 + PKCE** (Proof Key for Code Exchange) flow, whi
    - Type "Feima: 登录" (Sign In)
 
 2. **Authorize in Browser**
-   - A browser window will open at `https://idp.feima.tech/oauth/authorize`
+   - A browser window will open at `https://idp.feimacode.cn/oauth/authorize`
    - Choose your login method: WeChat or Weibo
    - Scan the QR code or enter your credentials
 
@@ -168,7 +168,7 @@ Both extensions can use the same OAuth tokens, providing a seamless experience.
 
 **Solutions**:
 1. Check network connectivity
-2. Verify feima-idp is accessible: `curl https://idp.feima.tech/.well-known/openid-configuration`
+2. Verify feima-idp is accessible: `curl https://idp.feimacode.cn/.well-known/openid-configuration`
 3. Sign in again to get a new code
 
 ### Token not refreshing automatically
@@ -207,4 +207,4 @@ Both extensions can use the same OAuth tokens, providing a seamless experience.
 
 - 🐛 [Report Issues](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [Discussions](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [Email Support](mailto:support@feima.tech)
+- 📧 [Email Support](mailto:support@feimacode.cn)

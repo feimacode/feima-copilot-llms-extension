@@ -178,8 +178,8 @@ npx husky add .husky/pre-commit "npm run lint && npm run test"
 
 ```env
 # Feima API 配置
-FEIMA_API_ENDPOINT=https://api.feima.tech
-FEIMA_IDP_ENDPOINT=https://idp.feima.tech
+FEIMA_API_ENDPOINT=https://api.feimacode.cn
+FEIMA_IDP_ENDPOINT=https://idp.feimacode.cn
 
 # OAuth 配置
 OAUTH_CLIENT_ID=vscode-feima-client
@@ -418,4 +418,4 @@ npm run compile
 
 - 🐛 [报告问题](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [讨论](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [邮件支持](mailto:support@feima.tech)
+- 📧 [邮件支持](mailto:support@feimacode.cn)

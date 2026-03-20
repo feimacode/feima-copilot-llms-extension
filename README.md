@@ -116,7 +116,7 @@ code .
 
 - 🐛 [报告问题](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [功能建议](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [邮件支持](mailto:support@feima.tech)
+- 📧 [邮件支持](mailto:support@feimacode.cn)
 
 ## 开源协议
 

@@ -42,7 +42,7 @@ def validate_redirect_uri(self, client_id: str, redirect_uri: str) -> bool:
 
 ### Prerequisites
 
-1. **feima-idp running** at https://idp.feima.tech
+1. **feima-idp running** at https://auth.feimacode.cn
 2. **VSCODE_CLIENT_ID** environment variable set to `vscode-feima-client` (default)
 3. That's it! No database changes or additional configuration needed.
 
@@ -77,7 +77,7 @@ def validate_redirect_uri(self, client_id: str, redirect_uri: str) -> bool:
 ```
 [Command] feima.signIn triggered
 [Auth] Starting OAuth2 flow
-[OAuth2Service] Authorization URL: https://idp.feima.tech/oauth/authorize?...
+[OAuth2Service] Authorization URL: https://auth.feimacode.cn/oauth/authorize?...
 [Auth] Opened browser, waiting for callback...
 [Auth] Received OAuth callback: vscode://feima.cn-model-for-copilot/oauth/callback?code=...
 [Auth] Callback validated successfully

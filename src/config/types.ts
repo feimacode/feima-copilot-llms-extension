@@ -30,16 +30,16 @@ export interface RegionConfig {
 	/**
 	 * Default OAuth2 authorization endpoint URL (region-specific)
 	 * Can be overridden by VS Code setting: feima.auth.baseUrl
-	 * - CN default: https://auth.feima.ai/cn
-	 * - Global default: https://auth.feima.ai/global
+	 * - CN default: https://auth.feimacode.cn
+	 * - Global default: https://auth.feimacode.com
 	 */
 	defaultAuthEndpoint: string;
 
 	/**
 	 * Default Model API endpoint URL (region-specific)
 	 * Can be overridden by VS Code setting: feima.api.baseUrl
-	 * - CN default: https://api.feima.ai/cn
-	 * - Global default: https://api.feima.ai
+	 * - CN default: https://api.feimacode.cn/v1
+	 * - Global default: https://api.feimacode.com/v1
 	 */
 	defaultApiEndpoint: string;
 

@@ -13,7 +13,7 @@ description: 几分钟内开始使用飞码扣
 
 - ✅ **VS Code** >= 1.85.0
 - ✅ **GitHub Copilot Chat** 扩展已安装（必需）
-- ✅ **飞码账号**（在 [feima.tech](https://feimacode.cn) 注册）
+- ✅ **飞码账号**（在 [feimacode.cn](https://feimacode.cn) 注册）
 
 ## 安装
 
@@ -93,7 +93,7 @@ description: 几分钟内开始使用飞码扣
 
 ### 令牌交换失败
 
-- 验证 feima-idp 是否可访问：`curl https://idp.feima.tech/.well-known/openid-configuration`
+- 验证 feima-idp 是否可访问：`curl https://idp.feimacode.cn/.well-known/openid-configuration`
 - 检查您的网络连接
 
 ## 下一步
@@ -107,4 +107,4 @@ description: 几分钟内开始使用飞码扣
 
 - 🐛 [报告问题](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [讨论](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [邮件支持](mailto:support@feima.tech)
+- 📧 [邮件支持](mailto:support@feimacode.cn)

@@ -156,7 +156,7 @@ Feima Copilot provides direct access to Chinese models without needing to bypass
 
 If you experience issues:
 
-1. Check if `https://idp.feima.tech` is accessible
+1. Check if `https://idp.feimacode.cn` is accessible
 2. Try using a different network
 3. Contact support if issues persist
 
@@ -178,4 +178,4 @@ Some corporate networks may block OAuth redirects. If you encounter authenticati
 
 - 🐛 [Report Issues](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [Discussions](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [Email Support](mailto:support@feima.tech)
+- 📧 [Email Support](mailto:support@feimacode.cn)

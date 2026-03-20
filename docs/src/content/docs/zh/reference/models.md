@@ -293,7 +293,7 @@ Understanding token limits helps you optimize your requests:
 
 1. Look at the status bar
 2. Command: "Feima: 查看账号" (Show Account)
-3. Visit [feima.tech/dashboard](https://feimacode.cn/dashboard)
+3. Visit [feimacode.cn/dashboard](https://feimacode.cn/dashboard)
 
 ## Future Models
 
@@ -317,4 +317,4 @@ Stay updated by following our [GitHub repository](https://github.com/feimacode/f
 
 - 🐛 [Report Issues](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [Discussions](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [Email Support](mailto:support@feima.tech)
+- 📧 [Email Support](mailto:support@feimacode.cn)

@@ -8,6 +8,8 @@ import { /*activeRegionConfig,*/ } from '../../config/regions';
 import { getResolvedConfig } from '../../config/configService';
 import { FeimaAuthenticationService } from '../platform/authentication/vscode/feimaAuthenticationService';
 import { ILogService } from '../platform/log/common/logService';
+import { parseQuotaHeader, setStatusBarUserName } from '../statusBar';
+import { getQuotaService } from '../services/quotaService';
 
 // Minimal response shape used to avoid depending on conflicting Response typedefs
 interface FetchResponseLike {
@@ -15,6 +17,9 @@ interface FetchResponseLike {
 	status: number;
 	statusText: string;
 	json(): Promise<unknown>;
+	headers?: {
+		get(name: string): string | null;
+	};
 }
 
 /**
@@ -110,6 +115,7 @@ export class ModelCatalogService {
 			
 			// If sessions were added (sign-in), proactively fetch models
 			if (event.added && event.added.length > 0) {
+				setStatusBarUserName(event.added[0].account.label);
 				this._log.info('New session detected, fetching models...');
 				try {
 					await this._fetchIfNeeded();
@@ -121,7 +127,8 @@ export class ModelCatalogService {
 					this._onDidChangeModels.fire();
 				}
 			} else {
-				// Sessions removed (sign-out), just fire event
+				// Sessions removed (sign-out), clear username and fire event
+				setStatusBarUserName(null);
 				this._log.info('Session removed, firing change event');
 				this._onDidChangeModels.fire();
 			}
@@ -209,10 +216,12 @@ export class ModelCatalogService {
 
 		try {
 			this._log.info('Fetching models from feima-api');
-			const accessToken = await this.authService.getToken();
-			if (!accessToken) {
+			const sessions = await this.authService.getSessions(undefined, {});
+			if (!sessions.length) {
 				throw new Error('No access token available');
 			}
+			const accessToken = sessions[0].accessToken;
+			setStatusBarUserName(sessions[0].account.label);
 			
 			// P2 #11: Add fetch timeout (30 seconds)
 			const controller = new AbortController();
@@ -240,6 +249,18 @@ export class ModelCatalogService {
 
 			if (!response.ok) {
 				throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
+			}
+
+			// Extract quota snapshot from response headers if available
+			if (response.headers) {
+				const quotaHeaderValue = response.headers.get('x-feima-quota-snapshot');
+				if (quotaHeaderValue) {
+					const quota = parseQuotaHeader(quotaHeaderValue);
+					if (quota) {
+						getQuotaService().setQuota(quota);
+						this._log.debug(`[ModelCatalog] Updated quota from header: remaining=${quota.remaining}`);
+					}
+				}
 			}
 
 			const data = await response.json() as { data: FeimaModelAPIResponse[] };

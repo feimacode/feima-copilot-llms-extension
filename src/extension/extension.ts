@@ -10,6 +10,7 @@ import { VSCodeLogTarget, ConsoleLogTarget } from './platform/log/vscode/logServ
 import { LogLevel } from './platform/log/common/logService';
 import { FeimaConfigService } from '../config/configService';
 import { FEIMA_AUTH_SIGNED_IN_KEY } from './contextKeys';
+import { initializeStatusBar } from './statusBar';
 
 // Store auth service for disposal
 let authService: FeimaAuthenticationService | undefined;
@@ -74,6 +75,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		registerAuthCommands(context, authService, logService);
 		logService.info('[Init] ✅ Commands registered');
 
+		// 3.5 Initialize status bar
+		initializeStatusBar(context, logService);
+		logService.info('[Init] ✅ Status bar initialized');
+
 		// 4. Create shared model catalog service
 		const catalogLog = logService.createSubLogger('ModelCatalog');
 		const modelCatalog = new ModelCatalogService(authService, catalogLog);
@@ -131,7 +136,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			try {
 				await modelCatalog.refreshModels();
 				logService.info('✅ Models refreshed successfully');
-				logService.info('   VS Code will have model list ready immediately');
+				logService.info('   VS Code will have model list and quota ready immediately');
 			} catch (error) {
 				logService.error(error as Error, 'Failed to refresh models');
 				// Non-fatal error - continue activation

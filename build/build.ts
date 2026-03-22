@@ -33,7 +33,7 @@ const REGION_CONFIGS = {
 		defaultApiUrl: 'https://api.feimacode.cn/v1',
 		promotionUrl: 'https://feimacode.cn/pricing',
 		issuer: 'https://auth.feimacode.cn',
-		icon: 'assets/feima-icon.png',
+		icon: 'assets/ext-icon.png',
 		readmePath: 'packages/regional/cn/README.md',
 	},
 	global: {
@@ -46,7 +46,7 @@ const REGION_CONFIGS = {
 		defaultApiUrl: 'https://api.feimacode.com/v1',
 		promotionUrl: 'https://feimacode.com/pricing',
 		issuer: 'https://auth.feimacode.com',
-		icon: 'assets/feima-icon.png',
+		icon: 'assets/ext-icon.png',
 		readmePath: 'packages/regional/global/README.md',
 	},
 };
@@ -81,7 +81,7 @@ class BuildSystem {
 			region,
 			startTime: new Date(),
 			buildDir: path.join(PROJECT_ROOT, 'dist', region),
-			version: packageJson.version,
+			version: packageJson.version as string,
 			extensionId: REGION_CONFIGS[region].extensionId,
 		};
 	}
@@ -191,7 +191,7 @@ class BuildSystem {
 
 		// Create region-specific package.json by merging root with region config
 		// This ensures all changes to root package.json are automatically included
-		const resolvedPackage = {
+		const resolvedPackage: Record<string, unknown> = {
 			...rootPackageJson,
 			// Override region-specific fields
 			name: regionConfig.extensionId,
@@ -207,19 +207,21 @@ class BuildSystem {
 		};
 
 		// Update configuration defaults with resolved URLs
-		if (resolvedPackage.contributes?.configuration?.properties) {
-			const props = resolvedPackage.contributes.configuration.properties;
+		const contributes = resolvedPackage['contributes'] as Record<string, unknown> | undefined;
+		const configuration = contributes?.['configuration'] as Record<string, unknown> | undefined;
+		const props = configuration?.['properties'] as Record<string, Record<string, unknown>> | undefined;
+		if (props) {
 			if (props['feima.auth.baseUrl']) {
-				props['feima.auth.baseUrl'].default = regionConfig.defaultAuthUrl;
+				props['feima.auth.baseUrl']['default'] = regionConfig.defaultAuthUrl;
 			}
 			if (props['feima.api.baseUrl']) {
-				props['feima.api.baseUrl'].default = regionConfig.defaultApiUrl;
+				props['feima.api.baseUrl']['default'] = regionConfig.defaultApiUrl;
 			}
 			if (props['feima.auth.issuer']) {
-				props['feima.auth.issuer'].default = regionConfig.issuer;
+				props['feima.auth.issuer']['default'] = regionConfig.issuer;
 			}
 			if (props['feima.promotionUrl']) {
-				props['feima.promotionUrl'].default = regionConfig.promotionUrl;
+				props['feima.promotionUrl']['default'] = regionConfig.promotionUrl;
 			}
 		}
 

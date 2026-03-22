@@ -122,7 +122,27 @@
           "description": "%settings.warnWhenQuotaLow.description%"
         }
       }
-    }
+    },
+    "icons": {
+      "feima-logo": {
+        "description": "Feima icon",
+        "default": {
+          "fontPath": "assets/feima-icons.woff",
+          "fontCharacter": "\\f101"
+        }
+      }
+    },
+    "iconFonts": [
+      {
+        "id": "feima-font",
+        "src": [
+          {
+            "path": "assets/feima-icons.woff",
+            "format": "woff"
+          }
+        ]
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run ext:package",
@@ -166,6 +186,7 @@
     "@vscode/vsce": "^3.2.1",
     "esbuild": "^0.25.6",
     "eslint": "^8.56.0",
+    "fantasticon": "^4.1.0",
     "glob": "^10.3.10",
     "mocha": "^10.2.0",
     "tsx": "^4.7.0",

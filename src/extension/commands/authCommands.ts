@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import { FeimaAuthenticationService } from '../platform/authentication/vscode/feimaAuthenticationService';
 import { ILogService } from '../platform/log/common/logService';
+import { showAccountDialog } from '../dialogs/accountDialog';
 
 /**
  * Register all authentication-related commands
@@ -59,21 +60,8 @@ export function registerAuthCommands(
 			logService.info('feima.showAccount triggered');
 			
 			try {
-				// Get sessions from auth service directly
-				const sessions = await authService.getSessions([], {});
-				
-				if (sessions.length === 0) {
-					vscode.window.showWarningMessage(vscode.l10n.t('Please sign in to Feima first'));
-					logService.info('No active session');
-					return;
-				}
-				
-				const session = sessions[0];
-				
-				// Show account details in quick pick
-				const info = vscode.l10n.t('Current account: {0}\nAccount ID: {1}', session.account.label, session.account.id);
-				vscode.window.showInformationMessage(info);
-				logService.info(info);
+				// Show the full account dialog with balance
+				await showAccountDialog(authService, logService);
 			} catch (error) {
 				const errorMsg = error instanceof Error ? error.message : String(error);
 				vscode.window.showErrorMessage(vscode.l10n.t('Failed to get account info: {0}', errorMsg));

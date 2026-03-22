@@ -1,0 +1,19 @@
+@font-face {
+    font-family: "feima-icons";
+    src: url("./feima-icons.woff?1751c513c79079de39fded0092abd20c") format("woff");
+}
+
+i[class^="icon-"]:before, i[class*=" icon-"]:before {
+    font-family: feima-icons !important;
+    font-style: normal;
+    font-weight: normal !important;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-feima-logo:before {
+    content: "\f101";
+}

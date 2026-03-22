@@ -9,6 +9,8 @@ import { ILogService } from '../platform/log/common/logService';
 import { FeimaAuthenticationService } from '../platform/authentication/vscode/feimaAuthenticationService';
 import { countTokens } from '../platform/tokenizer/tikTokenizer';
 import { getResolvedConfig } from '../../config/configService';
+import { parseQuotaHeader } from '../statusBar';
+import { getQuotaService } from '../services/quotaService';
 
 /**
  * Callback invoked as stream progresses with deltas.
@@ -677,6 +679,22 @@ export class FeimaChatEndpoint {
 				return { type: 'error', reason: vscode.l10n.t('error.noResponseBody') };
 			}
 
+			// Extract and emit quota update from response headers
+			const quotaHeaderValue = response.headers.get('x-feima-quota-snapshot');
+			this.log.debug(`[FeimaChatEndpoint] Quota header value: "${quotaHeaderValue}"`);
+			if (quotaHeaderValue) {
+				const quota = parseQuotaHeader(quotaHeaderValue);
+				this.log.debug(`[FeimaChatEndpoint] Parsed quota: ${JSON.stringify(quota)}`);
+				if (quota) {
+					this.log.debug(`[FeimaChatEndpoint] Emitting quota to service`);
+					getQuotaService().setQuota(quota);
+				} else {
+					this.log.warn(`[FeimaChatEndpoint] Failed to parse quota header: "${quotaHeaderValue}"`);
+				}
+			} else {
+				this.log.warn(`[FeimaChatEndpoint] No x-feima-quota-snapshot header in response`);
+			}
+
 			this.log.debug(`[FeimaChatEndpoint] Starting SSE stream parsing`);
 			// Parse SSE stream
 			await this._parseSSEStream(response.body, callback, token);
@@ -775,6 +793,8 @@ export class FeimaChatEndpoint {
 								function?: { name?: string; arguments?: string };
 							}
 							interface SSEChunk {
+								type?: string;
+								snapshot?: string;
 								error?: { message?: string; code?: unknown; http_code?: unknown };
 								choices?: Array<{
 									delta: {
@@ -786,6 +806,16 @@ export class FeimaChatEndpoint {
 								}>;
 							}
 							const chunk = parsed as SSEChunk;
+
+							// Handle quota snapshot event emitted after billing completes
+							if (chunk.type === 'quota_snapshot' && typeof chunk.snapshot === 'string') {
+								const quota = parseQuotaHeader(chunk.snapshot);
+								if (quota) {
+									getQuotaService().setQuota(quota);
+									this.log.debug(`[FeimaChatEndpoint] Quota updated from SSE event: remaining=${quota.remaining}`);
+								}
+								continue;
+							}
 
 							// Check if this is an error response (not a normal choice response)
 							if (chunk.error) {

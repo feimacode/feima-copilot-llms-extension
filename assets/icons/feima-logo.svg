@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!--
+    Robot bot face icon with code sign.
+    Winding directions are set for TrueType non-zero winding rule
+    (fonts always use non-zero; even-odd only works in SVG renderers):
+      - Outer head: CCW in SVG (Y-down) → CW in font (Y-up) → filled
+      - Eye holes and jaw: CW in SVG → CCW in font → holes in filled head
+      - Code chevrons in jaw: winding math resolves them as filled inside the hole
+  -->
+  <path fill-rule="nonzero" fill="currentColor" d="
+    M22,4 A14,14 0 0,0 8,18 L8,82 A14,14 0 0,0 22,96 L78,96 A14,14 0 0,0 92,82 L92,18 A14,14 0 0,0 78,4 Z
+    M22,13 L41,13 A7,7 0 0,1 48,20 L48,48 A7,7 0 0,1 41,55 L22,55 A7,7 0 0,1 15,48 L15,20 A7,7 0 0,1 22,13 Z
+    M59,13 L78,13 A7,7 0 0,1 85,20 L85,48 A7,7 0 0,1 78,55 L59,55 A7,7 0 0,1 52,48 L52,20 A7,7 0 0,1 59,13 Z
+    M22,63 L78,63 A7,7 0 0,1 85,70 L85,82 A7,7 0 0,1 78,89 L22,89 A7,7 0 0,1 15,82 L15,70 A7,7 0 0,1 22,63 Z
+    M37,65 L26,74 L37,83 L33,83 L22,74 L33,65 Z
+    M45,83 L49,83 L57,65 L53,65 Z
+    M63,65 L74,74 L63,83 L67,83 L78,74 L67,65 Z
+  "/>
+</svg>

@@ -26,9 +26,9 @@ async function fetchWalletBalance(authService: FeimaAuthenticationService, logge
 			return null;
 		}
 		const apiBase = getResolvedConfig().apiBaseUrl || '';
-		logger?.debug(`[AccountDialog] Fetching wallet balance from ${apiBase}/v1/wallet/balance`);
+		logger?.debug(`[AccountDialog] Fetching wallet balance from ${apiBase}/wallet/balance`);
 		
-		const response = await fetch(`${apiBase}/v1/wallet/balance`, {
+		const response = await fetch(`${apiBase}/wallet/balance`, {
 			headers: {
 				'Authorization': `Bearer ${token}`,
 				'Content-Type': 'application/json'

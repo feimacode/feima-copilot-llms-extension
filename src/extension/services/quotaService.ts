@@ -13,7 +13,7 @@ export interface QuotaSnapshot {
 }
 
 class QuotaService {
-	private readonly _onQuotaChanged = new vscode.EventEmitter<QuotaSnapshot>();
+	private readonly _onQuotaChanged = new vscode.EventEmitter<QuotaSnapshot | null>();
 	readonly onQuotaChanged = this._onQuotaChanged.event;
 
 	/**
@@ -22,6 +22,14 @@ class QuotaService {
 	 */
 	setQuota(quota: QuotaSnapshot): void {
 		this._onQuotaChanged.fire(quota);
+	}
+
+	/**
+	 * Clear quota state (e.g., on sign-out).
+	 * Fires an event with null quota to notify subscribers.
+	 */
+	clearQuota(): void {
+		this._onQuotaChanged.fire(null);
 	}
 
 	/**

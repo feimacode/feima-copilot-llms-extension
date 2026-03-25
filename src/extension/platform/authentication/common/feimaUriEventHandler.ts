@@ -139,16 +139,43 @@ export class FeimaUriEventHandler implements vscode.UriHandler {
 
 	/**
 	 * Cancel a pending authorization request.
+	 * Resolves gracefully without error (used when browser fails to open).
 	 *
 	 * @param nonce Unique nonce to cancel
 	 */
 	cancelPendingCallback(nonce: string): void {
+		this._cancelPendingCallback(nonce, 'browser failed to open');
+	}
+
+	/**
+	 * Internal method to cancel a pending authorization request.
+	 * Resolves gracefully without error (used when superseded by newer attempt).
+	 *
+	 * @param nonce Unique nonce to cancel
+	 * @param reason Optional reason for cancellation (logged only)
+	 */
+	private _cancelPendingCallback(nonce: string, reason: string = 'canceled'): void {
 		const pending = this._pendingCallbacks.get(nonce);
 		if (pending) {
 			clearTimeout(pending.timeoutId);
 			this._pendingCallbacks.delete(nonce);
-			pending.reject(new Error('OAuth2 authorization canceled'));
-			this._logService.info(`[FeimaUriEventHandler] Canceled pending callback: nonce=${nonce}, remainingPending=${this._pendingCallbacks.size}`);
+			// Resolve with null instead of rejecting - no scary error for user
+			pending.resolve(null as unknown as ICallbackData);
+			this._logService.info(`[FeimaUriEventHandler] Canceled pending callback: nonce=${nonce}, reason=${reason}, remainingPending=${this._pendingCallbacks.size}`);
+		}
+	}
+
+	/**
+	 * Cancel all pending callbacks except the one that just succeeded.
+	 * Called when an OAuth flow completes to clean up stale attempts.
+	 *
+	 * @param excludeNonce The nonce to keep (the successful one)
+	 */
+	cancelAllPendingCallbacksExcept(excludeNonce: string): void {
+		for (const [nonce] of this._pendingCallbacks.entries()) {
+			if (nonce !== excludeNonce) {
+				this._cancelPendingCallback(nonce, 'superseded by newer attempt');
+			}
 		}
 	}
 

@@ -41,8 +41,12 @@ export function initializeStatusBar(
 	// Subscribe to quota changes from the quota service
 	const quotaService = getQuotaService();
 	context.subscriptions.push(
-		quotaService.onQuotaChanged((quota: QuotaSnapshot) => {
-			updateStatusBarUI(quota);
+		quotaService.onQuotaChanged((quota: QuotaSnapshot | null) => {
+			if (quota) {
+				updateStatusBarUI(quota);
+			} else {
+				resetStatusBar();
+			}
 		})
 	);
 
@@ -100,8 +104,8 @@ function buildTooltip(quota: QuotaSnapshot | null, userName: string | null): vsc
 
 	if (!quota) {
 		md.appendMarkdown('**Feima**\n\n');
-		md.appendMarkdown('No credit data yet.\n\n');
-		md.appendMarkdown('[View Account](command:feima.showAccount)');
+		md.appendMarkdown('Not signed in.\n\n');
+		md.appendMarkdown('[Sign In](command:feima.signIn) | [View Account](command:feima.showAccount)');
 		return md;
 	}
 
@@ -173,4 +177,17 @@ export function showStatusBar(): void {
 	if (statusBarItem) {
 		statusBarItem.show();
 	}
+}
+
+/**
+ * Reset status bar to signed-out state.
+ * Called when user signs out.
+ */
+export function resetStatusBar(): void {
+	currentUserName = null;
+	if (statusBarItem) {
+		statusBarItem.text = '$(feima-logo)';
+		statusBarItem.tooltip = buildTooltip(null, null);
+	}
+	logger?.debug('[StatusBar] Reset to signed-out state');
 }

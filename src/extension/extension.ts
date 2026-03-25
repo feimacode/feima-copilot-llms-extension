@@ -10,7 +10,8 @@ import { VSCodeLogTarget, ConsoleLogTarget } from './platform/log/vscode/logServ
 import { LogLevel } from './platform/log/common/logService';
 import { FeimaConfigService } from '../config/configService';
 import { FEIMA_AUTH_SIGNED_IN_KEY } from './contextKeys';
-import { initializeStatusBar } from './statusBar';
+import { initializeStatusBar, resetStatusBar } from './statusBar';
+import { getQuotaService } from './services/quotaService';
 
 // Store auth service for disposal
 let authService: FeimaAuthenticationService | undefined;
@@ -171,7 +172,14 @@ function setupAuthenticationMenu(
 	logService: LogServiceImpl
 ): void {
 	// Function to request session access (adds menu item to Accounts menu)
-	const requestSessionAccess = () => {
+	const requestSessionAccess = async () => {
+		// Only prompt for sign-in if not already authenticated
+		const isSignedIn = await authService.isAuthenticated();
+		if (isSignedIn) {
+			logService.debug('[Auth] User already authenticated, skipping sign-in prompt');
+			return;
+		}
+		
 		vscode.authentication.getSession(
 			'feima',
 			[],
@@ -195,6 +203,13 @@ function setupAuthenticationMenu(
 			const isSignedIn = await authService.isAuthenticated();
 			await vscode.commands.executeCommand('setContext', FEIMA_AUTH_SIGNED_IN_KEY, isSignedIn);
 			logService.debug(`[Auth] Sign-in state updated: ${isSignedIn}`);
+
+			// Clear quota and status bar when user signs out
+			if (!isSignedIn) {
+				getQuotaService().clearQuota();
+				resetStatusBar();
+				logService.debug('[Auth] Cleared quota and status bar on sign-out');
+			}
 		})
 	);
 

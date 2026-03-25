@@ -223,7 +223,26 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 
 		try {
 			// Wait for callback (with 5-minute timeout from URI handler)
-			const callbackData: ICallbackData = await callbackPromise;
+			const callbackData: ICallbackData | null = await callbackPromise;
+
+			// If null, this callback was canceled (superseded by newer attempt)
+			// Wait for the newer flow to complete and return its session
+			if (!callbackData) {
+				this._activeFlows.delete(nonce);
+				this._logService.info(`[FeimaAuthenticationService] Auth flow superseded by newer attempt: nonce=${nonce}`);
+
+				// Wait briefly for the newer flow to create a session, then return it
+				// This avoids showing an error to the user
+				await new Promise(resolve => setTimeout(resolve, 500));
+				if (this._cachedSessions.length > 0) {
+					this._logService.info('[FeimaAuthenticationService] Returning session from newer flow');
+					return this._cachedSessions[0];
+				}
+
+				// No session yet - throw cancellation (VS Code handles this gracefully)
+				throw new vscode.CancellationError();
+			}
+
 			const { code } = callbackData;
 
 			// Retrieve flow state
@@ -233,6 +252,10 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 			}
 
 			this._logService.info('[FeimaAuthenticationService] Callback received, exchanging code for token');
+
+			// Cancel all other pending auth attempts (user completed this one)
+			this._uriHandler.cancelAllPendingCallbacksExcept(nonce);
+			this._logService.debug(`[FeimaAuthenticationService] Canceled stale auth attempts, proceeding with nonce=${nonce}`);
 
 			// Exchange code for token (pass config for user overridable endpoints)
 			const tokenResponse = await this._oauth2Service.exchangeCodeForToken(

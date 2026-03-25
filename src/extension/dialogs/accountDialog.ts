@@ -112,6 +112,32 @@ export async function showAccountDialog(
 		}
 	);
 
+	// Handle messages from the webview
+	panel.webview.onDidReceiveMessage(
+		async (message: { command: string; url?: string }) => {
+			switch (message.command) {
+				case 'addCredits':
+					if (message.url) {
+						vscode.env.openExternal(vscode.Uri.parse(message.url));
+					}
+					break;
+				case 'signOut':
+					const confirm = await vscode.window.showWarningMessage(
+						vscode.l10n.t('Are you sure you want to sign out of Feima?'),
+						{ modal: true },
+						vscode.l10n.t('Sign Out')
+					);
+					if (confirm) {
+						await authService.signOut();
+						panel.dispose();
+					}
+					break;
+			}
+		},
+		undefined,
+		[]
+	);
+
 	// Generate the HTML content
 	panel.webview.html = getAccountHtml({
 		userName,
@@ -273,6 +299,7 @@ function getAccountHtml(data: {
 	</div>
 
 	<script>
+		const vscode = acquireVsCodeApi();
 		function addCredits() {
 			vscode.postMessage({ command: 'addCredits', url: '${data.promotionUrl}' });
 		}

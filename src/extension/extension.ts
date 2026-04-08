@@ -92,7 +92,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		if (!vscode.lm) {
 			logService.warn('❌ Language Model API (vscode.lm) not available!');
 			logService.warn('⚠️  This requires VS Code 1.85.0 or later with Copilot Chat installed.');
-			vscode.window.showWarningMessage(vscode.l10n.t('error.languageModelNotAvailable'));
+			vscode.window.showWarningMessage(vscode.l10n.t('Language Model API not available. Please ensure GitHub Copilot Chat is installed.'));
 		} else {
 			logService.info('✅ Language Model API available');
 			logService.info(`   vscode.lm methods: ${Object.keys(vscode.lm).join(', ')}`);
@@ -155,7 +155,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		logService.info('   - Start coding in any file (test inline completions)');
 	} catch (error) {
 		logService.error(error as Error, 'Failed to activate extension');
-		vscode.window.showErrorMessage(vscode.l10n.t('error.activationFailed', String(error)));
+		vscode.window.showErrorMessage(vscode.l10n.t('Feima extension activation failed: {0}', String(error)));
 		throw error;
 	}
 }

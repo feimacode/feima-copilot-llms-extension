@@ -145,7 +145,7 @@ export class FeimaLanguageModelProvider implements vscode.LanguageModelChatProvi
 			// Check authentication first to provide better error messages
 			const isAuthenticated = await this.authService.isAuthenticated();
 			if (!isAuthenticated) {
-				throw new Error(vscode.l10n.t('error.auth.unauthorized'));
+				throw new Error(vscode.l10n.t('Please sign in to Feima first'));
 			}
 
 			// P2 #12: Add error handling for endpoint creation
@@ -232,8 +232,8 @@ export class FeimaLanguageModelProvider implements vscode.LanguageModelChatProvi
 				this._triggerReauthDebounced();
 
 				// Show user-friendly message inline in chat
-				const message = vscode.l10n.t('error.auth.tokenExpired');
-				progress.report(new vscode.LanguageModelTextPart(`⚠️ **${message}** ${vscode.l10n.t('prompt.sessionExpired')}`));
+				const message = vscode.l10n.t('Your session has expired');
+				progress.report(new vscode.LanguageModelTextPart(`⚠️ **${message}** ${vscode.l10n.t('Please sign in to Feima first')}`));
 				return;
 			}
 
@@ -264,7 +264,7 @@ export class FeimaLanguageModelProvider implements vscode.LanguageModelChatProvi
 				// Trigger re-auth prompt (debounced - avoids multiple dialogs per session)
 				this._triggerReauthDebounced();
 
-				throw new Error(vscode.l10n.t('error.auth.tokenExpired'));
+				throw new Error(vscode.l10n.t('Your session has expired'));
 			}
 
 			throw error;

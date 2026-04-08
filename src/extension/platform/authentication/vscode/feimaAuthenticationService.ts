@@ -155,8 +155,8 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 				this._cachedSessions = [];
 
 				// Notify user and prompt re-authentication
-				const message = vscode.l10n.t('prompt.sessionExpired');
-				const signIn = vscode.l10n.t('command.signIn');
+				const message = vscode.l10n.t('Your session has expired. Please sign in again.');
+				const signIn = vscode.l10n.t('Sign In');
 				const result = await vscode.window.showWarningMessage(message, signIn);
 
 				if (result === signIn) {
@@ -216,7 +216,7 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 		if (!opened) {
 			this._activeFlows.delete(nonce);
 			this._uriHandler.cancelPendingCallback(nonce);
-			throw new Error(vscode.l10n.t('error.authUrlFailed'));
+			throw new Error(vscode.l10n.t('Failed to open authentication URL'));
 		}
 
 		this._logService.info('[FeimaAuthenticationService] Browser opened, waiting for callback...');
@@ -248,7 +248,7 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 			// Retrieve flow state
 			const flowState = this._activeFlows.get(nonce);
 			if (!flowState) {
-				throw new Error(vscode.l10n.t('error.oauthStateLost'));
+				throw new Error(vscode.l10n.t('OAuth flow state lost'));
 			}
 
 			this._logService.info('[FeimaAuthenticationService] Callback received, exchanging code for token');

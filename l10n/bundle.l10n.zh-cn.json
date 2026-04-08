@@ -9,5 +9,18 @@
 	"Sign out failed: {0}": "登出失败: {0}",
 	"Please sign in to Feima first": "请先登录 Feima 账号",
 	"Current account: {0}\nAccount ID: {1}": "当前账号: {0}\n账号 ID: {1}",
-	"Failed to get account info: {0}": "获取账号信息失败: {0}"
+	"Failed to get account info: {0}": "获取账号信息失败: {0}",
+	"Your session has expired. Please sign in again.": "您的会话已过期，请重新登录。",
+	"Sign In": "登录",
+	"Your session has expired": "您的会话已过期",
+	"LanguageModelChatToolMode.Required is not supported with more than one tool": "LanguageModelChatToolMode.Required 不支持多个工具",
+	"The extension has been temporarily blocked due to too many requests": "由于请求过多，扩展已被临时阻止",
+	"Request quota exceeded": "请求配额已超出",
+	"Too many requests, please retry later": "请求过于频繁，请稍后重试",
+	"HTTP {0}: {1}": "HTTP {0}: {1}",
+	"No response body received": "未收到响应体",
+	"Failed to open authentication URL": "无法打开身份验证URL",
+	"OAuth flow state lost": "OAuth 流程状态丢失",
+	"Language Model API not available. Please ensure GitHub Copilot Chat is installed.": "语言模型 API 不可用。请确保已安装 GitHub Copilot Chat。",
+	"Feima extension activation failed: {0}": "飞码扣扩展激活失败：{0}"
 }

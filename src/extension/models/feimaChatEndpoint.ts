@@ -219,7 +219,7 @@ export class FeimaChatEndpoint {
 			const session = sessions[0];
 			if (!session) {
 				// Provide actionable error message
-				throw new Error(vscode.l10n.t('error.auth.unauthorized'));
+				throw new Error(vscode.l10n.t('Please sign in to Feima first'));
 			}
 			this._cachedToken = session.accessToken;
 			return session.accessToken;
@@ -528,7 +528,7 @@ export class FeimaChatEndpoint {
 
 		// Validate toolMode
 		if (toolMode === vscode.LanguageModelChatToolMode.Required && tools.length > 1) {
-			throw new Error(vscode.l10n.t('error.toolModeNotSupported'));
+			throw new Error(vscode.l10n.t('LanguageModelChatToolMode.Required is not supported with more than one tool'));
 		}
 
 		// Warn if tools provided but not supported
@@ -645,7 +645,7 @@ export class FeimaChatEndpoint {
 						`Retry-After: ${retryAfter || 'not specified'}, ` +
 						`Timestamp: ${new Date().toISOString()}`
 					);
-					return { type: 'blocked', reason: vscode.l10n.t('error.extensionBlocked', 'The extension has been temporarily blocked due to too many requests') };
+					return { type: 'blocked', reason: vscode.l10n.t('The extension has been temporarily blocked due to too many requests') };
 				} else if (response.status === 402) {
 					this.log.warn(
 						`[FeimaChatEndpoint] Insufficient balance (HTTP 402) for model ${this.modelInfo.id}`
@@ -658,10 +658,10 @@ export class FeimaChatEndpoint {
 					// Issue #6: Log rate limit events with context
 					if (isQuota) {
 						this.log.info(`[FeimaChatEndpoint] Quota exceeded for model ${this.modelInfo.id}, retry after: ${retryAfter || 'unspecified'}`);
-						return { type: 'quotaExceeded', reason: vscode.l10n.t('error.quotaExceeded', 'Request quota exceeded') };
+						return { type: 'quotaExceeded', reason: vscode.l10n.t('Request quota exceeded') };
 					} else {
 						this.log.info(`[FeimaChatEndpoint] Rate limited for model ${this.modelInfo.id}, retry after: ${retryAfter || 'unspecified'}`);
-						return { type: 'rateLimited', reason: vscode.l10n.t('error.rateLimited', 'Too many requests, please retry later') };
+						return { type: 'rateLimited', reason: vscode.l10n.t('Too many requests, please retry later') };
 					}
 				} else if (response.status === 499) {
 					// 499 = proxy-level "client closed request" — benign when the
@@ -670,13 +670,13 @@ export class FeimaChatEndpoint {
 					this.log.debug(`[FeimaChatEndpoint] Request cancelled (HTTP 499) for model ${this.modelInfo.id}, token cancelled: ${token.isCancellationRequested}`);
 					return { type: 'cancelled' };
 				} else {
-					return { type: 'error', reason: vscode.l10n.t('error.httpRequest', response.status.toString(), errorText) };
+					return { type: 'error', reason: vscode.l10n.t('HTTP {0}: {1}', response.status.toString(), errorText) };
 				}
 			}
 
 			if (!response.body) {
 				this.log.error(`[FeimaChatEndpoint] Response has no body`);
-				return { type: 'error', reason: vscode.l10n.t('error.noResponseBody') };
+			return { type: 'error', reason: vscode.l10n.t('No response body received') };
 			}
 
 			// Extract and emit quota update from response headers

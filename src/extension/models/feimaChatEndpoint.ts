@@ -602,6 +602,7 @@ export class FeimaChatEndpoint {
 			const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 			
 			this.log.debug(`[FeimaChatEndpoint] Sending POST to ${this.apiUrl} (timeout=${timeoutMs / 1000}s)`);
+			const requestStartTime = Date.now();
 			
 			let response: Response;
 			try {
@@ -698,6 +699,8 @@ export class FeimaChatEndpoint {
 			this.log.debug(`[FeimaChatEndpoint] Starting SSE stream parsing`);
 			// Parse SSE stream
 			await this._parseSSEStream(response.body, callback, token);
+			const elapsedMs = Date.now() - requestStartTime;
+			this.log.info(`[FeimaChatEndpoint] LLM response completed: model=${this.model}, elapsed=${elapsedMs}ms`);
 			this.log.debug(`[FeimaChatEndpoint] SSE stream parsing completed successfully`);
 
 			return { type: 'success' };

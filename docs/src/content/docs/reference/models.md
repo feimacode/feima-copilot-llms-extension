@@ -7,6 +7,38 @@ description: Complete reference for all supported AI models
 
 Complete reference for all AI models available in Feimacode Copilot.
 
+
+## Billing Multipliers
+
+Each model has a **billing multiplier** that affects how requests are charged. The total cost is calculated as:
+
+```
+weighted_requests = model_multiplier × context_multiplier
+```
+
+### Model Tiers
+
+| Tier | Multiplier | Description |
+|------|------------|-------------|
+| **Ultra-Lightweight** | 0.1x | Ultra-fast, minimal resource models for quick tasks |
+| **Lightweight** | 0.5x | Fast, efficient models for simple tasks |
+| **Standard** | 1.0x | Balanced performance for everyday coding |
+| **Premium** | 2.0x | State-of-the-art models with best performance |
+
+### Context Multipliers
+
+| Context Size | Token Range | Multiplier |
+|--------------|-------------|------------|
+| Small | 0 - 4,000 tokens | 0.5x |
+| Medium | 4,001 - 16,000 tokens | 1.0x |
+| Large | 16,001 - 32,000 tokens | 1.5x |
+| Extra Large | 32,001+ tokens | 2.0x |
+
+For detailed billing information, see the [Billing & Pricing guide](../guides/billing.md).
+
+---
+
+
 ## Qwen Series (Alibaba Cloud)
 
 ### Qwen3 Max

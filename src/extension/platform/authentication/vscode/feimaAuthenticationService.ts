@@ -423,6 +423,60 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 	}
 
 	/**
+	 * Force an immediate token refresh, bypassing the time-based shouldRefreshToken check.
+	 *
+	 * Called after an HTTP 401 response — the token is invalid on the server even if the
+	 * local clock hasn't reached the 5-minute proactive window.
+	 *
+	 * Returns the new session on success, or null when a full re-auth is required
+	 * (no refresh_token stored, or the refresh_token itself is expired/invalid).
+	 */
+	async forceRefresh(): Promise<vscode.AuthenticationSession | null> {
+		const stored = await this._loadStoredToken();
+
+		if (!stored?.tokenResponse.refresh_token) {
+			this._logService.info('[FeimaAuthenticationService] forceRefresh: no refresh token — clearing session');
+			await this._clearStoredToken();
+			this._cachedSessions = [];
+			return null;
+		}
+
+		try {
+			this._logService.info('[FeimaAuthenticationService] forceRefresh: attempting token refresh');
+			const refreshed = await this._oauth2Service.refreshAccessToken(
+				stored.tokenResponse.refresh_token,
+				this._getOAuth2Config()
+			);
+
+			// Preserve the refresh token if the server didn't issue a new one
+			if (!refreshed.refresh_token) {
+				refreshed.refresh_token = stored.tokenResponse.refresh_token;
+			}
+
+			await this._saveToken(refreshed, stored.accountId, stored.accountLabel, stored.sessionId);
+
+			const session: vscode.AuthenticationSession = {
+				id: stored.sessionId,
+				accessToken: refreshed.access_token,
+				account: { id: stored.accountId, label: stored.accountLabel },
+				scopes: []
+			};
+			this._cachedSessions = [session];
+
+			this._logService.info('[FeimaAuthenticationService] forceRefresh: token refreshed successfully');
+			return session;
+		} catch (error) {
+			const errorMsg = error instanceof Error ? error.message : String(error);
+			this._logService.error(error as Error, `[FeimaAuthenticationService] forceRefresh failed: ${errorMsg}`);
+
+			// Refresh token is also invalid — clear everything, caller must re-auth
+			await this._clearStoredToken();
+			this._cachedSessions = [];
+			return null;
+		}
+	}
+
+	/**
 	 * Dispose and clean up resources.
 	 */
 	dispose(): void {

@@ -157,6 +157,11 @@ export class FeimaLanguageModelWrapper {
 				this.log.error(`[Wrapper] Chat request failed - insufficient balance`);
 				await this._handleInsufficientBalance(progress);
 				return; // message rendered in chat, do not throw
+			} else if (result.type === 'unauthorized') {
+				// Token is invalid on the server. Throw with a sentinel message so the
+				// provider can intercept this, force-refresh, and prompt re-auth if needed.
+				this.log.warn(`[Wrapper] Chat request unauthorized (HTTP 401) — token invalid/expired`);
+				throw new Error(`Unauthorized: ${result.reason}`);
 			} else {
 				this.log.error(`[Wrapper] Chat request failed: ${result.reason}`);
 				throw new Error(result.reason);

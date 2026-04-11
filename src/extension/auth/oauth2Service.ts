@@ -204,19 +204,34 @@ export class OAuth2Service {
 	}
 
 	/**
-	 * Check if token needs refresh (5 minutes before expiration)
+	 * Check if token needs refresh (5 minutes before expiration).
+	 *
+	 * Primary source: `expires_in` from the OAuth token response + `issuedAt` timestamp.
+	 * Fallback: `exp` claim decoded from the JWT itself when `expires_in` is absent
+	 * (feima-idp may omit the field in some responses).
 	 */
 	shouldRefreshToken(tokenResponse: ITokenResponse, issuedAt: number): boolean {
-		if (!tokenResponse.expires_in) {
-			return false;
+		const fiveMinutes = 5 * 60 * 1000;
+		const now = Date.now();
+
+		if (tokenResponse.expires_in) {
+			const expiresAt = issuedAt + (tokenResponse.expires_in * 1000);
+			return (expiresAt - now) < fiveMinutes;
 		}
 
-		const expiresAt = issuedAt + (tokenResponse.expires_in * 1000);
-		const now = Date.now();
-		const timeUntilExpiry = expiresAt - now;
-		const fiveMinutes = 5 * 60 * 1000;
+		// Fallback: decode JWT exp claim from access_token
+		try {
+			const claims = this.getUserInfo(tokenResponse);
+			if (claims?.exp) {
+				const expiresAt = claims.exp * 1000; // exp is in seconds
+				return (expiresAt - now) < fiveMinutes;
+			}
+		} catch {
+			// JWT decode failure is non-fatal
+		}
 
-		return timeUntilExpiry < fiveMinutes;
+		// No expiry information available — don't proactively refresh
+		return false;
 	}
 
 	// ============ Configuration Helpers ============

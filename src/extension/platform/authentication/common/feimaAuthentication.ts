@@ -40,6 +40,18 @@ export interface IFeimaAuthenticationService {
 	refreshToken(): Promise<string | undefined>;
 
 	/**
+	 * Force an immediate token refresh, bypassing the time-based check.
+	 *
+	 * Call this after receiving an HTTP 401 from the API — the token is invalid
+	 * server-side even if the client-side clock hasn't reached the expiry window.
+	 *
+	 * @returns New session if refresh succeeded, null if refresh is impossible
+	 *          (no refresh token, or refresh token itself expired).
+	 *          When null is returned the caller should trigger full re-authentication.
+	 */
+	forceRefresh(): Promise<vscode.AuthenticationSession | null>;
+
+	/**
 	 * Sign out and clear all stored tokens.
 	 */
 	signOut(): Promise<void>;

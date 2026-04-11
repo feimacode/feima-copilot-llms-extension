@@ -172,6 +172,7 @@
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
+    "test:unit": "tsc -p src/test/unit/tsconfig.json --outDir out --noEmit false && mocha 'out/test/unit/**/*.test.js' --timeout 5000",
     "validate:vsix": "./build/validate-vsix.sh"
   },
   "devDependencies": {

@@ -11,6 +11,7 @@ import { countTokens } from '../platform/tokenizer/tikTokenizer';
 import { getResolvedConfig } from '../../config/configService';
 import { parseQuotaHeader } from '../statusBar';
 import { getQuotaService } from '../services/quotaService';
+import { toolResultContentToString } from './toolResultConverter';
 
 /**
  * Callback invoked as stream progresses with deltas.
@@ -46,7 +47,8 @@ export type ChatResponse =
 	| { type: 'blocked'; reason: string; requestId?: string }
 	| { type: 'quotaExceeded'; reason: string; requestId?: string }
 	| { type: 'rateLimited'; reason: string; requestId?: string }
-	| { type: 'insufficientBalance'; reason: string; requestId?: string };
+	| { type: 'insufficientBalance'; reason: string; requestId?: string }
+	| { type: 'unauthorized'; reason: string; requestId?: string };
 
 /**
  * Model information from catalog
@@ -271,11 +273,12 @@ export class FeimaChatEndpoint {
 
 				for (const part of toolResultParts) {
 					const toolResultPart = part as ToolResultPart;
-					const resultContent = Array.isArray(toolResultPart.content)
-						? toolResultPart.content.map((c: vscode.LanguageModelTextPart | string) => 
-							c instanceof vscode.LanguageModelTextPart ? c.value : String(c)
-						).join('')
-						: String(toolResultPart.content || '');
+					// Use shared pure helper to avoid [object Object] for unknown content types
+					const resultContent = toolResultContentToString(
+						toolResultPart.content,
+						(c): c is vscode.LanguageModelTextPart => c instanceof vscode.LanguageModelTextPart,
+						(c): c is vscode.LanguageModelDataPart => c instanceof vscode.LanguageModelDataPart
+					);
 					
 					this.log.debug(`[FeimaChatEndpoint] Tool result for callId=${toolResultPart.callId}, content length: ${resultContent.length}`);
 					
@@ -638,7 +641,13 @@ export class FeimaChatEndpoint {
 				}
 				
 				// P2 #23: Error type differentiation
-				if (response.status === 403) {
+				if (response.status === 401) {
+					this.log.warn(
+						`[FeimaChatEndpoint] Unauthorized (HTTP 401) for model ${this.modelInfo.id}. ` +
+						`Token is invalid or expired server-side.`
+					);
+					return { type: 'unauthorized', reason: vscode.l10n.t('Authentication token is invalid or expired') };
+				} else if (response.status === 403) {
 					// P2 #24 & Issue #6: Track/log blocked request for analytics
 					const retryAfter = response.headers.get('Retry-After');
 					this.log.warn(
@@ -680,20 +689,23 @@ export class FeimaChatEndpoint {
 			return { type: 'error', reason: vscode.l10n.t('No response body received') };
 			}
 
-			// Extract and emit quota update from response headers
+			// Extract and emit quota update from response headers.
+			// NOTE: All requests use stream=true. For streaming responses, the backend cannot set
+			// HTTP headers after the generator starts, so the quota snapshot is delivered via a
+			// `quota_snapshot` SSE event emitted after billing completes (handled in _parseSSEStream).
+			// The header path below is kept for future non-streaming use cases.
 			const quotaHeaderValue = response.headers.get('x-feima-quota-snapshot');
-			this.log.debug(`[FeimaChatEndpoint] Quota header value: "${quotaHeaderValue}"`);
 			if (quotaHeaderValue) {
 				const quota = parseQuotaHeader(quotaHeaderValue);
-				this.log.debug(`[FeimaChatEndpoint] Parsed quota: ${JSON.stringify(quota)}`);
 				if (quota) {
-					this.log.debug(`[FeimaChatEndpoint] Emitting quota to service`);
+					this.log.debug(`[FeimaChatEndpoint] Quota updated from response header: remaining=${quota.remaining}`);
 					getQuotaService().setQuota(quota);
 				} else {
 					this.log.warn(`[FeimaChatEndpoint] Failed to parse quota header: "${quotaHeaderValue}"`);
 				}
 			} else {
-				this.log.warn(`[FeimaChatEndpoint] No x-feima-quota-snapshot header in response`);
+				// Expected for streaming responses — quota arrives via SSE event instead
+				this.log.debug(`[FeimaChatEndpoint] No x-feima-quota-snapshot header (streaming: quota will arrive via SSE event)`);
 			}
 
 			this.log.debug(`[FeimaChatEndpoint] Starting SSE stream parsing`);
@@ -816,6 +828,8 @@ export class FeimaChatEndpoint {
 								if (quota) {
 									getQuotaService().setQuota(quota);
 									this.log.debug(`[FeimaChatEndpoint] Quota updated from SSE event: remaining=${quota.remaining}`);
+								} else {
+									this.log.warn(`[FeimaChatEndpoint] Failed to parse quota_snapshot SSE value: "${chunk.snapshot}"`);
 								}
 								continue;
 							}

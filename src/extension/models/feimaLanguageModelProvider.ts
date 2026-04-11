@@ -224,16 +224,10 @@ export class FeimaLanguageModelProvider implements vscode.LanguageModelChatProvi
 		} catch (error) {
 			const errorMsg = error instanceof Error ? error.message : String(error);
 
-			// Check for authentication errors
+			// Check for authentication errors — covers both 401 sentinel and legacy messages
 			if (this._isAuthError(errorMsg)) {
 				this._log.error(error as Error, `[Provider] Authentication error for model ${model.id}`);
-
-				// Trigger re-auth prompt (debounced - avoids multiple dialogs per session)
-				this._triggerReauthDebounced();
-
-				// Show user-friendly message inline in chat
-				const message = vscode.l10n.t('Your session has expired');
-				progress.report(new vscode.LanguageModelTextPart(`⚠️ **${message}** ${vscode.l10n.t('Please sign in to Feima first')}`));
+				await this._handleAuthFailure(progress);
 				return;
 			}
 
@@ -261,8 +255,15 @@ export class FeimaLanguageModelProvider implements vscode.LanguageModelChatProvi
 			if (this._isAuthError(errorMsg)) {
 				this._log.error(error as Error, `[Provider] Auth error during token count for model ${model.id}`);
 
-				// Trigger re-auth prompt (debounced - avoids multiple dialogs per session)
-				this._triggerReauthDebounced();
+				// Fire-and-forget refresh attempt (token count errors don't have a progress stream)
+				this.authService.forceRefresh().then(newSession => {
+					if (!newSession) {
+						this._log.info('[Provider] Token refresh failed during token count — prompting re-auth');
+						this.authService.createSession([], {}).catch(e => {
+							this._log.error(e as Error, '[Provider] Re-auth failed during token count');
+						});
+					}
+				}).catch(e => this._log.error(e as Error, '[Provider] forceRefresh failed during token count'));
 
 				throw new Error(vscode.l10n.t('Your session has expired'));
 			}
@@ -271,26 +272,61 @@ export class FeimaLanguageModelProvider implements vscode.LanguageModelChatProvi
 		}
 	}
 
-	/** Returns true for errors that indicate the session/token has expired. */
+	/** Returns true for errors that indicate the session/token has expired or is invalid. */
 	private _isAuthError(msg: string): boolean {
-		return msg.includes('authenticated') || msg.includes('Unauthorized') || msg.includes('auth');
+		// Match the sentinel thrown by the wrapper on HTTP 401, plus legacy patterns
+		return msg.startsWith('Unauthorized:') ||
+			msg.includes('authenticated') ||
+			msg.includes('Unauthorized') ||
+			msg.includes('Please sign in');
 	}
 
-	// Debounce re-auth prompt so we show the dialog at most once per minute
-	// even when multiple calls fail in rapid succession.
-	private _reauthTriggered = false;
-	private _triggerReauthDebounced(): void {
-		if (this._reauthTriggered) {
+	// Debounce auth-failure handling so we don't show multiple dialogs in rapid succession.
+	private _authFailureInProgress = false;
+
+	/**
+	 * Handle an authentication failure (HTTP 401 or token-expired error).
+	 *
+	 * 1. Attempt a forced token refresh (bypass time-based check).
+	 * 2. If refresh succeeds, cache is updated — next request will use the new token.
+	 * 3. If refresh fails (no/expired refresh token), clear the session and prompt re-auth.
+	 * 4. Write an inline warning to the chat for the current request regardless.
+	 */
+	private async _handleAuthFailure(
+		progress: vscode.Progress<vscode.LanguageModelResponsePart | vscode.LanguageModelToolCallPart>
+	): Promise<void> {
+		// Always show an inline warning for the current (failed) request
+		const warningMsg = vscode.l10n.t('Your session has expired');
+		progress.report(new vscode.LanguageModelTextPart(`⚠️ **${warningMsg}** — ${vscode.l10n.t('signing you in again...')}`));
+
+		// Guard against concurrent handling (e.g., multiple simultaneous 401s)
+		if (this._authFailureInProgress) {
+			this._log.debug('[Provider] Auth failure handling already in progress, skipping');
 			return;
 		}
-		this._reauthTriggered = true;
+		this._authFailureInProgress = true;
 
-		// getSessions() is where the re-auth dialog lives (it calls createSession on failure)
-		this.authService.getSessions(undefined, {}).finally(() => {
-			setTimeout(() => {
-				this._reauthTriggered = false;
-			}, 60_000); // 1-minute cooldown before showing dialog again
-		});
+		try {
+			this._log.info('[Provider] Attempting forced token refresh after auth failure');
+			const newSession = await this.authService.forceRefresh();
+
+			if (newSession) {
+				// Refresh succeeded — cache is up to date, next request will use new token
+				this._log.info('[Provider] Token refreshed successfully after 401');
+			} else {
+				// No refresh token or refresh failed — need full re-auth
+				this._log.info('[Provider] forceRefresh returned null — prompting re-authentication');
+				try {
+					await this.authService.createSession([], {});
+					this._log.info('[Provider] Re-authentication completed successfully');
+				} catch (authError) {
+					this._log.error(authError as Error, '[Provider] Re-authentication failed or was dismissed');
+				}
+			}
+		} finally {
+			// Allow next auth failure to be handled after a brief cooldown
+			setTimeout(() => { this._authFailureInProgress = false; }, 30_000);
+		}
 	}
 
 	/**

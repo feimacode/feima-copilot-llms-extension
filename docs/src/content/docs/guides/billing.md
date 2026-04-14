@@ -7,6 +7,10 @@ description: Understand how Feima charges for AI requests and optimize your usag
 
 Feima uses a weighted request-based billing model that considers both the AI model you use and the context size of your requests. This fair and transparent system ensures you pay for what you use.
 
+> ⏰ **IMPORTANT: Promotional Credits Expire After 30 Days**
+> 
+> All credits earned through starter bundles, weekly previews, referrals, bug reports, feature requests, blog posts, and video content **expire 30 days** from receipt. Check your [profile](https://feimacode.com/profile) regularly to see expiration dates and use your credits before they expire!
+
 ## Billing Formula
 
 Each request is calculated using a simple formula:
@@ -159,6 +163,51 @@ Check your balance regularly:
 - **Model**: Qwen3 Coder Plus (premium, 2.0x)
 - **Context**: 50,000 tokens (extra large, 2.0x)
 - **Calculation**: 2.0 × 2.0 = **4.00 weighted requests**
+
+## Ways to Earn Free Credits
+
+Feima offers multiple ways to earn free credits beyond your initial starter bundle:
+
+### 🎁 Starter Bundle
+- **Amount**: 500 credits (during public preview)
+- **How**: Simply sign up for a Feima account
+- **Credits expire**: 30 days from receipt
+
+### 📅 Weekly Preview Credits
+- **Amount**: 50 credits per week
+- **How**: Automatically added every Monday during the public preview period
+- **Credits expire**: 30 days from receipt
+
+### 👥 Referral Program
+- **Amount**: 200 credits per successful referral
+- **How**: Share your referral code with friends - both of you receive credits when they sign up
+- **Credits expire**: 30 days from receipt
+
+### 🐛 Bug Reports
+- **Amount**: 20 credits per verified bug
+- **How**: Report bugs through our issue tracker
+- **Credits expire**: 30 days from receipt
+- **Note**: Credits awarded after bug is verified by our team
+
+### 💡 Feature Requests
+- **Amount**: 30 credits per implemented feature
+- **How**: Submit feature requests through our feedback channels
+- **Credits expire**: 30 days from receipt
+- **Note**: Credits awarded when your request is implemented
+
+### 📝 Blog Posts
+- **Amount**: 100 credits per approved post
+- **How**: Write about Feima and submit for review
+- **Credits expire**: 30 days from receipt
+- **Note**: Content must be approved by our team
+
+### 🎬 Video Content
+- **Amount**: 150 credits per approved video
+- **How**: Create video content about Feima
+- **Credits expire**: 30 days from receipt
+- **Note**: Video must be approved by our team
+
+> **Tip**: All promotional credits expire after 30 days. Use them or lose them! Check your [profile](https://feimacode.com/profile) to see expiration dates.
 
 ## FAQ
 

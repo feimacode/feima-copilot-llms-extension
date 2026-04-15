@@ -73,9 +73,10 @@ export class OAuth2Service {
 	 * 
 	 * @param redirectUri OAuth2 redirect URI
 	 * @param config OAuth2 configuration (can be from VS Code settings or region defaults)
+	 * @param referralCode Optional referral code to pass to OAuth server (for signup bonus)
 	 * @returns Authorization URL with nonce and codeVerifier
 	 */
-	async buildAuthorizationUrl(redirectUri: string, config: IOAuth2Config): Promise<IAuthorizationUrl> {
+	async buildAuthorizationUrl(redirectUri: string, config: IOAuth2Config, referralCode?: string): Promise<IAuthorizationUrl> {
 		const endpoints = this.deriveEndpoints(config);
 
 		// Generate PKCE parameters
@@ -94,6 +95,11 @@ export class OAuth2Service {
 		authUrl.searchParams.set('code_challenge', codeChallenge);
 		authUrl.searchParams.set('code_challenge_method', 'S256');
 		authUrl.searchParams.set('scope', config.scopes.join(' '));
+
+		// Add referral code if provided (for signup bonus)
+		if (referralCode) {
+			authUrl.searchParams.set('ref', referralCode);
+		}
 
 		return {
 			url: authUrl.toString(),

@@ -15,6 +15,20 @@ export interface ICallbackData {
 }
 
 /**
+ * Launch data structure for referral deep links.
+ */
+export interface ILaunchData {
+	referralCode: string;
+	source: string;
+}
+
+/**
+ * Event emitted when a referral code is received from a /launch deep link.
+ */
+export const onDidReceiveReferralCode = new vscode.EventEmitter<string>();
+export const referralCodeEvent = onDidReceiveReferralCode.event;
+
+/**
  * Callback resolver for a specific OAuth2 flow.
  */
 interface IPendingCallback {
@@ -47,13 +61,79 @@ export class FeimaUriEventHandler implements vscode.UriHandler {
 	) { }
 
 	/**
-	 * Handle incoming OAuth2 callback URI.
+	 * Handle incoming URI from VS Code deep link.
+	 * Routes to appropriate handler based on path:
+	 * - /launch → Referral deep link (stores referral code, prompts sign-in)
+	 * - /oauth/callback → OAuth2 callback (routes to pending authorization)
+	 *
+	 * @param uri URI from VS Code: vscode://feima.cn-model-for-copilot/launch?referral_code=...
+	 *            or vscode://feima.cn-model-for-copilot/oauth/callback?code=...&state=...
+	 */
+	handleUri(uri: vscode.Uri): void {
+		this._logService.debug(`[FeimaUriEventHandler] Received URI: ${uri.toString()}`);
+
+		// Check path to determine handler
+		const path = uri.path;
+
+		if (path === '/launch') {
+			this._handleLaunchUri(uri);
+			return;
+		}
+
+		// Default: OAuth callback handling
+		this._handleOAuthCallback(uri);
+	}
+
+	/**
+	 * Handle /launch deep link for referral code.
+	 * Stores referral code and prompts user to sign in.
+	 *
+	 * @param uri Launch URI with referral_code query param
+	 */
+	private _handleLaunchUri(uri: vscode.Uri): void {
+		this._logService.info(`[FeimaUriEventHandler] Handling launch URI: ${uri.toString()}`);
+
+		try {
+			const query = new URLSearchParams(uri.query);
+			const referralCode = query.get('referral_code');
+			const source = query.get('source');
+
+			if (!referralCode) {
+				this._logService.warn('[FeimaUriEventHandler] Launch URI missing referral_code');
+				vscode.window.showWarningMessage(vscode.l10n.t('Welcome to Feima! Sign in to get started.'));
+				return;
+			}
+
+			this._logService.info(`[FeimaUriEventHandler] Received referral code: ${referralCode}, source: ${source}`);
+
+			// Emit event for authentication service to consume
+			onDidReceiveReferralCode.fire(referralCode);
+
+			// Prompt user to sign in
+			const message = vscode.l10n.t('Welcome to Feima! Sign in to claim your referral bonus.');
+			const signIn = vscode.l10n.t('Sign In');
+			const later = vscode.l10n.t('Later');
+
+			vscode.window.showInformationMessage(message, signIn, later).then(selection => {
+				if (selection === signIn) {
+					vscode.commands.executeCommand('feima.signIn');
+				}
+			});
+
+		} catch (error) {
+			this._logService.error(error as Error, '[FeimaUriEventHandler] Failed to handle launch URI');
+			vscode.window.showErrorMessage(vscode.l10n.t('Failed to process launch request'));
+		}
+	}
+
+	/**
+	 * Handle OAuth2 callback URI.
 	 * Routes callback to the appropriate pending authorization request.
 	 *
 	 * @param uri Callback URI from feima-idp: vscode://feima.cn-model-for-copilot/oauth/callback?code=...&state=...
 	 */
-	handleUri(uri: vscode.Uri): void {
-		this._logService.debug(`[FeimaUriEventHandler] Received callback URI: ${uri.toString()}`);
+	private _handleOAuthCallback(uri: vscode.Uri): void {
+		this._logService.debug(`[FeimaUriEventHandler] Handling OAuth callback URI: ${uri.toString()}`);
 
 		try {
 			// Parse query parameters

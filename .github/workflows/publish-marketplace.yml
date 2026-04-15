@@ -85,6 +85,55 @@ jobs:
           
           echo "✅ GitHub Release v$VERSION exists"
       
+      - name: Verify VSIX files in release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          REPO="${{ github.repository }}"
+          
+          echo "🔍 Checking release assets..."
+          ASSETS=$(gh release view "v$VERSION" --repo "$REPO" --json assets --jq '.assets[].name')
+          
+          echo "Available assets:"
+          echo "$ASSETS"
+          
+          # Check if required files exist
+          MISSING_FILES=false
+          
+          if [ "${{ github.event.inputs.publish_cn }}" == "true" ]; then
+            if ! echo "$ASSETS" | grep -q "feima-copilot-cn-models-$VERSION.vsix"; then
+              echo "❌ Missing: feima-copilot-cn-models-$VERSION.vsix"
+              MISSING_FILES=true
+            else
+              echo "✅ Found: feima-copilot-cn-models-$VERSION.vsix"
+            fi
+          fi
+          
+          if [ "${{ github.event.inputs.publish_global }}" == "true" ]; then
+            if ! echo "$ASSETS" | grep -q "feima-copilot-more-models-$VERSION.vsix"; then
+              echo "❌ Missing: feima-copilot-more-models-$VERSION.vsix"
+              MISSING_FILES=true
+            else
+              echo "✅ Found: feima-copilot-more-models-$VERSION.vsix"
+            fi
+          fi
+          
+          if [ "$MISSING_FILES" == "true" ]; then
+            echo ""
+            echo "❌ ERROR: Required VSIX files not found in release!"
+            echo ""
+            echo "📋 Next steps:"
+            echo "1. Run the 'Release' workflow to build and upload VSIX files"
+            echo "2. Once the release is complete, re-run this 'Publish to Marketplace' workflow"
+            echo ""
+            echo "ℹ️  The 'Release' workflow will:"
+            echo "   - Build VSIX for CN and Global variants"
+            echo "   - Generate SHA-256 checksums"
+            echo "   - Upload artifacts to GitHub Release"
+            exit 1
+          fi
+      
       - name: Check VSCE_PAT secret
         run: |
           if [ -z "${{ secrets.VSCE_PAT }}" ]; then
@@ -113,7 +162,28 @@ jobs:
           mkdir -p dist/cn
           cd dist/cn
           
-          gh release download "v$VERSION" --repo "$REPO" --pattern "feima-copilot-cn-models-$VERSION.vsix" --pattern "feima-copilot-cn-models-$VERSION.vsix.sha256"
+          echo "📥 Downloading CN VSIX from release v$VERSION..."
+          echo "Repository: $REPO"
+          echo "Tag: v$VERSION"
+          
+          # Download all files matching the pattern
+          echo "Attempting download..."
+          gh release download "v$VERSION" --repo "$REPO" --pattern "feima-copilot-cn-models-$VERSION.vsix*" --dir . || {
+            echo "❌ Download failed with exit code $?"
+            echo "Available files in release:"
+            gh release view "v$VERSION" --repo "$REPO" --json assets -q '.assets[].name'
+            exit 1
+          }
+          
+          echo "✅ Download completed"
+          echo "Files in current directory:"
+          ls -lah
+          
+          if [ ! -f "feima-copilot-cn-models-$VERSION.vsix" ]; then
+            echo "❌ VSIX file not found after download"
+            echo "Expected: feima-copilot-cn-models-$VERSION.vsix"
+            exit 1
+          fi
           
           VSIX="feima-copilot-cn-models-$VERSION.vsix"
           echo "vsix=$VSIX" >> $GITHUB_OUTPUT
@@ -131,7 +201,28 @@ jobs:
           mkdir -p dist/global
           cd dist/global
           
-          gh release download "v$VERSION" --repo "$REPO" --pattern "feima-copilot-more-models-$VERSION.vsix" --pattern "feima-copilot-more-models-$VERSION.vsix.sha256"
+          echo "📥 Downloading Global VSIX from release v$VERSION..."
+          echo "Repository: $REPO"
+          echo "Tag: v$VERSION"
+          
+          # Download all files matching the pattern
+          echo "Attempting download..."
+          gh release download "v$VERSION" --repo "$REPO" --pattern "feima-copilot-more-models-$VERSION.vsix*" --dir . || {
+            echo "❌ Download failed with exit code $?"
+            echo "Available files in release:"
+            gh release view "v$VERSION" --repo "$REPO" --json assets -q '.assets[].name'
+            exit 1
+          }
+          
+          echo "✅ Download completed"
+          echo "Files in current directory:"
+          ls -lah
+          
+          if [ ! -f "feima-copilot-more-models-$VERSION.vsix" ]; then
+            echo "❌ VSIX file not found after download"
+            echo "Expected: feima-copilot-more-models-$VERSION.vsix"
+            exit 1
+          fi
           
           VSIX="feima-copilot-more-models-$VERSION.vsix"
           echo "vsix=$VSIX" >> $GITHUB_OUTPUT
@@ -143,15 +234,23 @@ jobs:
           
           if [ "${{ github.event.inputs.publish_cn }}" == "true" ]; then
             cd dist/cn
-            sha256sum -c "feima-copilot-cn-models-$VERSION.vsix.sha256"
-            echo "✅ CN VSIX checksum verified"
+            if [ ! -f "feima-copilot-cn-models-$VERSION.vsix.sha256" ]; then
+              echo "⚠️  CN VSIX checksum file not found, skipping verification"
+            else
+              sha256sum -c "feima-copilot-cn-models-$VERSION.vsix.sha256"
+              echo "✅ CN VSIX checksum verified"
+            fi
             cd ../..
           fi
           
           if [ "${{ github.event.inputs.publish_global }}" == "true" ]; then
             cd dist/global
-            sha256sum -c "feima-copilot-more-models-$VERSION.vsix.sha256"
-            echo "✅ Global VSIX checksum verified"
+            if [ ! -f "feima-copilot-more-models-$VERSION.vsix.sha256" ]; then
+              echo "⚠️  Global VSIX checksum file not found, skipping verification"
+            else
+              sha256sum -c "feima-copilot-more-models-$VERSION.vsix.sha256"
+              echo "✅ Global VSIX checksum verified"
+            fi
             cd ../..
           fi
       

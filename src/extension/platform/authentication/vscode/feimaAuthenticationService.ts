@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import { IFeimaAuthenticationService } from '../common/feimaAuthentication';
 import { OAuth2Service, ITokenResponse, IAuthorizationUrl, IOAuth2Config } from '../../../auth/oauth2Service';
-import { FeimaUriEventHandler, ICallbackData } from '../common/feimaUriEventHandler';
+import { FeimaUriEventHandler, ICallbackData, referralCodeEvent } from '../common/feimaUriEventHandler';
 import { ILogService } from '../../log/common/logService';
 import { FeimaConfigService } from '../../../../config/configService';
 
@@ -59,6 +59,7 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 	private readonly _redirectUri: string;
 	private readonly _oauth2Service: OAuth2Service;
 	private readonly _uriHandler: FeimaUriEventHandler;
+	private _pendingReferralCode: string | undefined;  // Referral code from /launch deep link
 
 	constructor(
 		private readonly _context: vscode.ExtensionContext,
@@ -76,6 +77,14 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 		this._logService.debug('[FeimaAuthenticationService] Initialized with multi-request support');
 		this._logService.debug(`[FeimaAuthenticationService] Redirect URI: ${this._redirectUri}`);
 		
+		// Listen for referral code events from /launch deep links
+		this._context.subscriptions.push(
+			referralCodeEvent((code: string) => {
+				this._pendingReferralCode = code;
+				this._logService.info(`[FeimaAuthenticationService] Stored pending referral code: ${code}`);
+			})
+		);
+
 		// Load stored sessions on startup
 		this._loadStoredSessions();
 	}
@@ -192,12 +201,23 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 	): Promise<vscode.AuthenticationSession> {
 		this._logService.info('[FeimaAuthenticationService] Starting OAuth2 flow');
 
+		// Get pending referral code (from /launch deep link)
+		const referralCode = this._pendingReferralCode;
+		if (referralCode) {
+			this._logService.info(`[FeimaAuthenticationService] Including referral code in OAuth flow: ${referralCode}`);
+		}
+
 		// Build authorization URL with config (respects VS Code settings)
+		// Pass referral code so feima-idp can process signup bonus
 		const authData: IAuthorizationUrl = await this._oauth2Service.buildAuthorizationUrl(
 			this._redirectUri,
-			this._getOAuth2Config()
+			this._getOAuth2Config(),
+			referralCode
 		);
 		const { url: authUrl, nonce, codeVerifier } = authData;
+
+		// Clear pending referral code after using it
+		this._pendingReferralCode = undefined;
 
 		this._logService.debug(`[FeimaAuthenticationService] Generated OAuth flow: nonce=${nonce}`);
 

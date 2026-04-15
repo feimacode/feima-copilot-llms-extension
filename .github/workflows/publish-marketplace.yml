@@ -312,7 +312,7 @@ jobs:
           VSIX="dist/cn/feima-copilot-cn-models-$VERSION.vsix"
           
           echo "📦 Publishing CN variant: $VSIX"
-          vsce publish --packagePath "$VSIX"
+          vsce publish --packagePath "$VSIX" --allow-proposed-apis chatProvider inlineCompletionsAdditions languageModelThinkingPart
           
           echo "✅ CN variant published successfully"
           echo "🔗 Marketplace: https://marketplace.visualstudio.com/items?itemName=feima.copilot-cn-models"
@@ -345,7 +345,7 @@ jobs:
           VSIX="dist/global/feima-copilot-more-models-$VERSION.vsix"
           
           echo "📦 Publishing Global variant: $VSIX"
-          vsce publish --packagePath "$VSIX"
+          vsce publish --packagePath "$VSIX" --allow-proposed-apis chatProvider inlineCompletionsAdditions languageModelThinkingPart
           
           echo "✅ Global variant published successfully"
           echo "🔗 Marketplace: https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-models"

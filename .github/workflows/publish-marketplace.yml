@@ -233,25 +233,49 @@ jobs:
           VERSION="${{ needs.validate.outputs.version }}"
           
           if [ "${{ github.event.inputs.publish_cn }}" == "true" ]; then
-            cd dist/cn
-            if [ ! -f "feima-copilot-cn-models-$VERSION.vsix.sha256" ]; then
+            CN_VSIX="dist/cn/feima-copilot-cn-models-$VERSION.vsix"
+            CN_SHA="dist/cn/feima-copilot-cn-models-$VERSION.vsix.sha256"
+            
+            if [ ! -f "$CN_SHA" ]; then
               echo "⚠️  CN VSIX checksum file not found, skipping verification"
             else
-              sha256sum -c "feima-copilot-cn-models-$VERSION.vsix.sha256"
-              echo "✅ CN VSIX checksum verified"
+              echo "🔍 Verifying CN checksum..."
+              # Extract hash from file and verify
+              EXPECTED_HASH=$(awk '{print $1}' "$CN_SHA")
+              ACTUAL_HASH=$(sha256sum "$CN_VSIX" | awk '{print $1}')
+              
+              if [ "$EXPECTED_HASH" == "$ACTUAL_HASH" ]; then
+                echo "✅ CN VSIX checksum verified"
+              else
+                echo "❌ Checksum mismatch!"
+                echo "Expected: $EXPECTED_HASH"
+                echo "Actual:   $ACTUAL_HASH"
+                exit 1
+              fi
             fi
-            cd ../..
           fi
           
           if [ "${{ github.event.inputs.publish_global }}" == "true" ]; then
-            cd dist/global
-            if [ ! -f "feima-copilot-more-models-$VERSION.vsix.sha256" ]; then
+            GLOBAL_VSIX="dist/global/feima-copilot-more-models-$VERSION.vsix"
+            GLOBAL_SHA="dist/global/feima-copilot-more-models-$VERSION.vsix.sha256"
+            
+            if [ ! -f "$GLOBAL_SHA" ]; then
               echo "⚠️  Global VSIX checksum file not found, skipping verification"
             else
-              sha256sum -c "feima-copilot-more-models-$VERSION.vsix.sha256"
-              echo "✅ Global VSIX checksum verified"
+              echo "🔍 Verifying Global checksum..."
+              # Extract hash from file and verify
+              EXPECTED_HASH=$(awk '{print $1}' "$GLOBAL_SHA")
+              ACTUAL_HASH=$(sha256sum "$GLOBAL_VSIX" | awk '{print $1}')
+              
+              if [ "$EXPECTED_HASH" == "$ACTUAL_HASH" ]; then
+                echo "✅ Global VSIX checksum verified"
+              else
+                echo "❌ Checksum mismatch!"
+                echo "Expected: $EXPECTED_HASH"
+                echo "Actual:   $ACTUAL_HASH"
+                exit 1
+              fi
             fi
-            cd ../..
           fi
       
       - name: Upload artifacts

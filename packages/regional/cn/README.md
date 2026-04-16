@@ -1,27 +1,41 @@
-# 飞码 AI 模型
+# 飞码扣(Feimacode)
 
-**一键接入 Qwen、DeepSeek、Claude、GPT-4o 等顶尖大模型，无需梯子，开箱即用**
+**一键接入 GitHub Copilot 到中国顶级大模型支持：通义千问、DeepSeek、智谱 GLM、MiniMax、月之暗面等**
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/feimacode/feima-copilot-llms-extension/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## ✨ 核心特性
 
 - 🚀 **无需梯子** - 国内直连，稳定快速
-- 🤖 **多模型支持** - Qwen、DeepSeek、Claude、GPT-4o 等主流模型
-- 🔐 **安全登录** - 支持微信、微博一键登录
+- 🤖 **多模型支持** - Qwen、DeepSeek、智谱 GLM、MiniMax、月之暗面等主流模型
+- 🔐 **安全登录** - 支持一键登录
 - 💰 **灵活计费** - 按需付费，无订阅压力
 - 🌐 **中文优化** - 完整中文界面和文档
 
+## � 获取免费额度
+
+在公测期间，飞码为用户提供多种方式获取免费额度：
+
+- **每周赠送** - 每周自动获得 50 点积分，无需任何操作
+- **邀请好友** - 邀请朋友注册，双方都能获得奖励积分
+- **参与推广** - 定期推出特殊活动和优惠，赚取额外积分
+
+[了解如何赚取更多额度 →](https://feimacode.cn/promotion)
+
 ## 🎯 支持的模型
 
-| 模型 | 提供商 | 特点 |
-|------|--------|------|
-| **Qwen-Turbo** | 阿里云 | 快速响应，性价比高 |
-| **Qwen-Plus** | 阿里云 | 更强推理能力 |
-| **DeepSeek-V3** | DeepSeek | 国产顶尖，代码能力强 |
-| **Claude 3.5 Sonnet** | Anthropic | 安全可靠，长文本处理 |
-| **GPT-4o** | OpenAI | 多模态，通用能力强 |
+| 模型 | 提供商 | 特点 | 价格 |
+|------|--------|------|------|
+| **Qwen Flash** | 阿里云 | 极速响应，100万token长文本 | 🟦 最便宜 |
+| **Qwen3 Max** | 阿里云 | 高质量推理，256K token，支持思维链 | 🟩 标准 |
+| **Qwen3 Coder Plus** | 阿里云 | 高级代码生成，100万token上下文 | 🟨 进阶 |
+| **Qwen3.5 Plus** | 阿里云 | **最强推理**，100万token，80K思维链 | 🟧 专业 |
+| **DeepSeek V3.2** | DeepSeek | 深度思考模型，稀疏注意力，代码能力强 | 🟩 标准 |
+| **Qwen Coder Turbo** | 阿里云 | 快速代码补全（内测免费） | 🆓 免费 |
+| **GLM-5** | 智谱 | 智谱最新模型，200K token，思维链推理 | 🟨 进阶 |
+| **GLM-4.7** | 智谱 | 智谱高性能模型，200K token，思维链推理 | 🟩 标准 |
+| **MiniMax M2.5** | MiniMax | 高效推理，200K token，思维链能力 | 🟩 标准 |
+| **Kimi K2.5** | 月之暗面 | **超长文本**，256K token，思维链推理 | 🟩 标准 |
 
 ## 📦 安装
 
@@ -29,7 +43,7 @@
 
 1. 打开 VS Code
 2. 按 `Ctrl+Shift+X` 打开扩展市场
-3. 搜索 "飞码 AI 模型"
+3. 搜索 "飞码扣"或"Feima"
 4. 点击 "安装"
 
 ### 方式二：手动安装
@@ -43,28 +57,36 @@
 
 ### 1. 登录认证
 
-安装扩展后，首次使用需要登录：
+安装扩展后，首次使用需要登录
 
-- **微信登录**：扫描二维码即可快速登录
-- **微博登录**：使用微博账号授权登录
 
 ### 2. 选择模型
 
-在 VS Code 侧边栏找到飞码图标，点击后选择您想使用的模型。
+在 VS Code AI对话框中选择飞码模型
 
 ### 3. 开始对话
 
-在编辑器中选中代码，右键选择 "飞码：解释代码" 或 "飞码：优化代码"，即可开始 AI 对话。
+输入提示词开始您的代码之旅
 
 ## 💰 定价
 
-采用按需付费模式，无订阅压力：
+采用按需付费模式，无订阅压力。在公测期间，通过多种方式获取免费额度：
 
-- **免费额度**：新用户赠送免费体验额度
-- **按量计费**：根据实际使用的 Token 数量计费
-- **详细定价**：查看 [feimacode.cn/pricing](https://feimacode.cn/pricing)
+- **每周赠送** - 自动获得 50 点积分/周 💝
+- **邀请返利** - 邀请好友赚取奖励 🎁
+- **活动赠送** - 参与社区活动赚额度 🏆
+- **按量计费** - 用完后才需付费，透明无隐藏成本 ✨
+
+**示例**：
+- Qwen Flash（最便宜）：免费额度可用 **数百次对话**
+- Qwen3 Max（标准价格）：免费额度可用 **数十次高级推理**
+
+详细定价 & 积分计划：[feimacode.cn/pricing](https://feimacode.cn/pricing)
 
 ## 📸 截图
+
+### 登录飞码扣
+![模型选择界面](./screenshots/auth-selection-cn.png)
 
 ### 模型选择
 ![模型选择界面](./screenshots/model-selection-cn.png)
@@ -80,7 +102,7 @@
 ### 网络相关问题
 
 **Q: 需要梯子吗？**
-A: 不需要。飞码 AI 模型使用国内服务器，无需任何网络代理即可正常使用。
+A: 不需要。飞码扣使用国内服务器，无需任何网络代理即可正常使用。
 
 **Q: 速度如何？**
 A: 我们使用阿里云服务器，国内访问速度快，响应延迟低。
@@ -104,14 +126,13 @@ A: 对话记录保存在您的本地设备，不会上传到服务器。
 ## 📚 文档
 
 - **完整文档**：[docs.feimacode.cn](https://docs.feimacode.cn)
-- **API 参考**：[docs.feimacode.cn/api](https://docs.feimacode.cn/api)
 - **更新日志**：[CHANGELOG.md](../../CHANGELOG.md)
 
 ## 🤝 反馈与支持
 
 - **问题反馈**：[GitHub Issues](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - **功能建议**：[GitHub Discussions](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- **用户社区**：微信搜索 "飞码AI" 加入用户群
+- **用户社区**：微信搜索 "飞码扣" 加入用户群
 
 ## 📄 许可证
 
@@ -119,6 +140,6 @@ A: 对话记录保存在您的本地设备，不会上传到服务器。
 
 ---
 
-**飞码 AI 模型** - 让 AI 编程助手更懂中国开发者
+**飞码扣** - 让 AI 编程助手更懂中国开发者
 
 [官网](https://feimacode.cn) | [定价](https://feimacode.cn/pricing) | [文档](https://docs.feimacode.cn)

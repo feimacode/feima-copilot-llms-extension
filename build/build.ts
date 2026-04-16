@@ -16,40 +16,11 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import { REGION_CONFIGS } from './region-configs.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '..');
-
-// Region-specific configuration
-const REGION_CONFIGS = {
-	cn: {
-		extensionId: 'copilot-cn-models',
-		displayName: '飞码 AI 模型',
-		description: '国产 AI 模型扩展，支持 Qwen、DeepSeek 等模型，国内直连无需梯子',
-		keywords: ['copilot', 'ai', 'qwen', 'deepseek', '中文', '国产模型'],
-		categories: ['AI', 'Other'],
-		defaultAuthUrl: 'https://auth.feimacode.cn',
-		defaultApiUrl: 'https://api.feimacode.cn/v1',
-		promotionUrl: 'https://feimacode.cn/pricing',
-		issuer: 'https://auth.feimacode.cn',
-		icon: 'assets/ext-icon.png',
-		readmePath: 'packages/regional/cn/README.md',
-	},
-	global: {
-		extensionId: 'copilot-more-models',
-		displayName: 'Feima Code Models',
-		description: 'Access Claude, Gemini, Qwen and more models in VS Code Copilot Chat',
-		keywords: ['copilot', 'ai', 'llm', 'claude', 'gemini', 'qwen', 'language-model'],
-		categories: ['AI', 'Other'],
-		defaultAuthUrl: 'https://auth.feimacode.com',
-		defaultApiUrl: 'https://api.feimacode.com/v1',
-		promotionUrl: 'https://feimacode.com/pricing',
-		issuer: 'https://auth.feimacode.com',
-		icon: 'assets/ext-icon.png',
-		readmePath: 'packages/regional/global/README.md',
-	},
-};
 
 interface BuildConfig {
 	region: 'cn' | 'global';

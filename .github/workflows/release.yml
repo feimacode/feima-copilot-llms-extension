@@ -112,21 +112,70 @@ jobs:
           VERSION="${{ needs.validate.outputs.version }}"
           REGION="${{ matrix.region }}"
           
-          # Determine extension ID based on region
-          if [ "$REGION" == "cn" ]; then
-            EXT_ID="copilot-cn-models"
+          # Read region config from shared source of truth
+          CONFIG=$(node -e "const { REGION_CONFIGS } = require('./build/region-configs.js'); console.log(JSON.stringify(REGION_CONFIGS['$REGION']))")
+          
+          EXT_ID=$(echo "$CONFIG" | jq -r '.extensionId')
+          DISPLAY_NAME=$(echo "$CONFIG" | jq -r '.displayName')
+          DESCRIPTION=$(echo "$CONFIG" | jq -r '.description')
+          DEFAULT_AUTH_URL=$(echo "$CONFIG" | jq -r '.defaultAuthUrl')
+          DEFAULT_API_URL=$(echo "$CONFIG" | jq -r '.defaultApiUrl')
+          ISSUER=$(echo "$CONFIG" | jq -r '.issuer')
+          PROMOTION_URL=$(echo "$CONFIG" | jq -r '.promotionUrl')
+          README_SOURCE=$(echo "$CONFIG" | jq -r '.readmePath')
+          
+          echo "📦 Packaging VSIX for region: $REGION"
+          echo "Extension ID: $EXT_ID"
+          echo "Display Name: $DISPLAY_NAME"
+          
+          # Backup original files
+          cp package.json package.json.backup
+          cp README.md README.md.backup
+          
+          # Copy regional README to root
+          if [ -f "$README_SOURCE" ]; then
+            cp "$README_SOURCE" README.md
+            echo "✅ Copied regional README: $README_SOURCE"
           else
-            EXT_ID="copilot-more-models"
+            echo "⚠️  Regional README not found at $README_SOURCE"
           fi
+          
+          # Update package.json with region-specific values
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            
+            pkg.name = '$EXT_ID';
+            pkg.displayName = '$DISPLAY_NAME';
+            pkg.description = '$DESCRIPTION';
+            
+            // Update configuration defaults
+            if (pkg.contributes?.configuration?.properties) {
+              const props = pkg.contributes.configuration.properties;
+              if (props['feima.auth.baseUrl']) props['feima.auth.baseUrl'].default = '$DEFAULT_AUTH_URL';
+              if (props['feima.api.baseUrl']) props['feima.api.baseUrl'].default = '$DEFAULT_API_URL';
+              if (props['feima.auth.issuer']) props['feima.auth.issuer'].default = '$ISSUER';
+              if (props['feima.promotionUrl']) props['feima.promotionUrl'].default = '$PROMOTION_URL';
+            }
+            
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, '\t'));
+            console.log('✅ Updated package.json with region-specific configuration');
+          "
           
           # Ensure dist directory exists
           mkdir -p dist/$REGION
           
           # Package VSIX
+          echo "🔨 Running vsce package..."
           npx @vscode/vsce package \
             --allow-star-activation \
             --no-dependencies \
             --out dist/$REGION/feima-$EXT_ID-$VERSION.vsix
+          
+          # Restore original files
+          mv package.json.backup package.json
+          mv README.md.backup README.md
+          echo "✅ Restored original files"
           
           echo "EXT_ID=$EXT_ID" >> $GITHUB_ENV
       

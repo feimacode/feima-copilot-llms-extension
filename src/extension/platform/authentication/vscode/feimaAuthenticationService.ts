@@ -60,6 +60,7 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 	private readonly _oauth2Service: OAuth2Service;
 	private readonly _uriHandler: FeimaUriEventHandler;
 	private _pendingReferralCode: string | undefined;  // Referral code from /launch deep link
+	private _refreshInProgress: Promise<void> | undefined;  // Mutex: prevents concurrent token refreshes
 
 	constructor(
 		private readonly _context: vscode.ExtensionContext,
@@ -125,14 +126,56 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 		// CRITICAL FIX: Always validate from storage, not just when cache exists
 		const stored = await this._loadStoredToken();
 		if (!stored) {
+			this._logService.debug('[getSessions] No stored token found');
 			this._cachedSessions = [];
 			return [];
 		}
 
+		const now = Date.now();
+		const ageMs = now - stored.issuedAt;
+		const expiresIn = stored.tokenResponse.expires_in;
+		const remainingMs = expiresIn ? (stored.issuedAt + expiresIn * 1000 - now) : undefined;
+		const willRefresh = this._oauth2Service.shouldRefreshToken(stored.tokenResponse, stored.issuedAt);
+		this._logService.debug(
+			`[getSessions] Token: issuedAt=${stored.issuedAt} age=${ageMs}ms expires_in=${expiresIn}s` +
+			(remainingMs !== undefined ? ` remaining=${remainingMs}ms` : ' (no expires_in, using JWT exp)') +
+			` willRefresh=${willRefresh} hasRefreshToken=${!!stored.tokenResponse.refresh_token}`
+		);
+
 		// Check if token needs refresh (proactive 5-minute check)
-		if (this._oauth2Service.shouldRefreshToken(stored.tokenResponse, stored.issuedAt) && stored.tokenResponse.refresh_token) {
+		if (willRefresh && stored.tokenResponse.refresh_token) {
+			// Mutex: if a refresh is already in progress, wait for it and then re-read storage
+			if (this._refreshInProgress) {
+				this._logService.debug('[getSessions] Refresh already in progress, waiting...');
+				try {
+					await this._refreshInProgress;
+				} catch {
+					// Refresh failed in the other call; fall through to re-read storage below
+				}
+				// Re-read storage after the in-progress refresh completed (or failed)
+				const reloaded = await this._loadStoredToken();
+				if (!reloaded) {
+					this._cachedSessions = [];
+					return [];
+				}
+				this._cachedSessions = [{
+					id: reloaded.sessionId,
+					accessToken: reloaded.tokenResponse.access_token,
+					account: { id: reloaded.accountId, label: reloaded.accountLabel },
+					scopes: []
+				}];
+				return this._cachedSessions;
+			}
+
+			let resolveRefresh!: () => void;
+			let rejectRefresh!: (e: unknown) => void;
+			this._refreshInProgress = new Promise<void>((res, rej) => {
+				resolveRefresh = res;
+				rejectRefresh = rej;
+			});
+
 			try {
-				this._logService.info('Refreshing expired token');
+				this._logService.info(`Refreshing expired token (age=${ageMs}ms, remaining=${remainingMs}ms)`);
 				const refreshed = await this._oauth2Service.refreshAccessToken(
 					stored.tokenResponse.refresh_token,
 					this._getOAuth2Config()
@@ -155,9 +198,11 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 					},
 					scopes: []
 				}];
+				resolveRefresh();
 			} catch (error) {
 				const errorMsg = error instanceof Error ? error.message : String(error);
 				this._logService.error(error as Error, `Token refresh failed: ${errorMsg}`);
+				rejectRefresh(error);
 
 				// Clear the invalid token
 				await this._clearStoredToken();
@@ -178,6 +223,8 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 				}
 
 				return [];
+			} finally {
+				this._refreshInProgress = undefined;
 			}
 		} else {
 			// Token still valid - use cached session
@@ -347,6 +394,16 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 			scopes: []
 		};
 
+		// Notify IDP to delete the server-side session so the next sign-in
+		// shows the login page instead of auto-approving the previous user.
+		try {
+			await this._oauth2Service.logout(stored.tokenResponse.access_token, this._getOAuth2Config());
+			this._logService.info('IDP session invalidated');
+		} catch (error) {
+			// Non-fatal — local token is cleared regardless
+			this._logService.warn(`Failed to invalidate IDP session: ${error instanceof Error ? error.message : String(error)}`);
+		}
+
 		// Clear token
 		await this._clearStoredToken();
 		this._cachedSessions = [];
@@ -410,14 +467,19 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 		accountLabel: string,
 		sessionId: string
 	): Promise<void> {
+		const issuedAt = Date.now();
 		const data: IStoredTokenData = {
 			tokenResponse,
-			issuedAt: Date.now(),
+			issuedAt,
 			sessionId,
 			accountId,
 			accountLabel
 		};
 
+		this._logService.debug(
+			`[_saveToken] Saving token: issuedAt=${issuedAt} expires_in=${tokenResponse.expires_in}s` +
+			` expiresAt=${issuedAt + (tokenResponse.expires_in ?? 0) * 1000} sessionId=${sessionId}`
+		);
 		await this._context.secrets.store(this._secretsKey, JSON.stringify(data));
 	}
 

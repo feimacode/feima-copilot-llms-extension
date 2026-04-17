@@ -54,5 +54,9 @@
 	"adjust": "调整",
 	"No transactions yet": "暂无交易记录",
 	"No API calls yet": "暂无 API 调用记录",
-	"Referral code copied to clipboard": "推荐码已复制到剪贴板"
+	"Referral code copied to clipboard": "推荐码已复制到剪贴板",
+	"Your email is needed for account notifications and support.": "您的邮箱用于接收账户通知和提供客户支持。",
+	"Please enter a valid email address": "请输入有效的邮箱地址",
+	"Email saved successfully!": "邮箱已成功保存！",
+	"Failed to save email. You can add it later in your profile.": "保存邮箱失败。您可以稍后在个人资料中添加。"
 }

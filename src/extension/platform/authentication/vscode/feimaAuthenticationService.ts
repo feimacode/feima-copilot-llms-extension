@@ -336,6 +336,7 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 			const userInfo = this._oauth2Service.getUserInfo(tokenResponse);
 			const accountId = userInfo?.sub || `user-${Date.now()}`;
 			const accountLabel = userInfo?.email || userInfo?.name || 'Feima User';
+			const hasEmail = !!userInfo?.email;
 
 			// Generate session ID
 			const sessionId = `feima-session-${Date.now()}`;
@@ -363,6 +364,12 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 			});
 
 			this._logService.info('[FeimaAuthenticationService] Session created successfully');
+
+			// Prompt for email if not provided
+			if (!hasEmail) {
+				this._promptForEmail(tokenResponse.access_token);
+			}
+
 			return session;
 
 		} catch (error) {
@@ -555,6 +562,68 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 			await this._clearStoredToken();
 			this._cachedSessions = [];
 			return null;
+		}
+	}
+
+	/**
+	 * Prompt user to provide email if missing after authentication.
+	 */
+	private async _promptForEmail(accessToken: string): Promise<void> {
+		// Check if user has already skipped email collection
+		const skippedKey = 'feima.emailSkipped';
+		const skipped = await this._context.globalState.get<boolean>(skippedKey, false);
+		if (skipped) {
+			this._logService.info('[FeimaAuthenticationService] User previously skipped email collection');
+			return;
+		}
+
+		// Show input dialog for email
+		const email = await vscode.window.showInputBox({
+			prompt: vscode.l10n.t('Your email is needed for account notifications and support.'),
+			placeHolder: 'your@email.com',
+			validateInput: (value: string) => {
+				if (!value) {
+					return undefined; // Allow empty input (skip)
+				}
+				const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+				return emailRegex.test(value) ? undefined : vscode.l10n.t('Please enter a valid email address');
+			}
+		});
+
+		if (!email) {
+			// User skipped - remember this choice
+			await this._context.globalState.update(skippedKey, true);
+			this._logService.info('[FeimaAuthenticationService] User skipped email collection');
+			return;
+		}
+
+		// Submit email to API
+		try {
+			const configService = FeimaConfigService.getInstance();
+			const config = configService.getConfig();
+
+			const response = await fetch(`${config.apiBaseUrl}/v1/user/email`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`,
+				},
+				body: JSON.stringify({ email }),
+			});
+
+			if (!response.ok) {
+				const data = await response.json() as { detail?: string };
+				throw new Error(data.detail || 'Failed to save email');
+			}
+
+			this._logService.info('[FeimaAuthenticationService] Email saved successfully');
+			vscode.window.showInformationMessage(vscode.l10n.t('Email saved successfully!'));
+		} catch (error) {
+			const errorMsg = error instanceof Error ? error.message : String(error);
+			this._logService.error('[FeimaAuthenticationService] Failed to save email:', errorMsg);
+			vscode.window.showErrorMessage(
+				vscode.l10n.t('Failed to save email. You can add it later in your profile.')
+			);
 		}
 	}
 

@@ -602,7 +602,7 @@ export class FeimaAuthenticationService implements IFeimaAuthenticationService {
 			const configService = FeimaConfigService.getInstance();
 			const config = configService.getConfig();
 
-			const response = await fetch(`${config.apiBaseUrl}/v1/user/email`, {
+			const response = await fetch(`${config.apiBaseUrl}/user/email`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',

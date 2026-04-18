@@ -27,7 +27,7 @@ export class EmailService {
 	 */
 	async updateEmail(email: string): Promise<EmailUpdateResponse> {
 		try {
-			const response = await fetch(`${this._apiBaseUrl}/v1/user/email`, {
+			const response = await fetch(`${this._apiBaseUrl}/user/email`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',

@@ -86,16 +86,16 @@
 ## 📸 截图
 
 ### 登录飞码扣
-![模型选择界面](https://raw.githubusercontent.com/feimacode/feima-copilot-llms-extension/main/packages/regional/cn/screenshots/auth-selection-cn.png)
+![登录界面](https://feimacode.cn/screenshots/cn/auth-selection-cn.png)
 
 ### 模型选择
-![模型选择界面](https://raw.githubusercontent.com/feimacode/feima-copilot-llms-extension/main/packages/regional/cn/screenshots/model-selection-cn.png)
+![模型选择界面](https://feimacode.cn/screenshots/cn/model-selection-cn.png)
 
 ### 代码解释
-![代码解释功能](https://raw.githubusercontent.com/feimacode/feima-copilot-llms-extension/main/packages/regional/cn/screenshots/code-explanation-cn.png)
+![代码解释功能](https://feimacode.cn/screenshots/cn/code-explanation-cn.png)
 
 ### 对话界面
-![AI 对话界面](https://raw.githubusercontent.com/feimacode/feima-copilot-llms-extension/main/packages/regional/cn/screenshots/chat-interface-cn.png)
+![AI 对话界面](https://feimacode.cn/screenshots/cn/chat-interface-cn.png)
 
 ## ❓ 常见问题
 

@@ -63,6 +63,20 @@ Flexible pay-as-you-go pricing:
 - **Pay Per Use** - Only pay for the tokens you actually use
 - **Transparent Pricing** - View detailed rates at [feimacode.com/pricing](https://feimacode.com/pricing)
 
+## 📸 Screenshots
+
+### Authentication
+![Authentication](https://feimacode.com/screenshots/global/auth-selection.png)
+
+### Model Selection
+![Model Selection](https://feimacode.com/screenshots/global/model-selection.png)
+
+### Code Explanation
+![Code Explanation](https://feimacode.com/screenshots/global/code-explanation.png)
+
+### Chat Interface
+![Chat Interface](https://feimacode.com/screenshots/global/chat-interface.png)
+
 ## ❓ Frequently Asked Questions
 
 ### Network & Access

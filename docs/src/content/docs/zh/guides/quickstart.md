@@ -21,7 +21,7 @@ description: 几分钟内开始使用飞码扣
 
 1. 打开 VS Code
 2. 按 `Ctrl+Shift+X`（或 Mac 上的 `Cmd+Shift+X`）打开扩展面板
-3. 搜索 "Feima Copilot"
+3. 搜索 "飞码扣" 或 "Feima Copilot"
 4. 点击 "安装"
 
 ### 第二步：验证 GitHub Copilot Chat
@@ -40,7 +40,7 @@ description: 几分钟内开始使用飞码扣
 2. 输入 "Feima: 登录"
 3. 选择该命令
 4. 浏览器窗口将打开
-5. 使用您的飞码账号登录（微信或微博）
+5. 使用您的飞码账号登录（GitHub）
 6. 授予请求的权限
 7. 您将被重定向回 VS Code
 

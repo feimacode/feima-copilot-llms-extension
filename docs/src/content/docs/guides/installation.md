@@ -46,8 +46,6 @@ This guide covers all the installation options for Feima Copilot.
 # Using code CLI
 code --install-extension feima-copilot-llms-extension.vsix
 
-# Or directly from marketplace (if published)
-code --install-extension feima-tech.feima-copilot
 ```
 
 ## GitHub Copilot Chat Setup

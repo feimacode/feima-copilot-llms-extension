@@ -86,7 +86,6 @@ const sidebarZh = [
   {
     label: '参考',
     items: [
-      { label: '支持的模型', link: '/reference/models' },
       { label: 'API 参考', link: '/reference/api' },
       { label: '配置参考', link: '/reference/config' },
     ],

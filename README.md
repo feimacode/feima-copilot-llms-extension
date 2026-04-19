@@ -5,15 +5,14 @@
 为 GitHub Copilot 提供中国 AI 模型支持的 VS Code 扩展
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![GitHub Stars](https://img.shields.io/github/stars/feima-tech/feima-copilot-llms-extension?style=flat-square)](https://github.com/feimacode/feima-copilot-llms-extension)
 
 ## 快速链接
 
 - 📖 [文档](https://feimacode.cn/docs/) | [中文文档](https://docs.feima.cn/)
-- 🚀 [快速入门](https://feimacode.cn/docs/guides/quickstart/) | [快速入门（中文）](https://docs.feima.cn/guides/quickstart/)
-- 📦 [安装指南](https://feimacode.cn/docs/guides/installation/) | [安装指南（中文）](https://docs.feima.cn/guides/installation/)
-- 🔧 [配置选项](https://feimacode.cn/docs/guides/configuration/) | [配置选项（中文）](https://docs.feima.cn/guides/configuration/)
-- 💻 [开发指南](https://feimacode.cn/docs/dev/setup/) | [开发指南（中文）](https://docs.feima.cn/dev/setup/)
+- 🚀 [快速入门](https://feimacode.cn/docs/guides/quickstart/) | [快速入门（中文）](https://docs.feimacode.cn/guides/quickstart/)
+- 📦 [安装指南](https://feimacode.cn/docs/guides/installation/) | [安装指南（中文）](https://docs.feimacode.cn/guides/installation/)
+- 🔧 [配置选项](https://feimacode.cn/docs/guides/configuration/) | [配置选项（中文）](https://docs.feimacoe.cn/guides/configuration/)
+- 💻 [开发指南](https://feimacode.cn/docs/dev/setup/) | [开发指南（中文）](https://docs.feimacode.cn/dev/setup/)
 
 ## 简介
 
@@ -91,14 +90,6 @@ git push --follow-tags
 - 版本号必须与 GitHub Release 匹配
 - 预发布版本（-alpha, -beta）无法发布到市场
 
-## 安装
-
-```bash
-# 从 VS Code Marketplace 安装
-code --install-extension feima-tech.feima-copilot
-
-# 或在 VS Code 中搜索 "Feima Copilot"
-```
 
 ## 贡献
 

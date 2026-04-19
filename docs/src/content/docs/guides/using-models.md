@@ -242,7 +242,6 @@ Write this function, and explain:
 
 - [Quick Start](./quickstart.md) - Get started with Feima Copilot
 - [Configuration](./configuration.md) - Customize model settings
-- [Reference - Models](../reference/models.md) - Detailed model specifications
 
 ## Need Help?
 

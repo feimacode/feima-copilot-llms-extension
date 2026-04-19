@@ -21,12 +21,38 @@ export interface DataPartLike {
 }
 
 /**
+ * Returns true when `mimeType` indicates textual content that should be decoded
+ * and forwarded to the upstream LLM as part of a tool result string.
+ *
+ * copilot-chat encodes several metadata signals as DataParts with custom mimeTypes
+ * (e.g. `cache_control`, `stateful_marker`, `thinking`, `context_management`,
+ * `phase_data`). These are Anthropic-specific bookkeeping signals that must NOT be
+ * decoded as text — doing so leaks e.g. the literal string `"ephemeral"` into tool
+ * results, corrupting filenames and triggering autopilot fix-loops.
+ *
+ * Allowlist (treat as textual):
+ *   - undefined / empty string  (no mimeType → legacy DataPart carrying text)
+ *   - `text/*`                  (e.g. `text/plain`, `text/html`)
+ *   - `application/json`
+ *
+ * Everything else (including `image/*`, `cache_control`, `stateful_marker`, etc.)
+ * is treated as non-textual and skipped.
+ */
+export function isTextualMimeType(mimeType: string | undefined): boolean {
+	if (!mimeType) {
+		return true; // Legacy DataParts with no mimeType carry actual text content
+	}
+	return mimeType.startsWith('text/') || mimeType === 'application/json';
+}
+
+/**
  * Convert a single element from a `LanguageModelToolResultPart.content` array
  * to a plain string suitable for sending in a `role: "tool"` message.
  *
  * Rules (mirrors VS Code Copilot anthropicMessageConverter.ts):
  * - `LanguageModelTextPart`  → `.value`
- * - `LanguageModelDataPart`  → text-decoded bytes, or empty string for binary
+ * - `LanguageModelDataPart` with textual mimeType → text-decoded bytes
+ * - `LanguageModelDataPart` with non-textual mimeType → empty string (skip metadata/images)
  * - `string` primitive       → as-is
  * - anything else            → empty string (NEVER `String(c)` → `[object Object]`)
  *
@@ -44,6 +70,12 @@ export function toolResultPartToString(
 	}
 
 	if (isDataPart(part)) {
+		// Skip non-textual DataParts (metadata signals like cache_control, stateful_marker,
+		// thinking, context_management, phase_data, and binary image data).
+		// Only decode DataParts whose mimeType indicates actual textual content.
+		if (!isTextualMimeType(part.mimeType)) {
+			return '';
+		}
 		try {
 			const data = part.data;
 			if (typeof data === 'string') {

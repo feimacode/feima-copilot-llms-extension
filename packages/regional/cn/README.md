@@ -1,4 +1,4 @@
-# 飞码扣(Feimacode)
+# 飞码扣(Feima Copilot)
 
 **一键接入 GitHub Copilot 到中国顶级大模型支持：通义千问、DeepSeek、智谱 GLM、MiniMax、月之暗面等**
 
@@ -102,26 +102,87 @@
 ### 网络相关问题
 
 **Q: 需要梯子吗？**
-A: 不需要。飞码扣使用国内服务器，无需任何网络代理即可正常使用。
+A: 不需要。飞码扣使用国内服务器（阿里云），无需任何网络代理即可正常使用。
 
 **Q: 速度如何？**
-A: 我们使用阿里云服务器，国内访问速度快，响应延迟低。
+A: 快速稳定。我们使用阿里云服务器，国内访问速度快，响应延迟低。具体响应时间取决于所选模型：
+- Qwen Flash：极速响应，通常 1-3 秒
+- Qwen3 Max：标准响应，通常 3-5 秒
+- 思维链模型：深度推理需要更长时间，通常 5-15 秒
 
 ### VS Code 版本
 
 **Q: 支持哪些 VS Code 版本？**
-A: 支持 VS Code 1.85.0 及以上版本。
+A: 支持 VS Code 1.85.0 及以上版本。建议使用最新版 VS Code 以获得最佳体验。
 
 **Q: 支持 VS Code Insiders 吗？**
-A: 是的，完全支持。
+A: 是的，完全支持。VS Code Insiders 版本与稳定版功能一致。
+
+**Q: 支持 VSCodium 吗？**
+A: 目前不支持。飞码扣依赖 GitHub Copilot Chat 扩展，而 VSCodium 不包含该扩展。
+
+### 功能支持
+
+**Q: 是否支持 Custom Agent？**
+A: 是的，和原生 Copilot 一样支持。飞码扣作为 GitHub Copilot Chat 的模型提供器，完全支持 Custom Agent、Skills、constitution.md、prompts.md 和 instructions.md，与原生 Copilot 的功能体验一致。
+
+**Q: 是否支持 Skills？**
+A: 是的，和原生 Copilot 一样支持。飞码扣完全支持 Skills 功能，同样支持 constitution.md、prompts.md 和 instructions.md 配置文件。
+
+**Q: 是否支持工具调用（Tool Calls）？**
+A: 是的，支持工具调用。所有聊天模型都支持工具调用功能，包括代码执行、文件操作、API 调用等。
+
+**Q: 是否支持思维链（Thinking）？**
+A: 是的，多个模型支持思维链。包括 Qwen3 Max（32K）、Qwen3.5 Plus（80K）、DeepSeek V3.2、GLM-5、GLM-4.7、MiniMax M2.5（32K）、Kimi K2.5（16K）。思维链功能可提高复杂问题的解决质量。
+
+**Q: 是否支持代码补全？**
+A: 是的，支持代码补全。飞码扣提供聊天补全（在 Copilot Chat 中）和内联补全（通过 Qwen Coder Turbo 模型）。
 
 ### 数据隐私
 
 **Q: 我的代码会被存储吗？**
-A: 代码仅在请求时发送给 AI 模型进行处理，不会被存储或用于其他目的。详见我们的 [隐私政策](https://feimacode.cn/privacy)。
+A: 不会。代码仅在请求时发送给 AI 模型进行处理，不会被存储或用于其他目的。详见我们的 [隐私政策](https://feimacode.cn/privacy)。
 
 **Q: 对话记录会保存吗？**
-A: 对话记录保存在您的本地设备，不会上传到服务器。
+A: 对话记录保存在您的本地设备，不会上传到服务器。您可以随时查看或删除历史对话。
+
+### 计费相关
+
+**Q: 如何计费？**
+A: 按次计费，无订阅压力。计费公式：加权请求次数 = 模型倍率 × 上下文倍率。模型倍率从 0.1x（Qwen Flash）到 2.0x（Qwen3 Coder Plus）。
+
+**Q: 公测期间如何获取免费额度？**
+A: 多种方式获取：每周赠送（每周自动获得 50 点积分）、邀请好友（双方获得奖励）、参与活动（定期活动赚取额外积分）。[了解详情 →](https://feimacode.cn/promotion)
+
+**Q: 如何查看剩余额度？**
+A: 三种方式查看：状态栏（启用设置）、命令面板（"飞码: 查看账号"）、网站（feimacode.cn/dashboard）。
+
+**Q: Pro 会员有什么特权？**
+A: Pro 会员可使用所有高级模型（除 Qwen Flash 外的 8 个模型），更高的每周赠送额度，优先客服支持，专属活动参与资格。
+
+### 登录认证
+
+**Q: 如何登录？**
+A: OAuth2 一键登录。按 `Ctrl+Shift+P` → 输入 "飞码: 登录" → 浏览器打开认证页面 → 使用 GitHub 账号登录 → 授权后自动返回 VS Code。
+
+**Q: 支持哪些登录方式？**
+A: 目前支持 GitHub 登录。未来计划支持微信登录和邮箱登录。
+
+**Q: 登录失败怎么办？**
+A: 检查网络连接、默认浏览器设置、回调超时（5 分钟过期）、防火墙设置。如仍无法解决，请联系我们。
+
+### 故障排除
+
+**Q: 模型选择器中找不到飞码模型？**
+A: 确保已登录（"飞码: 查看账号"）、检查输出面板错误消息、重新加载 VS Code 窗口。
+
+**Q: 请求失败或超时？**
+A: 检查额度是否充足、网络连接是否正常、会员等级是否满足模型要求、上下文是否过大。
+
+**Q: 如何报告 Bug？**
+A: 通过 [GitHub Issues](https://github.com/feimacode/feima-copilot-llms-extension/issues) 报告，描述问题、重现步骤、预期结果，附上相关日志或截图。
+
+**更多问题？** 查看 [完整 FAQ](https://docs.feimacode.cn/zh/guides/faq) 或 [联系我们](mailto:support@feimacode.cn)
 
 ## 📚 文档
 

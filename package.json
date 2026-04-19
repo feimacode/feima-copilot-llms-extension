@@ -9,7 +9,7 @@
     "email": "support@feimacode.cn"
   },
   "license": "MIT",
-  "icon": "assets/ext-icon.png",
+  "icon": "assets/ext-icon3.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/feimacode/cn-model-for-copilot"

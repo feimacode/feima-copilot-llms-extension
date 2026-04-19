@@ -3,8 +3,6 @@ title: Installation
 description: Detailed installation instructions for Feima Copilot
 ---
 
-# Installation Guide
-
 This guide covers all the installation options for Feima Copilot.
 
 ## Requirements

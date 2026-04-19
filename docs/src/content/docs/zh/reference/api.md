@@ -3,8 +3,6 @@ title: API Reference
 description: Complete API reference for Feima Copilot
 ---
 
-# API Reference
-
 Complete API reference for Feima Copilot extension.
 
 ## Extension Commands

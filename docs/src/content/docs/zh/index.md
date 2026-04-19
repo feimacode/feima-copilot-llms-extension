@@ -3,8 +3,6 @@ title: 欢迎使用飞码扣
 description: 加速创意落地 - GitHub Copilot Chat 的中国 AI 模型支持
 ---
 
-# 欢迎使用飞码扣
-
 **加速创意落地 - Accelerating intent into execution**
 
 飞码扣是一个 VS Code 扩展，为 GitHub Copilot Chat 提供中国 AI 模型支持。

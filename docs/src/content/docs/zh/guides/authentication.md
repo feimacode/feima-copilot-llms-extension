@@ -3,8 +3,6 @@ title: 认证
 description: 为飞码扣设置 OAuth2 认证
 ---
 
-# 认证指南
-
 飞码扣使用 OAuth2 认证来保护您的账号并管理 API 访问。
 
 ## OAuth2 认证如何工作

@@ -2,7 +2,7 @@
   "name": "copilot-cn-models",
   "displayName": "%extension.displayName%",
   "description": "%extension.description%",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "publisher": "feima",
   "author": {
     "name": "Feima",
@@ -154,7 +154,7 @@
     "vscode:prepublish": "npm run ext:package",
     "ext:build": "tsx .esbuild.ts",
     "ext:compile": "tsx .esbuild.ts --dev",
-	"ext:build:global": "FEIMA_REGION=global tsx .esbuild.ts",
+    "ext:build:global": "FEIMA_REGION=global tsx .esbuild.ts",
     "ext:watch": "tsx .esbuild.ts --watch --dev",
     "ext:package": "tsx .esbuild.ts",
     "ext:compile-tests": "tsc -p . --outDir out",

@@ -120,10 +120,7 @@ Flexible pay-as-you-go pricing:
 
 ## ❓ Frequently Asked Questions
 
-### Network & Access
-
-**Q: Are there any regional restrictions?**
-A: No. Feima Code Models works globally without any regional restrictions or VPN requirements.
+### Location & Access
 
 **Q: What's the response latency?**
 A: We use edge deployments for low latency worldwide. Most responses complete within 2-5 seconds.

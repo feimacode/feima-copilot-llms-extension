@@ -26,7 +26,7 @@ const REGION_CONFIGS = {
 	},
 	global: {
 		extensionId: 'copilot-more-models',
-		displayName: 'Feima Copilot',
+		displayName: 'Feima Copilot Models',
 		description: 'Access Claude, Gemini, Qwen and more models in VS Code Copilot Chat',
 		keywords: ['copilot', 'ai', 'llm', 'claude', 'gemini', 'qwen', 'language-model'],
 		categories: ['AI', 'Other'],

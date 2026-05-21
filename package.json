@@ -2,7 +2,7 @@
   "name": "copilot-cn-models",
   "displayName": "%extension.displayName%",
   "description": "%extension.description%",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "publisher": "feima",
   "author": {
     "name": "Feima",

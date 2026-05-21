@@ -1,6 +1,6 @@
 {
-	"extension.name": "copilot-more-models",
-	"extension.displayName": "Feima Copilot",
+	"extension.name": "copilot-more-llms",
+	"extension.displayName": "Feima Copilot Models",
 	"extension.description": "Accelerating intent into execution - Alternative AI models for GitHub Copilot Chat: Claude, Gemini, GPT-4o, Qwen, DeepSeek, GLM, MiniMax, Kimi and more.",
 	
 	"error.notAuthenticated": "Not authenticated",
@@ -14,7 +14,7 @@
 	"error.failedToParseToken": "Failed to parse stored token",
 	
 	"command.triggerCompletion.title": "Trigger Code Completion",
-	"command.triggerCompletion.description": "Trigger code completion suggestions from Feima Code Models",
+	"command.triggerCompletion.description": "Trigger code completion suggestions from Feima Copilot Models",
 	
 	"command.explainCode.title": "Explain Code",
 	"command.explainCode.description": "Explain the selected code using Feima AI",

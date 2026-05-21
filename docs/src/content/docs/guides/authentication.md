@@ -100,7 +100,7 @@ Feima Copilot uses a public OAuth client with no secret:
 |----------|-------|
 | **client_id** | `vscode-feima-client` |
 | **client_secret** | None (public client) |
-| **redirect_uri** | `vscode://feima.copilot-more-models/oauth/callback` |
+| **redirect_uri** | `vscode://feima.copilot-more-llms/oauth/callback` |
 | **grant_types** | `authorization_code`, `refresh_token` |
 | **scopes** | `openid`, `profile`, `email` |
 | **auth method** | PKCE (Proof Key for Code Exchange) |

@@ -38,14 +38,14 @@ export const cnRegionConfig: RegionConfig = {
  */
 export const globalRegionConfig: RegionConfig = {
 	region: 'global',
-	extensionId: 'copilot-more-models',
+	extensionId: 'copilot-more-llms',
 	publisher: 'feima',
 	defaultAuthEndpoint: 'https://auth.feimacode.com',
 	defaultApiEndpoint: 'https://api.feimacode.com/v1',
 	defaultClientId: 'vscode-feima-client',
 	defaultIssuer: 'https://auth.feimacode.com',
 	scopes: ['openid', 'profile', 'email'],
-	marketplaceUrl: 'https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-models',
+	marketplaceUrl: 'https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms',
 	repositoryUrl: 'https://github.com/feimacode/feima-copilot-llms-extension',
 	promotionUrl: 'https://feimacode.com/promotion',
 	websiteBaseUrl: 'https://feimacode.com',

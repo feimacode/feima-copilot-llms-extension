@@ -111,11 +111,11 @@ jobs:
           fi
           
           if [ "${{ github.event.inputs.publish_global }}" == "true" ]; then
-            if ! echo "$ASSETS" | grep -q "feima-copilot-more-models-$VERSION.vsix"; then
-              echo "❌ Missing: feima-copilot-more-models-$VERSION.vsix"
+            if ! echo "$ASSETS" | grep -q "feima-copilot-more-llms-$VERSION.vsix"; then
+              echo "❌ Missing: feima-copilot-more-llms-$VERSION.vsix"
               MISSING_FILES=true
             else
-              echo "✅ Found: feima-copilot-more-models-$VERSION.vsix"
+              echo "✅ Found: feima-copilot-more-llms-$VERSION.vsix"
             fi
           fi
           
@@ -207,7 +207,7 @@ jobs:
           
           # Download all files matching the pattern
           echo "Attempting download..."
-          gh release download "v$VERSION" --repo "$REPO" --pattern "feima-copilot-more-models-$VERSION.vsix*" --dir . || {
+          gh release download "v$VERSION" --repo "$REPO" --pattern "feima-copilot-more-llms-$VERSION.vsix*" --dir . || {
             echo "❌ Download failed with exit code $?"
             echo "Available files in release:"
             gh release view "v$VERSION" --repo "$REPO" --json assets -q '.assets[].name'
@@ -218,13 +218,13 @@ jobs:
           echo "Files in current directory:"
           ls -lah
           
-          if [ ! -f "feima-copilot-more-models-$VERSION.vsix" ]; then
+          if [ ! -f "feima-copilot-more-llms-$VERSION.vsix" ]; then
             echo "❌ VSIX file not found after download"
-            echo "Expected: feima-copilot-more-models-$VERSION.vsix"
+            echo "Expected: feima-copilot-more-llms-$VERSION.vsix"
             exit 1
           fi
           
-          VSIX="feima-copilot-more-models-$VERSION.vsix"
+          VSIX="feima-copilot-more-llms-$VERSION.vsix"
           echo "vsix=$VSIX" >> $GITHUB_OUTPUT
           echo "✅ Downloaded: $VSIX"
       
@@ -256,8 +256,8 @@ jobs:
           fi
           
           if [ "${{ github.event.inputs.publish_global }}" == "true" ]; then
-            GLOBAL_VSIX="dist/global/feima-copilot-more-models-$VERSION.vsix"
-            GLOBAL_SHA="dist/global/feima-copilot-more-models-$VERSION.vsix.sha256"
+            GLOBAL_VSIX="dist/global/feima-copilot-more-llms-$VERSION.vsix"
+            GLOBAL_SHA="dist/global/feima-copilot-more-llms-$VERSION.vsix.sha256"
             
             if [ ! -f "$GLOBAL_SHA" ]; then
               echo "⚠️  Global VSIX checksum file not found, skipping verification"
@@ -342,13 +342,13 @@ jobs:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
           VERSION="${{ needs.validate.outputs.version }}"
-          VSIX="dist/global/feima-copilot-more-models-$VERSION.vsix"
+          VSIX="dist/global/feima-copilot-more-llms-$VERSION.vsix"
           
           echo "📦 Publishing Global variant: $VSIX"
           vsce publish --packagePath "$VSIX" --allow-proposed-apis chatProvider inlineCompletionsAdditions languageModelThinkingPart
           
           echo "✅ Global variant published successfully"
-          echo "🔗 Marketplace: https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-models"
+          echo "🔗 Marketplace: https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms"
 
   summary:
     needs: [validate, publish-cn, publish-global]
@@ -376,7 +376,7 @@ jobs:
           fi
           
           if [ "${{ github.event.inputs.publish_global }}" == "true" ] && [ "${{ needs.publish-global.result }}" == "success" ]; then
-            echo "✅ **Global Variant**: [feima.copilot-more-models](https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-models)" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **Global Variant**: [feima.copilot-more-llms](https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms)" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ github.event.inputs.publish_global }}" == "true" ]; then
             echo "❌ **Global Variant**: Failed to publish" >> $GITHUB_STEP_SUMMARY
           else

@@ -9,7 +9,7 @@
  * 
  * Builds the extension VSIX packages for different regions
  * - CN variant: feima-copilot-cn-models-{version}.vsix
- * - Global variant: feima-copilot-more-models-{version}.vsix
+ * - Global variant: feima-copilot-more-llms-{version}.vsix
  */
 
 import fs from 'fs';

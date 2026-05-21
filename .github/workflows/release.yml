@@ -291,5 +291,5 @@ jobs:
           echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "- \`feima-copilot-cn-models-$VERSION.vsix\`" >> $GITHUB_STEP_SUMMARY
           echo "- \`feima-copilot-cn-models-$VERSION.vsix.sha256\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`feima-copilot-more-models-$VERSION.vsix\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`feima-copilot-more-models-$VERSION.vsix.sha256\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`feima-copilot-more-llms-$VERSION.vsix\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`feima-copilot-more-llms-$VERSION.vsix.sha256\`" >> $GITHUB_STEP_SUMMARY

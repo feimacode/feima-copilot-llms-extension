@@ -90,7 +90,7 @@ function processPackageJson() {
 		nls
 	) as Record<string, unknown>;
 
-	// Update `name` from the NLS file (e.g. "copilot-cn-models" vs "copilot-more-models")
+	// Update `name` from the NLS file (e.g. "copilot-cn-models" vs "copilot-more-llms")
 	if (nls['extension.name']) {
 		processedPackage['name'] = nls['extension.name'];
 		console.log(`[build] Set name: ${nls['extension.name']}`);

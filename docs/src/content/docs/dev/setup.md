@@ -183,7 +183,7 @@ FEIMA_IDP_ENDPOINT=https://idp.feimacode.com
 
 # OAuth configuration
 OAUTH_CLIENT_ID=vscode-feima-client
-OAUTH_REDIRECT_URI=vscode://feima.copilot-more-models/oauth/callback
+OAUTH_REDIRECT_URI=vscode://feima.copilot-more-llm/oauth/callback
 
 # Debug settings
 DEBUG=feima:*

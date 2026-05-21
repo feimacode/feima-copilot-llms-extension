@@ -25,8 +25,10 @@ export async function getCheckoutUrl(
 	logService: ILogService
 ): Promise<string> {
 	const config = FeimaConfigService.getInstance().getConfig();
-	const session = await vscode.authentication.getSession('feima', [], { createIfNone: false });
-	if (!session) {
+	// Use authService directly (not vscode.authentication.getSession) — consistent with
+	// how accountDialog.ts checks auth and avoids VS Code API layer quirks in published builds.
+	const token = await authService.getToken();
+	if (!token) {
 		throw new Error(vscode.l10n.t('Please sign in to Feima first'));
 	}
 
@@ -36,7 +38,7 @@ export async function getCheckoutUrl(
 	const response = await fetch(url, {
 		method: 'GET',
 		headers: {
-			'Authorization': `Bearer ${session.accessToken}`,
+			'Authorization': `Bearer ${token}`,
 			'Content-Type': 'application/json',
 		},
 	});

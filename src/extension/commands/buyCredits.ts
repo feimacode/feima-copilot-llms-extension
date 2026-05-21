@@ -28,8 +28,11 @@ export function registerBuyCreditsCommand(
 			logService.info('feima.buyCredits triggered');
 
 			// --- Guard: must be signed in ---
-			const session = await vscode.authentication.getSession('feima', [], { createIfNone: false });
-			if (!session) {
+			// Use authService directly (not vscode.authentication.getSession) so that published
+			// marketplace builds behave the same as local dev — the VS Code API layer can return
+			// null even when a session exists in some marketplace configurations.
+			const sessions = await authService.getSessions([], {});
+			if (!sessions.length) {
 				const action = await vscode.window.showWarningMessage(
 					vscode.l10n.t('Please sign in to Feima to purchase credits.'),
 					vscode.l10n.t('Sign In')

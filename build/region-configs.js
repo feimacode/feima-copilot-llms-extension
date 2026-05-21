@@ -25,7 +25,7 @@ const REGION_CONFIGS = {
 		readmePath: 'packages/regional/cn/README.md',
 	},
 	global: {
-		extensionId: 'copilot-more-models',
+		extensionId: 'copilot-more-llms',
 		displayName: 'Feima Copilot Models',
 		description: 'Access Claude, Gemini, Qwen and more models in VS Code Copilot Chat',
 		keywords: ['copilot', 'ai', 'llm', 'claude', 'gemini', 'qwen', 'language-model'],

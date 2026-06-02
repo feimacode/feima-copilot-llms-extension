@@ -68,6 +68,25 @@
 
 输入提示词开始您的AI代码之旅
 
+### 🔑 API Key 支持
+
+飞码扣不仅支持 VS Code 扩展，还提供 API Key 供其他工具使用：
+
+- **Copilot CLI** - 在命令行中使用飞码模型
+- **Claude Code** - 通过 Anthropic 兼容 API 原生支持
+- **其他 CLI 工具** - 支持任何兼容 OpenAI 或 Anthropic API 的工具
+- **自定义集成** - 构建自己的应用和工具
+
+我们同时支持 **OpenAI 兼容** 和 **Anthropic 兼容** 两种 API 格式，让您可以自由选择喜爱的工具。
+
+获取 API Key：
+1. 登录飞码账号
+2. 访问 [个人设置](https://feimacode.cn/profile)
+3. 在 API Key 管理页面创建新密钥
+4. 将密钥配置到您的 CLI 工具中
+
+API Key 使用相同的计费系统，无需额外订阅。
+
 ## 💰 定价
 
 按需付费模式，无订阅压力。在公测期间，通过多种方式获取免费额度：

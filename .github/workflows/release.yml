@@ -269,6 +269,7 @@ jobs:
           tag_name: v${{ needs.validate.outputs.version }}
           name: v${{ needs.validate.outputs.version }}
           prerelease: ${{ needs.validate.outputs.is_prerelease == 'true' }}
+          generate_release_notes: true
           body_path: ${{ steps.changelog.outputs.body_file }}
           files: |
             dist/cn/*.vsix

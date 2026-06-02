@@ -77,6 +77,25 @@ Make sure you have the **GitHub Copilot Chat** extension installed. Feima Copilo
 2. The AI will respond using the selected model
 3. You can switch models anytime during your session
 
+### 🔑 API Key Support
+
+Feima Copilot also provides API keys for use beyond the VS Code extension:
+
+- **Copilot CLI** - Use Feima models in your terminal
+- **Claude Code** - Native support via Anthropic-compatible API
+- **Other CLI Tools** - Works with any OpenAI-compatible or Anthropic-compatible tool
+- **Custom Integrations** - Build your own applications
+
+We support both **OpenAI-compatible** and **Anthropic-compatible** API formats, giving you flexibility to use your favorite tools.
+
+Get your API key:
+1. Sign in to your Feima account
+2. Visit [Profile Settings](https://feimacode.com/profile)
+3. Create a new key in the API Key management page
+4. Configure the key in your CLI tools
+
+API keys use the same billing system - no separate subscription needed.
+
 ## 💰 Pricing
 
 Flexible pay-as-you-go pricing:

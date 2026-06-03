@@ -15,11 +15,18 @@ const isEn = buildLocale === 'en';
 // For EN and bilingual builds, src/ is used with English at root and zh/ for Chinese.
 const srcDir = isZh ? './src-zh' : './src';
 
-const locales = isZh
-  ? { root: { label: '简体中文', lang: 'zh-CN' } }
-  : isEn
-    ? { root: { label: 'English', lang: 'en' } }
-    : { root: { label: 'English', lang: 'en' }, zh: { label: '简体中文', lang: 'zh-CN' } };
+// Build locales object without optional undefined properties
+/** @type {Record<string, { label: string; lang: string }>} */
+let locales;
+if (isZh) {
+  locales = { root: { label: '简体中文', lang: 'zh-CN' } };
+} else if (isEn) {
+  locales = { root: { label: 'English', lang: 'en' } };
+} else {
+  locales = { root: { label: 'English', lang: 'en' }, zh: { label: '简体中文', lang: 'zh-CN' } };
+}
+
+const starlightLocales = locales;
 
 const sidebarEn = [
   {
@@ -212,7 +219,7 @@ export default defineConfig({
         ? '为 GitHub Copilot 提供中国 AI 模型支持的 VS Code 扩展文档'
         : 'VS Code extension for GitHub Copilot with China AI model support',
 
-      locales,
+      locales: starlightLocales,
       defaultLocale: 'root',
 
       // Bilingual build: use both sidebar sets keyed by locale
@@ -223,7 +230,6 @@ export default defineConfig({
         {
           icon: 'github',
           label: 'GitHub',
-          ariaLabel: 'GitHub Repository',
           href: 'https://github.com/feimacode/feima-copilot-llms-extension',
         },
       ],

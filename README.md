@@ -33,7 +33,6 @@ Feima Copilot is a VS Code extension that adds alternative AI model support to G
 
 | Feature | GitHub Copilot Native | Feima Copilot Enhanced |
 |---------|----------------------|------------------------|
-| Model Selection | 3-4 models | 🎉 **10+ models** |
 | Cost Control | Fixed subscription | 💡 **Pay-per-request** |
 | Chain-of-Thought | ⚠️ Limited | ✅ **Full Support** |
 | Pricing | Monthly subscription | 🔥 **Cost-effective** |

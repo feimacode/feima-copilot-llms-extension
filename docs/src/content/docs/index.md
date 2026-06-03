@@ -53,7 +53,6 @@ Feima Copilot is a VS Code extension that enhances GitHub Copilot Chat with alte
 
 | Feature | GitHub Copilot Native | Feima Copilot Enhanced |
 |---------|----------------------|----------------------|
-| Model Selection | 3-4 models | 🎉 **10+ models** |
 | Cost Control | Fixed subscription | 💡 **Pay-per-request** |
 | International Models | ⚠️ Limited access | ✅ **Full access** |
 | Pricing | Monthly subscription | 🔥 **Cost-effective** |

@@ -98,11 +98,27 @@ API keys use the same billing system - no separate subscription needed.
 
 ## 💰 Pricing
 
-Flexible pay-as-you-go pricing:
+Flexible pay-as-you-go pricing with **predictable billing**:
 
-- **Free Tier** - New users get free credits to start
-- **Pay Per Use** - Only pay for the tokens you actually use
-- **Transparent Pricing** - View detailed rates at [feimacode.com/pricing](https://feimacode.com/pricing)
+- **Free Tier** - 700 weighted requests in your first month (500 starter + 50×4 weekly)
+- **Pay Per Request** - Simple request-based pricing, not complex token metering
+- **Prepaid Packs** - $10 one-time for 500 requests (never expires)
+- **Transparent** - "You have 300 requests left" vs complex token calculations
+
+### 🆚 Why Feima vs GitHub Copilot Billing?
+
+| Feature | GitHub Copilot | Feima |
+|---------|---------------|-------|
+| **Billing Model** | Usage-based (tokens) | Request-based |
+| **Cost Control** | Surprise bills possible | Prepaid - no surprises |
+| **Free Tier** | Limited models (Haiku 4.5, GPT-5 mini) | ✅ 700 requests/month, all models |
+| **Pricing** | $10/month + overages | $10 one-time (500 requests) |
+
+**Key Insight**: Feima's free tier gives **2-12x more requests** than Copilot Pro ($10/month)!
+
+📄 **Full Comparison**: [Why Feima is the Best GitHub Copilot Alternative](https://feimacode.com/copilot-alternative)
+
+View detailed rates at [feimacode.com/pricing](https://feimacode.com/pricing)
 
 ## 📸 Screenshots
 

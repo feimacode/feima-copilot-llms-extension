@@ -35,8 +35,18 @@ const sidebarEn = [
     label: 'User Guide',
     items: [
       { label: 'Authentication', link: '/guides/authentication' },
+      { label: 'API Keys', link: '/guides/api-keys' },
       { label: 'Using Models', link: '/guides/using-models' },
       { label: 'Configuration', link: '/guides/configuration' },
+      { label: 'Billing', link: '/guides/billing' },
+      { label: 'FAQ', link: '/guides/faq' },
+    ],
+  },
+  {
+    label: 'API Tools',
+    items: [
+      { label: 'API Tool Guides', link: '/guides/api-tool-guides' },
+      { label: 'API Code Examples', link: '/guides/api-code-examples' },
     ],
   },
   {
@@ -70,10 +80,18 @@ const sidebarZh = [
     label: '用户指南',
     items: [
       { label: '认证', link: '/guides/authentication' },
+      { label: 'API 密钥', link: '/guides/api-keys' },
       { label: '使用模型', link: '/guides/using-models' },
       { label: '配置', link: '/guides/configuration' },
       { label: '计费', link: '/guides/billing' },
       { label: '常见问题', link: '/guides/faq' },
+    ],
+  },
+  {
+    label: 'API 工具',
+    items: [
+      { label: 'API 工具指南', link: '/guides/api-tool-guides' },
+      { label: 'API 代码示例', link: '/guides/api-code-examples' },
     ],
   },
   {

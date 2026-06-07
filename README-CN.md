@@ -126,6 +126,13 @@ code .
 - 🐛 [报告问题](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [功能建议](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
 - 📧 [邮件支持](mailto:support@feimacode.cn)
+- 💬 微信交流群：扫码下方二维码加入
+
+## 微信交流群
+
+扫码加入飞码扣用户交流群，获取最新资讯和技术支持：
+
+![微信群二维码](https://feimacode.cn/wechat-barcode.png)
 
 ## 开源协议
 

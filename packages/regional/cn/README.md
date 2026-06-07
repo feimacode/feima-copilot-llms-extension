@@ -225,7 +225,13 @@ A: 通过 [GitHub Issues](https://github.com/feimacode/feima-copilot-llms-extens
 - **功能建议**：[GitHub Discussions](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
 - **用户社区**：微信搜索 "飞码扣" 加入用户群
 
-## 📄 许可证
+## � 微信交流群
+
+扫码加入飞码扣用户交流群，获取最新资讯和技术支持：
+
+![微信群二维码](https://feimacode.cn/wechat-barcode.png)
+
+## �📄 许可证
 
 本项目采用 [MIT 许可证](LICENSE)。
 

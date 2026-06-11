@@ -33,6 +33,10 @@ Before you begin, make sure you have:
 | **GLM-4.7** | Zhipu AI | Long-form content and documentation |
 | **MiniMax M2.5** | MiniMax | Balanced performance |
 | **Kimi K2.5** | Moonshot | 256K context with vision support |
+| **DeepSeek V4 Pro** | DeepSeek | 1M token context, deep thinking |
+| **DeepSeek V4 Flash** | DeepSeek | 1M token context, fastest DeepSeek |
+| **GLM 5.1** | Zhipu AI | 202K context, powerful reasoning |
+| **Qwen3.7 Plus** | Alibaba Cloud | 128K context, cost-effective |
 
 ## 📦 Installation
 

@@ -50,6 +50,10 @@
 | GLM-4.7 | 智谱AI | 200K 上下文，高级推理 |
 | MiniMax M2.5 | MiniMax | 200K 上下文，思维链推理 |
 | Kimi K2.5 | Moonshot | 256K 上下文，思维链推理 |
+| DeepSeek V4 Pro | DeepSeek | 100万 token 上下文，深度思考（仅全球市场） |
+| DeepSeek V4 Flash | DeepSeek | 100万 token 上下文，快速响应（仅全球市场） |
+| GLM 5.1 | 智谱AI | 202K 上下文，强大推理（仅全球市场） |
+| Qwen3.7 Plus | 阿里云 | 128K 上下文，轻量高效（仅全球市场） |
 
 ## 开发状态
 

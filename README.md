@@ -49,6 +49,10 @@ Feima Copilot is a VS Code extension that adds alternative AI model support to G
 | GLM-4.7 | Zhipu AI | 200K context, advanced reasoning |
 | MiniMax M2.5 | MiniMax | 200K context, chain-of-thought reasoning |
 | Kimi K2.5 | Moonshot | 256K context, chain-of-thought reasoning |
+| DeepSeek V4 Pro | DeepSeek | 1M token context, deep thinking |
+| DeepSeek V4 Flash | DeepSeek | 1M token context, fast |
+| GLM 5.1 | Zhipu AI | 202K context, powerful reasoning |
+| Qwen3.7 Plus | Alibaba Cloud | 128K context, cost-effective |
 
 ## Development Status
 

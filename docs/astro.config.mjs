@@ -3,9 +3,9 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
 // BUILD_LOCALE controls the language of the build:
-//   'en'       → English-only (GitHub Pages)
-//   'zh'       → Chinese-only (Alibaba OSS)
-//   undefined  → Bilingual (local dev default)
+//   'en'       → English-only (single-locale build)
+//   'zh'       → Chinese-only (single-locale build, uses src-zh)
+//   undefined  → Bilingual (default for local dev & GitHub Pages)
 const buildLocale = process.env.BUILD_LOCALE;
 const isZh = buildLocale === 'zh';
 const isEn = buildLocale === 'en';
@@ -26,9 +26,160 @@ if (isZh) {
   locales = { root: { label: 'English', lang: 'en' }, zh: { label: '简体中文', lang: 'zh-CN' } };
 }
 
-const starlightLocales = locales;
+// ── Sidebar ──────────────────────────────────────────────────────────────────
+// Starlight sidebar is a single flat array. For i18n, use `translations` on each
+// item and `slug` instead of `link` for internal pages — Starlight auto-resolves
+// the correct locale prefix from the slug.
+// When BUILD_LOCALE is set, we use the locale-specific sidebar directly.
+// In bilingual mode, we use a unified sidebar with translations.
 
-const sidebarEn = [
+// Bilingual sidebar: single flat array with translations.
+// VS Code Copilot items use `slug` — they only exist in zh/ content, so Starlight
+// automatically shows them in the ZH locale and hides them in the EN locale.
+const sidebarBilingual = [
+  {
+    label: 'Start Here',
+    translations: { 'zh-CN': '从这里开始' },
+    collapsed: false,
+    items: [
+      { slug: 'index', translations: { 'zh-CN': '简介' } },
+      { slug: 'guides/quickstart' },
+      { slug: 'guides/installation' },
+    ],
+  },
+  {
+    label: 'User Guide',
+    translations: { 'zh-CN': '用户指南' },
+    items: [
+      { slug: 'guides/authentication' },
+      { slug: 'guides/api-keys' },
+      { slug: 'guides/using-models' },
+      { slug: 'guides/configuration' },
+      { slug: 'guides/billing' },
+      { slug: 'guides/faq' },
+    ],
+  },
+  {
+    label: 'API Tools',
+    translations: { 'zh-CN': 'API 工具' },
+    items: [
+      { slug: 'guides/api-tool-guides' },
+      { slug: 'guides/api-code-examples' },
+    ],
+  },
+  {
+    label: 'VS Code Copilot',
+    translations: { 'zh-CN': 'VS Code Copilot 指南' },
+    collapsed: true,
+    items: [
+      { label: 'Overview', translations: { 'zh-CN': 'GitHub Copilot 概览' }, link: '/zh/vscode-copilot/overview/' },
+      { label: 'Setup', translations: { 'zh-CN': '设置 GitHub Copilot' }, link: '/zh/vscode-copilot/setup/' },
+      { label: 'Getting Started', translations: { 'zh-CN': '快速入门教程' }, link: '/zh/vscode-copilot/getting-started/' },
+      { label: 'Inline Suggestions', translations: { 'zh-CN': 'AI 驱动的内联建议' }, link: '/zh/vscode-copilot/inline-suggestions/' },
+      { label: 'Smart Actions', translations: { 'zh-CN': '智能操作' }, link: '/zh/vscode-copilot/smart-actions/' },
+      { label: 'Agents App', translations: { 'zh-CN': 'Agents 应用' }, link: '/zh/vscode-copilot/agents-app/' },
+      { label: 'Best Practices', translations: { 'zh-CN': '最佳实践' }, link: '/zh/vscode-copilot/best-practices/' },
+      {
+        label: 'Agents',
+        translations: { 'zh-CN': '智能体 (Agent)' },
+        collapsed: true,
+        items: [
+          { label: 'Overview', translations: { 'zh-CN': '智能体概览' }, link: '/zh/vscode-copilot/agents/overview/' },
+          { label: 'Tutorial', translations: { 'zh-CN': '智能体教程' }, link: '/zh/vscode-copilot/agents/agents-tutorial/' },
+          { label: 'Local Agents', translations: { 'zh-CN': '本地智能体' }, link: '/zh/vscode-copilot/agents/local-agents/' },
+          { label: 'Planning', translations: { 'zh-CN': '使用 Plan 智能体规划' }, link: '/zh/vscode-copilot/agents/planning/' },
+          { label: 'Cloud Agents', translations: { 'zh-CN': '云端智能体' }, link: '/zh/vscode-copilot/agents/cloud-agents/' },
+          { label: 'Copilot CLI', translations: { 'zh-CN': 'Copilot CLI（后台智能体）' }, link: '/zh/vscode-copilot/agents/copilot-cli/' },
+          { label: 'Third-party Agents', translations: { 'zh-CN': '第三方智能体' }, link: '/zh/vscode-copilot/agents/third-party-agents/' },
+        ],
+      },
+      {
+        label: 'Chat',
+        translations: { 'zh-CN': '聊天 (Chat)' },
+        collapsed: true,
+        items: [
+          { label: 'Chat View', translations: { 'zh-CN': '聊天视图' }, link: '/zh/vscode-copilot/chat/chat-view/' },
+          { label: 'Agent Mode', translations: { 'zh-CN': '智能体模式' }, link: '/zh/vscode-copilot/chat/agent-mode/' },
+          { label: 'Ask Mode', translations: { 'zh-CN': 'Ask 模式' }, link: '/zh/vscode-copilot/chat/ask-mode/' },
+          { label: 'Edit Mode', translations: { 'zh-CN': '编辑模式' }, link: '/zh/vscode-copilot/chat/edit-mode/' },
+          { label: 'Inline Chat', translations: { 'zh-CN': '内联聊天' }, link: '/zh/vscode-copilot/chat/inline-chat/' },
+          { label: 'Context', translations: { 'zh-CN': '聊天上下文' }, link: '/zh/vscode-copilot/chat/context/' },
+          { label: 'Chat Sessions', translations: { 'zh-CN': '管理聊天会话' }, link: '/zh/vscode-copilot/chat/chat-sessions/' },
+          { label: 'Prompt Crafting', translations: { 'zh-CN': '优化 AI 提示词' }, link: '/zh/vscode-copilot/chat/prompt-crafting/' },
+        ],
+      },
+      {
+        label: 'Customization',
+        translations: { 'zh-CN': '自定义 (Customization)' },
+        collapsed: true,
+        items: [
+          { label: 'Overview', translations: { 'zh-CN': '自定义概览' }, link: '/zh/vscode-copilot/customization/overview/' },
+          { label: 'Custom Instructions', translations: { 'zh-CN': '自定义说明' }, link: '/zh/vscode-copilot/customization/custom-instructions/' },
+          { label: 'Custom Agents', translations: { 'zh-CN': '自定义智能体' }, link: '/zh/vscode-copilot/customization/custom-agents/' },
+          { label: 'Agent Skills', translations: { 'zh-CN': '智能体技能' }, link: '/zh/vscode-copilot/customization/agent-skills/' },
+          { label: 'MCP Servers', translations: { 'zh-CN': 'MCP 服务器' }, link: '/zh/vscode-copilot/customization/mcp-servers/' },
+          { label: 'Hooks', translations: { 'zh-CN': 'Hooks（钩子）' }, link: '/zh/vscode-copilot/customization/hooks/' },
+          { label: 'Model Selection', translations: { 'zh-CN': '模型选择' }, link: '/zh/vscode-copilot/customization/model-selection/' },
+        ],
+      },
+      {
+        label: 'Concepts',
+        translations: { 'zh-CN': '概念 (Concepts)' },
+        collapsed: true,
+        items: [
+          { label: 'AI Features', translations: { 'zh-CN': 'AI 功能概述' }, link: '/zh/vscode-copilot/concepts/ai-features/' },
+          { label: 'Language Models', translations: { 'zh-CN': '语言模型' }, link: '/zh/vscode-copilot/concepts/language-models/' },
+          { label: 'Privacy', translations: { 'zh-CN': '隐私与数据处理' }, link: '/zh/vscode-copilot/concepts/privacy/' },
+        ],
+      },
+      {
+        label: 'Guides',
+        translations: { 'zh-CN': '实战指南 (Guides)' },
+        collapsed: true,
+        items: [
+          { label: 'Debug with Copilot', translations: { 'zh-CN': '使用 Copilot 调试' }, link: '/zh/vscode-copilot/guides/debug-with-copilot/' },
+          { label: 'Fix Bugs', translations: { 'zh-CN': '修复 Bug' }, link: '/zh/vscode-copilot/guides/fix-bugs/' },
+          { label: 'Generate Tests', translations: { 'zh-CN': '生成测试' }, link: '/zh/vscode-copilot/guides/generate-tests/' },
+          { label: 'Prompt Engineering', translations: { 'zh-CN': '提示词工程指南' }, link: '/zh/vscode-copilot/guides/prompt-engineering/' },
+          { label: 'Browser Agent Testing', translations: { 'zh-CN': '浏览器智能体测试' }, link: '/zh/vscode-copilot/guides/browser-agent-testing-guide/' },
+        ],
+      },
+      {
+        label: 'Reference',
+        translations: { 'zh-CN': '参考 (Reference)' },
+        collapsed: true,
+        items: [
+          { label: 'Slash Commands', translations: { 'zh-CN': '斜杠命令参考' }, link: '/zh/vscode-copilot/reference/slash-commands/' },
+          { label: 'Context Variables', translations: { 'zh-CN': '上下文变量参考' }, link: '/zh/vscode-copilot/reference/context-variables/' },
+          { label: 'Copilot Settings', translations: { 'zh-CN': 'Copilot 设置参考' }, link: '/zh/vscode-copilot/reference/copilot-settings/' },
+        ],
+      },
+      { label: 'Security & Privacy', translations: { 'zh-CN': 'AI 安全与隐私' }, link: '/zh/vscode-copilot/security/' },
+      { label: 'Troubleshooting', translations: { 'zh-CN': '故障排查' }, link: '/zh/vscode-copilot/troubleshooting/' },
+      { label: 'FAQ', translations: { 'zh-CN': '常见问题（FAQ）' }, link: '/zh/vscode-copilot/faq/' },
+    ],
+  },
+  {
+    label: 'Development',
+    translations: { 'zh-CN': '开发' },
+    items: [
+      { slug: 'dev/setup' },
+      { slug: 'dev/testing' },
+      { slug: 'dev/building' },
+    ],
+  },
+  {
+    label: 'Reference',
+    translations: { 'zh-CN': '参考' },
+    items: [
+      { slug: 'reference/api' },
+      { slug: 'reference/config' },
+    ],
+  },
+];
+
+// Single-locale sidebars (used when BUILD_LOCALE is set)
+const sidebarEnOnly = [
   {
     label: 'Start Here',
     collapsed: false,
@@ -73,7 +224,7 @@ const sidebarEn = [
   },
 ];
 
-const sidebarZh = [
+const sidebarZhOnly = [
   {
     label: '从这里开始',
     collapsed: false,
@@ -203,13 +354,16 @@ const sidebarZh = [
   },
 ];
 
+// Select sidebar based on build mode
+const sidebar = isZh ? sidebarZhOnly : isEn ? sidebarEnOnly : sidebarBilingual;
+
 export default defineConfig({
   output: 'static',
   outDir: './dist',
   srcDir,
   trailingSlash: 'always',
   build: {
-    format: 'directory',  // output guides/quickstart/index.html; works with OSS default-document (index.html)
+    format: 'directory',
   },
 
   integrations: [
@@ -219,12 +373,10 @@ export default defineConfig({
         ? '为 GitHub Copilot 提供中国 AI 模型支持的 VS Code 扩展文档'
         : 'VS Code extension for GitHub Copilot with China AI model support',
 
-      locales: starlightLocales,
+      locales,
       defaultLocale: 'root',
 
-      // Bilingual build: use both sidebar sets keyed by locale
-      // Single-language builds: use the matching sidebar
-      sidebar: isZh ? sidebarZh : sidebarEn,
+      sidebar,
 
       social: [
         {

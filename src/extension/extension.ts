@@ -73,9 +73,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 		// 3. Register commands
 		registerAuthCommands(context, authService, logService);
-		if (FEIMA_REGION === 'global') {
-			registerBuyCreditsCommand(context, authService, logService);
-		}
+		registerBuyCreditsCommand(context, authService, logService);
 		logService.info('[Init] ✅ Commands registered');
 
 		// 3.5 Initialize status bar

@@ -817,7 +817,7 @@ function getAccountHtml(data: {
 
 	<div class="actions">
 		<button class="primary" onclick="viewProfile()">${t('View Profile')}</button>
-		${data.isGlobalMarket ? `<button class="primary" onclick="buyCredits()">💳 ${t('Buy Credits')}</button>` : ''}
+			<button class="primary" onclick="buyCredits()">💳 ${t('Buy Credits')}</button>
 		<button class="secondary" onclick="signOut()">${t('Sign Out')}</button>
 	</div>
 

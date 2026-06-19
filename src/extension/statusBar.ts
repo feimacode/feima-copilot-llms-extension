@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 import { ILogger } from './platform/log/common/logService';
 import { getQuotaService, QuotaSnapshot } from './services/quotaService';
+import { FEIMA_INSUFFICIENT_BALANCE_KEY } from './contextKeys';
 import { FEIMA_REGION } from '../config/regions';
 
 let statusBarItem: vscode.StatusBarItem | undefined;
@@ -129,9 +130,7 @@ function buildTooltip(quota: QuotaSnapshot | null, userName: string | null): vsc
 	}
 
 	md.appendMarkdown('[View Account](command:feima.showAccount)');
-	if (FEIMA_REGION === 'global') {
-		md.appendMarkdown(' | [Buy Credits](command:feima.buyCredits)');
-	}
+	md.appendMarkdown(' | [Buy Credits](command:feima.buyCredits)');
 	return md;
 }
 
@@ -157,12 +156,16 @@ function updateStatusBarUI(quota: QuotaSnapshot): void {
 	const threshold = getWarningThreshold();
 	const isLow = quota.remaining <= threshold;
 
+	// Update the insufficient balance context key based on current quota
+	// This ensures the key is reset to false when balance becomes sufficient
+	vscode.commands.executeCommand('setContext', FEIMA_INSUFFICIENT_BALANCE_KEY, isLow);
+
 	statusBarItem.text = isLow
 		? `$(feima-logo) Feima Credit: ${quota.remaining.toLocaleString()} $(warning)`
 		: `$(feima-logo) Feima Credit: ${quota.remaining.toLocaleString()}`;
 	statusBarItem.tooltip = buildTooltip(quota, currentUserName);
 
-	logger?.debug(`[StatusBar] Updated: remaining=${quota.remaining}, threshold=${threshold}`);
+	logger?.debug(`[StatusBar] Updated: remaining=${quota.remaining}, threshold=${threshold}, isLow=${isLow}`);
 }
 
 /**

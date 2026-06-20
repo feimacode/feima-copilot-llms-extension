@@ -53,15 +53,17 @@ Make sure you have the **GitHub Copilot Chat** extension installed. Feima Copilo
 1. Open the Copilot Chat panel (click the chat icon in the sidebar or press `Ctrl+Alt+I`)
 2. Click the model selector at the top of the panel
 3. Choose a Feima model from the list:
-   - **Qwen3 Flash** - Fast responses, free tier (chat default)
-   - **Qwen3 Max** - Complex reasoning with thinking mode
-   - **Qwen3 Coder Plus** - Advanced code generation with 1M context
-   - **Qwen3.5 Plus** - Vision-capable with 80K thinking chain
+   - **Qwen3.6 Flash** - Fast responses, thinking support, free tier (chat default)
+   - **Qwen3.7 Max** - Complex reasoning with deep thinking, ~1M context
+   - **Qwen3.6 Plus** - Vision-capable with 80K thinking chain, 1M context
+   - **Qwen3.7 Plus** - ~1M context, vision and deep thinking
    - **DeepSeek V3.2** - Deep thinking for complex problems
    - **GLM-5** - Zhipu's advanced reasoning model
    - **GLM-4.7** - Long-form content and documentation
+   - **GLM 5.2** - 1M context, advanced reasoning
    - **MiniMax M2.5** - Balanced performance
-   - **Kimi K2.5** - 256K context with vision support
+   - **Kimi K2.6** - 256K context with vision support
+   - **Kimi K2.7 Code** - 256K context, code-specialized, vision
 
 ### Step 5: Start Chatting
 

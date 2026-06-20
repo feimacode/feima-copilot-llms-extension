@@ -11,12 +11,13 @@ Feima Copilot provides access to multiple AI models from diverse providers to su
 
 ### Ali Cloud Models
 
-#### Qwen3 Flash
-- **Model ID**: `qwen-flash`
+#### Qwen3.6 Flash
+- **Model ID**: `qwen3.6-flash`
 - **Provider**: Ali Cloud
-- **Best For**: Fast responses, everyday coding tasks
+- **Best For**: Fast responses, everyday coding tasks (chat default)
 - **Strengths**:
   - Ultra-fast with 1M context window
+  - Thinking support included
   - Free tier included
   - Great for quick questions and simple tasks
 
@@ -29,12 +30,12 @@ Feima Copilot provides access to multiple AI models from diverse providers to su
   - Fast and efficient
   - Free tier included
 
-#### Qwen3 Max
-- **Model ID**: `qwen3-max`
+#### Qwen3.7 Max
+- **Model ID**: `qwen3.7-max`
 - **Provider**: Ali Cloud
 - **Best For**: Complex reasoning, architecture design
 - **Strengths**:
-  - 256K context with thinking capabilities
+  - ~1M context with deep thinking capabilities
   - Advanced reasoning
   - Premium tier required
 
@@ -47,8 +48,8 @@ Feima Copilot provides access to multiple AI models from diverse providers to su
   - Excellent at code generation
   - Premium tier required
 
-#### Qwen3.5 Plus
-- **Model ID**: `qwen3.5-plus`
+#### Qwen3.6 Plus
+- **Model ID**: `qwen3.6-plus`
 - **Provider**: Ali Cloud
 - **Best For**: Complex reasoning with vision support
 - **Strengths**:
@@ -98,8 +99,8 @@ Feima Copilot provides access to multiple AI models from diverse providers to su
 
 ### Moonshot Models
 
-#### Kimi K2.5
-- **Model ID**: `kimi-k2.5`
+#### Kimi K2.6
+- **Model ID**: `kimi-k2.6`
 - **Provider**: Moonshot (via Ali Cloud)
 - **Best For**: Large context analysis, vision tasks
 - **Strengths**:
@@ -109,6 +110,25 @@ Feima Copilot provides access to multiple AI models from diverse providers to su
 
 
 ### New Models
+
+#### Kimi K2.7 Code
+- **Model ID**: `kimi-k2.7-code`
+- **Provider**: Moonshot
+- **Best For**: Code-specialized tasks, large context
+- **Strengths**:
+  - 256K context window with vision support
+  - Deep thinking capabilities
+  - Code-specialized
+  - Premium tier required
+
+#### GLM 5.2
+- **Model ID**: `glm-5.2`
+- **Provider**: Zhipu AI
+- **Best For**: Advanced reasoning, complex tasks
+- **Strengths**:
+  - 1M context window
+  - Powerful reasoning capabilities
+  - Premium tier required
 
 #### DeepSeek V4 Pro
 - **Model ID**: `deepseek-v4-pro`
@@ -139,12 +159,12 @@ Feima Copilot provides access to multiple AI models from diverse providers to su
 
 #### Qwen3.7 Plus
 - **Model ID**: `qwen3.7-plus`
-- **Provider**: Alibaba Cloud
-- **Best For**: Cost-effective everyday tasks
+- **Provider**: Ali Cloud
+- **Best For**: Advanced reasoning, vision tasks
 - **Strengths**:
-  - 128K context window
-  - Lightweight and fast
-  - Free tier included
+  - ~1M context window
+  - Vision and deep thinking support
+  - Premium tier required
 
 ## Selecting a Model
 
@@ -214,21 +234,21 @@ Explain how the authentication flow works in this codebase.
 
 | Task | Lightweight Models | Powerful Models |
 |------|-------------------|-----------------|
-| **Code Generation** | Qwen3 Flash, Qwen3.7 Plus | Qwen3 Coder Plus, DeepSeek V4 Pro |
-| **Code Review** | Qwen3 Flash, Qwen3.7 Plus | Qwen3 Max, GLM 5.1 |
-| **Documentation** | Qwen3 Flash, Qwen3.7 Plus | GLM-4.7, Qwen3.5 Plus |
-| **Architecture** | Qwen3 Max | DeepSeek V4 Pro, GLM 5.1 |
-| **Large Context** | Qwen3 Flash | Qwen3 Coder Plus, Kimi K2.5, DeepSeek V4 Flash |
+| **Code Generation** | Qwen3.6 Flash, DeepSeek V4 Flash | Qwen3.6 Plus, DeepSeek V4 Pro |
+| **Code Review** | Qwen3.6 Flash | Qwen3.7 Max, GLM 5.2 |
+| **Documentation** | Qwen3.6 Flash | GLM-4.7, Qwen3.6 Plus |
+| **Architecture** | Qwen3.7 Max | DeepSeek V4 Pro, GLM 5.2 |
+| **Large Context** | Qwen3.6 Flash | Qwen3.6 Plus, Kimi K2.6, DeepSeek V4 Flash |
 
 ## Best Practices
 
 ### Match Model to Task
 
-1. **Quick questions** - Use Qwen3 Flash or Qwen3.7 Plus (free tier)
-2. **Code generation** - Use Qwen3 Coder Plus or DeepSeek V4 Pro
-3. **Documentation** - Use GLM-4.7 or Qwen3.5 Plus
-4. **Complex reasoning** - Use Qwen3 Max or DeepSeek V4 Pro
-5. **Large context** - Use Qwen3 Coder Plus, Kimi K2.5, or DeepSeek V4 Flash
+1. **Quick questions** - Use Qwen3.6 Flash (free tier)
+2. **Code generation** - Use Qwen3.6 Plus or DeepSeek V4 Pro
+3. **Documentation** - Use GLM-4.7 or Qwen3.6 Plus
+4. **Complex reasoning** - Use Qwen3.7 Max or DeepSeek V4 Pro
+5. **Large context** - Use Qwen3.6 Plus, Kimi K2.6, or DeepSeek V4 Flash
 
 ### Provide Clear Context
 

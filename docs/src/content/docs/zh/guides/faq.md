@@ -128,13 +128,14 @@ VS Code Insiders 版本与稳定版功能相同，飞码扣在两个版本中都
 **A: 是的，多个模型支持思维链。**
 
 支持思维链的模型：
-- Qwen3 Max（32K 思维 tokens）
-- Qwen3.5 Plus（80K 思维 tokens）
+- Qwen3.7 Max（983K 思维 tokens）
+- Qwen3.6 Plus（80K 思维 tokens）
+- Qwen3.7 Plus（983K 思维 tokens）
 - DeepSeek V3.2
 - GLM-5
 - GLM-4.7
 - MiniMax M2.5（32K 思维 tokens）
-- Kimi K2.5（16K 思维 tokens）
+- Kimi K2.6（16K 思维 tokens）
 
 思维链功能可提高复杂问题的解决质量。
 
@@ -166,8 +167,8 @@ VS Code Insiders 版本与稳定版功能相同，飞码扣在两个版本中都
 **A: 是的，支持代码审查。**
 
 推荐使用：
-- **Qwen3 Max**：深度分析，32K 思维链
-- **GLM-5**：高级推理，结构化输出
+- **Qwen3.7 Max**：深度分析，983K 思维链
+- **GLM 5.2**：高级推理，1M 上下文
 
 ---
 

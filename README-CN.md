@@ -23,7 +23,7 @@
 
 ### 核心特点
 
-- 🇨🇳 **国产顶级模型**: Qwen3 系列、DeepSeek V3.2、GLM-5、MiniMax M2.5、Kimi K2.5
+- 🇨🇳 **国产顶级模型**: Qwen3.7 系列、DeepSeek V3.2、GLM-5、MiniMax M2.5、Kimi K2.6
 - 💬 **无缝集成**: 直接在 GitHub Copilot Chat 中使用，无需切换界面
 - 💰 **按次计费**: 请求数付费，成本可控，告别按月订阅
 - 🔒 **安全可靠**: OAuth2 认证，代码不离开 VS Code
@@ -42,18 +42,20 @@
 
 | 模型 | 提供商 | 特点 |
 |------|--------|------|
-| Qwen3 Max | 阿里云 | 256K 上下文，思维链推理 |
-| Qwen3 Coder Plus | 阿里云 | 100万 token 上下文，代码专精 |
-| Qwen3.5 Plus | 阿里云 | 100万 token 上下文，80K 思维链 |
+| Qwen3.7 Max | 阿里云 | ~1M 上下文，思维链推理 |
+| Qwen3.6 Plus | 阿里云 | 1M token 上下文，80K 思维链，视觉 |
+| Qwen3.6 Flash | 阿里云 | 1M token 上下文，支持思维链（默认） |
+| Qwen3.7 Plus | 阿里云 | ~1M 上下文，视觉，深度思考 |
 | DeepSeek V3.2 | DeepSeek | 深度思考，稀疏注意力 |
 | GLM-5 | 智谱AI | 200K 上下文，思维链推理 |
 | GLM-4.7 | 智谱AI | 200K 上下文，高级推理 |
+| GLM 5.2 | 智谱AI | 1M 上下文，高级推理 |
 | MiniMax M2.5 | MiniMax | 200K 上下文，思维链推理 |
-| Kimi K2.5 | Moonshot | 256K 上下文，思维链推理 |
-| DeepSeek V4 Pro | DeepSeek | 100万 token 上下文，深度思考（仅全球市场） |
-| DeepSeek V4 Flash | DeepSeek | 100万 token 上下文，快速响应（仅全球市场） |
+| Kimi K2.6 | Moonshot | 256K 上下文，思维链推理，视觉 |
+| Kimi K2.7 Code | Moonshot | 256K 上下文，代码专精，视觉 |
+| DeepSeek V4 Pro | DeepSeek | 1M token 上下文，深度思考（仅全球市场） |
+| DeepSeek V4 Flash | DeepSeek | 1M token 上下文，快速响应（仅全球市场） |
 | GLM 5.1 | 智谱AI | 202K 上下文，强大推理（仅全球市场） |
-| Qwen3.7 Plus | 阿里云 | 128K 上下文，轻量高效（仅全球市场） |
 
 ## 开发状态
 

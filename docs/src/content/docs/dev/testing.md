@@ -149,7 +149,7 @@ describe('LanguageModelProvider', () => {
 
   it('should fetch models from API', async () => {
     const mockModels = [
-      { id: 'qwen-flash', name: '[Feima] Qwen3 Flash' }
+      { id: 'qwen3.6-flash', name: '[Feima] Qwen3.6 Flash' }
     ];
     mockApiClient.models.mockResolvedValue(mockModels);
 

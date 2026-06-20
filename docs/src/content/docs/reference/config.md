@@ -18,24 +18,28 @@ All Feima Copilot settings are prefixed with `feima.` in VS Code settings.
 Default model for new conversations.
 
 **Type**: `string`
-**Default**: `"qwen-flash"`
+**Default**: `"qwen3.6-flash"`
 **Scope**: Window
 
 **Valid Values**:
-- `"qwen-flash"` - Qwen3 Flash (free tier, chat default)
-- `"qwen3-max"` - Qwen3 Max (thinking capable)
+- `"qwen3.6-flash"` - Qwen3.6 Flash (free tier, chat default, thinking-capable)
+- `"qwen3.7-max"` - Qwen3.7 Max (~1M context, deep thinking)
 - `"qwen3-coder-plus"` - Qwen3 Coder Plus (1M context)
-- `"qwen3.5-plus"` - Qwen3.5 Plus (vision + thinking)
+- `"qwen3.6-plus"` - Qwen3.6 Plus (vision + thinking, 1M context)
+- `"qwen3.7-plus"` - Qwen3.7 Plus (~1M context, vision + deep thinking)
 - `"deepseek-v3.2"` - DeepSeek V3.2 (deep thinking)
 - `"glm-5"` - GLM-5 (Zhipu, thinking capable)
 - `"glm-4.7"` - GLM-4.7 (Zhipu, long output)
+- `"glm-5.1"` - GLM 5.1 (202K context)
+- `"glm-5.2"` - GLM 5.2 (1M context)
 - `"minimax-m2.5"` - MiniMax M2.5
-- `"kimi-k2.5"` - Kimi K2.5 (256K context + vision)
+- `"kimi-k2.6"` - Kimi K2.6 (256K context + vision)
+- `"kimi-k2.7-code"` - Kimi K2.7 Code (256K context, code-specialized)
 
 **Example**:
 ```json
 {
-  "feima.defaultModel": "qwen3-max"
+  "feima.defaultModel": "qwen3.7-max"
 }
 ```
 
@@ -195,10 +199,10 @@ Custom aliases for models.
 {
   "feima.modelAliases": {
     "code": "qwen3-coder-plus",
-    "review": "qwen3-max",
+    "review": "qwen3.7-max",
     "docs": "glm-4.7",
     "arch": "deepseek-v3.2",
-    "fast": "qwen-flash"
+    "fast": "qwen3.6-flash"
   }
 }
 ```

@@ -24,19 +24,19 @@ Before you begin, make sure you have:
 
 | Model | Provider | Best For |
 |-------|----------|----------|
-| **Qwen3 Flash** | Alibaba Cloud | Fast responses, free tier |
-| **Qwen3 Max** | Alibaba Cloud | Complex reasoning with thinking mode |
-| **Qwen3 Coder Plus** | Alibaba Cloud | Advanced code generation, 1M context |
-| **Qwen3.5 Plus** | Alibaba Cloud | Vision-capable, 80K thinking chain |
-| **DeepSeek V3.2** | DeepSeek | Deep thinking for complex problems |
+| **Qwen3.6 Flash** | Alibaba Cloud | Fast responses, thinking support (default) |
+| **Qwen3.7 Max** | Alibaba Cloud | Complex reasoning with deep thinking, ~1M context |
+| **Qwen3.6 Plus** | Alibaba Cloud | Vision-capable, 80K thinking chain, 1M context |
+| **Qwen3.7 Plus** | Alibaba Cloud | ~1M context, vision, deep thinking |
 | **GLM-5** | Zhipu AI | Advanced reasoning |
 | **GLM-4.7** | Zhipu AI | Long-form content and documentation |
+| **GLM 5.2** | Zhipu AI | 1M context, advanced reasoning |
 | **MiniMax M2.5** | MiniMax | Balanced performance |
-| **Kimi K2.5** | Moonshot | 256K context with vision support |
+| **Kimi K2.6** | Moonshot | 256K context with vision support |
+| **Kimi K2.7 Code** | Moonshot | 256K context, code-specialized, vision |
 | **DeepSeek V4 Pro** | DeepSeek | 1M token context, deep thinking |
 | **DeepSeek V4 Flash** | DeepSeek | 1M token context, fastest DeepSeek |
 | **GLM 5.1** | Zhipu AI | 202K context, powerful reasoning |
-| **Qwen3.7 Plus** | Alibaba Cloud | 128K context, cost-effective |
 
 ## 📦 Installation
 

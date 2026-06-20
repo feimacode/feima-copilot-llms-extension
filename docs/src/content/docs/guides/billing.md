@@ -36,7 +36,7 @@ Different AI models have different costs based on their capabilities and resourc
 
 ### Ultra-Lightweight Models (0.1x)
 
-**Examples**: Qwen3 Flash
+**Examples**: Qwen3.6 Flash
 
 - **Best For**: Ultra-fast code completion
 - **Characteristics**: Extremely fast, minimal resource usage
@@ -44,7 +44,7 @@ Different AI models have different costs based on their capabilities and resourc
 
 ### Lightweight Models (0.5x)
 
-**Examples**: Qwen3.5 Plus
+**Examples**: Qwen3.6 Plus
 
 - **Best For**: Code completion, simple code generation
 - **Characteristics**: Fast, efficient, lower resource usage
@@ -52,7 +52,7 @@ Different AI models have different costs based on their capabilities and resourc
 
 ### Standard Models (1.0x)
 
-**Examples**: Qwen3 Max, DeepSeek V3.2, Kimi K2.5
+**Examples**: Qwen3.7 Max, DeepSeek V3.2, Kimi K2.6
 
 - **Best For**: General Q&A, code understanding
 - **Characteristics**: Balanced performance and cost
@@ -60,7 +60,7 @@ Different AI models have different costs based on their capabilities and resourc
 
 ### Premium Models (2.0x)
 
-**Examples**: Qwen3 Coder Plus, GLM-5
+**Examples**: GLM-5, GLM 5.2
 
 - **Best For**: Large codebase analysis, advanced reasoning
 - **Characteristics**: State-of-the-art performance, maximum capabilities

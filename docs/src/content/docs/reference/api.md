@@ -539,15 +539,19 @@ enum ModelProvider {
 
 ```typescript
 export const MODEL_IDS = {
-  QWEN_FLASH: 'qwen-flash',
-  QWEN3_MAX: 'qwen3-max',
+  QWEN3_6_FLASH: 'qwen3.6-flash',
+  QWEN3_7_MAX: 'qwen3.7-max',
   QWEN3_CODER_PLUS: 'qwen3-coder-plus',
-  QWEN3_5_PLUS: 'qwen3.5-plus',
+  QWEN3_6_PLUS: 'qwen3.6-plus',
+  QWEN3_7_PLUS: 'qwen3.7-plus',
   DEEPSEEK_V3_2: 'deepseek-v3.2',
   GLM_5: 'glm-5',
   GLM_4_7: 'glm-4.7',
+  GLM_5_1: 'glm-5.1',
+  GLM_5_2: 'glm-5.2',
   MINIMAX_M2_5: 'minimax-m2.5',
-  KIMI_K2_5: 'kimi-k2.5'
+  KIMI_K2_6: 'kimi-k2.6',
+  KIMI_K2_7_CODE: 'kimi-k2.7-code'
 } as const;
 ```
 

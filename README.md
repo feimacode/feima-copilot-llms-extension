@@ -23,7 +23,7 @@ Feima Copilot is a VS Code extension that adds alternative AI model support to G
 
 ### Key Features
 
-- � **Diverse Model Selection**: Qwen3, DeepSeek V3.2, GLM-5, MiniMax M2.5, Kimi K2.5
+- � **Diverse Model Selection**: Qwen3.7, DeepSeek V3.2, GLM-5, MiniMax M2.5, Kimi K2.6
 - 💬 **Seamless Integration**: Works directly in GitHub Copilot Chat, no interface switching needed
 - 💰 **Pay-per-Request**: Request-based pricing, cost-controllable, no monthly subscriptions
 - 🔒 **Secure & Reliable**: OAuth2 authentication, code never leaves VS Code
@@ -41,18 +41,19 @@ Feima Copilot is a VS Code extension that adds alternative AI model support to G
 
 | Model | Provider | Features |
 |-------|----------|----------|
-| Qwen3 Max | Alibaba Cloud | 256K context, chain-of-thought reasoning |
-| Qwen3 Coder Plus | Alibaba Cloud | 1M token context, code-specialized |
-| Qwen3.5 Plus | Alibaba Cloud | 1M token context, 80K chain-of-thought |
-| DeepSeek V3.2 | DeepSeek | Deep thinking, sparse attention |
-| GLM-5 | Zhipu AI | 200K context, chain-of-thought reasoning |
+| Qwen3.7 Max | Alibaba Cloud | ~1M context, chain-of-thought reasoning |
+| Qwen3.6 Plus | Alibaba Cloud | 1M token context, 80K chain-of-thought, vision |
+| Qwen3.6 Flash | Alibaba Cloud | 1M token context, thinking support (default) |
+| Qwen3.7 Plus | Alibaba Cloud | ~1M context, vision, deep thinking |
 | GLM-4.7 | Zhipu AI | 200K context, advanced reasoning |
+| GLM-5 | Zhipu AI | 200K context, chain-of-thought reasoning |
+| GLM 5.1 | Zhipu AI | 202K context, powerful reasoning |
+| GLM 5.2 | Zhipu AI | 1M context, advanced reasoning |
 | MiniMax M2.5 | MiniMax | 200K context, chain-of-thought reasoning |
-| Kimi K2.5 | Moonshot | 256K context, chain-of-thought reasoning |
+| Kimi K2.6 | Moonshot | 256K context, chain-of-thought reasoning, vision |
+| Kimi K2.7 Code | Moonshot | 256K context, code-specialized, vision |
 | DeepSeek V4 Pro | DeepSeek | 1M token context, deep thinking |
 | DeepSeek V4 Flash | DeepSeek | 1M token context, fast |
-| GLM 5.1 | Zhipu AI | 202K context, powerful reasoning |
-| Qwen3.7 Plus | Alibaba Cloud | 128K context, cost-effective |
 
 ## Development Status
 

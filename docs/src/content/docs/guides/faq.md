@@ -22,8 +22,8 @@ Feima Copilot works globally without any regional restrictions or VPN requiremen
 **A: Fast and stable.**
 
 We use Singapore-based servers with excellent global connectivity. Response times vary by model:
-- **Qwen Flash**: Ultra-fast, typically 1-3 seconds
-- **Qwen3 Max**: Standard response, typically 3-8 seconds
+- **Qwen3.6 Flash**: Ultra-fast, typically 1-3 seconds
+- **Qwen3.7 Max**: Standard response, typically 3-8 seconds
 - **Thinking Models**: Deep reasoning requires more time, typically 5-15 seconds
 
 ---
@@ -140,13 +140,14 @@ All chat models support tool call functionality, including:
 **A: Yes, multiple models support thinking.**
 
 Models that support thinking:
-- Qwen3 Max (32K thinking tokens)
-- Qwen3.5 Plus (80K thinking tokens)
+- Qwen3.7 Max (983K thinking tokens)
+- Qwen3.6 Plus (80K thinking tokens)
+- Qwen3.7 Plus (983K thinking tokens)
 - DeepSeek V3.2
 - GLM-5
 - GLM-4.7
 - MiniMax M2.5 (32K thinking tokens)
-- Kimi K2.5 (16K thinking tokens)
+- Kimi K2.6 (16K thinking tokens)
 
 Thinking improves the quality of solutions for complex problems.
 
@@ -178,8 +179,8 @@ Feima Copilot provides:
 **A: Yes, supports code review.**
 
 Recommended models:
-- **Qwen3 Max**: Deep analysis, 32K thinking chain
-- **GLM-5**: Advanced reasoning, structured output
+- **Qwen3.7 Max**: Deep analysis, 983K thinking chain
+- **GLM 5.2**: Advanced reasoning, 1M context
 
 ---
 

@@ -23,7 +23,7 @@
 
 ### 核心特点
 
-- 🇨🇳 **国产顶级模型**: Qwen3.7 系列、DeepSeek V3.2、GLM-5、MiniMax M2.5、Kimi K2.6
+- 🇨🇳 **国产顶级模型**: Qwen3.7 系列、DeepSeek V4、GLM-5、MiniMax M3、Mimo V2.5、Kimi K2.7 Code
 - 💬 **无缝集成**: 直接在 GitHub Copilot Chat 中使用，无需切换界面
 - 💰 **按次计费**: 请求数付费，成本可控，告别按月订阅
 - 🔒 **安全可靠**: OAuth2 认证，代码不离开 VS Code
@@ -53,9 +53,11 @@
 | MiniMax M2.5 | MiniMax | 200K 上下文，思维链推理 |
 | Kimi K2.6 | Moonshot | 256K 上下文，思维链推理，视觉 |
 | Kimi K2.7 Code | Moonshot | 256K 上下文，代码专精，视觉 |
-| DeepSeek V4 Pro | DeepSeek | 1M token 上下文，深度思考（仅全球市场） |
-| DeepSeek V4 Flash | DeepSeek | 1M token 上下文，快速响应（仅全球市场） |
-| GLM 5.1 | 智谱AI | 202K 上下文，强大推理（仅全球市场） |
+| Mimo V2.5 | 小米 | 1M 上下文，视觉，高级推理 |
+| Mimo V2.5 Pro | 小米 | 1M 上下文，视觉，推理（Pro） |
+| DeepSeek V4 Pro | DeepSeek | 1M token 上下文，深度思考 |
+| DeepSeek V4 Flash | DeepSeek | 1M token 上下文，快速响应 |
+| GLM 5.1 | 智谱AI | 202K 上下文，强大推理 |
 
 ## 开发状态
 

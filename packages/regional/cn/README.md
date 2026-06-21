@@ -7,7 +7,7 @@
 ## ✨ 核心特性
 
 - 🚀 **无需梯子** - 国内直连，稳定快速
-- 🤖 **多模型支持** - Qwen、DeepSeek、智谱 GLM、MiniMax、月之暗面等主流模型
+- 🤖 **多模型支持** - Qwen、DeepSeek、智谱 GLM、MiniMax、小米、月之暗面等主流模型
 - �️ **视觉支持** - 支持图片上传和视觉理解，可直接分析截图、设计稿、报错信息
 - �🔐 **安全登录** - 支持一键登录
 - 💰 **灵活计费** - 按需付费，无订阅压力
@@ -31,14 +31,16 @@
 | **Qwen3.7 Max** | 阿里云 | 高质量推理，~1M token，支持思维链 | 🟩 标准 |
 | **Qwen3.6 Plus** | 阿里云 | **最强推理**，1M token，80K思维链，视觉 | 🟧 专业 |
 | **Qwen3.7 Plus** | 阿里云 | ~1M token，视觉，深度思考 | 🟧 专业 |
-| **DeepSeek V4 Pro** | DeepSeek | 100万 token 上下文，深度思考（仅全球市场） | 🟧 专业 |
-| **DeepSeek V4 Flash** | DeepSeek | 100万 token 上下文，快速响应（仅全球市场） | 🟩 标准 |
+| **DeepSeek V4 Pro** | DeepSeek | 100万 token 上下文，深度思考 | 🟧 专业 |
+| **DeepSeek V4 Flash** | DeepSeek | 100万 token 上下文，快速响应 | 🟩 标准 |
 | **GLM-5** | 智谱 | 智谱最新模型，200K token，思维链推理 | 🟨 进阶 |
 | **GLM-4.7** | 智谱 | 智谱高性能模型，200K token，思维链推理 | 🟩 标准 |
 | **GLM 5.2** | 智谱 | 1M token 上下文，高级推理 | 🟨 进阶 |
 | **MiniMax M2.5** | MiniMax | 高效推理，200K token，思维链能力 | 🟩 标准 |
 | **Kimi K2.6** | 月之暗面 | **超长文本**，256K token，思维链推理，视觉 | 🟩 标准 |
 | **Kimi K2.7 Code** | 月之暗面 | 256K token，代码专精，视觉 | 🟩 标准 |
+| **Mimo V2.5** | 小米 | 1M token 上下文，视觉，高级推理 | 🟩 标准 |
+| **Mimo V2.5 Pro** | 小米 | 1M token 上下文，视觉，推理（Pro） | 🟧 专业 |
 
 ## 📦 安装
 

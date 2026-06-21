@@ -34,6 +34,8 @@ Before you begin, make sure you have:
 | **MiniMax M2.5** | MiniMax | Balanced performance |
 | **Kimi K2.6** | Moonshot | 256K context with vision support |
 | **Kimi K2.7 Code** | Moonshot | 256K context, code-specialized, vision |
+| **Mimo V2.5** | Xiaomi | 1M context, vision, advanced reasoning |
+| **Mimo V2.5 Pro** | Xiaomi | 1M context, vision, reasoning (Pro tier) |
 | **DeepSeek V4 Pro** | DeepSeek | 1M token context, deep thinking |
 | **DeepSeek V4 Flash** | DeepSeek | 1M token context, fastest DeepSeek |
 | **GLM 5.1** | Zhipu AI | 202K context, powerful reasoning |

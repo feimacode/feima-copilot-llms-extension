@@ -267,7 +267,7 @@ Custom API endpoint.
 **Example**:
 ```json
 {
-  "feima.apiEndpoint": "https://api.feimacode.cn"
+  "feima.apiEndpoint": "https://api.feimacode.com"
 }
 ```
 
@@ -286,7 +286,7 @@ Custom authentication endpoint.
 **Example**:
 ```json
 {
-  "feima.authEndpoint": "https://idp.feimacode.cn"
+  "feima.authEndpoint": "https://idp.feimacode.com"
 }
 ```
 

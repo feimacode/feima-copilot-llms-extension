@@ -65,7 +65,7 @@ The `src-zh/content/docs` directory is a symlink to `src/content/docs/zh/`, so C
 | Target | `BUILD_LOCALE` | `SITE_URL` | `BASE_PATH` | Final URL |
 |--------|----------------|-----------|------------|-----------|
 | GitHub Pages | `en` | `https://ivenxu.github.io` | `/feima-copilot-llms-extension` | https://ivenxu.github.io/feima-copilot-llms-extension/ |
-| Alibaba OSS/CDN | `zh` | `https://feimacode.cn` | `/docs` | https://feimacode.cn/docs/ |
+| Alibaba OSS/CDN | `zh` | `https://feimacode.com` | `/docs` | https://feimacode.com/docs/ |
 
 ### Separate Package Management
 
@@ -98,7 +98,7 @@ BUILD_LOCALE=en SITE_URL=https://ivenxu.github.io BASE_PATH=/feima-copilot-llms-
 
 # Chinese (Alibaba OSS)
 cd docs
-BUILD_LOCALE=zh SITE_URL=https://feimacode.cn BASE_PATH=/docs npm run build
+BUILD_LOCALE=zh SITE_URL=https://feimacode.com BASE_PATH=/docs npm run build
 ```
 
 ### Preview Production Build
@@ -229,7 +229,7 @@ The `site` and `base` values differ per deployment target and are controlled via
 | Target | `SITE_URL` | `BASE_PATH` | Final URL |
 |--------|-----------|------------|-----------|
 | GitHub Pages (default) | `https://ivenxu.github.io` | `/feima-copilot-llms-extension` | https://ivenxu.github.io/feima-copilot-llms-extension/ |
-| Alibaba OSS/CDN | `https://feimacode.cn` | `/docs` | https://feimacode.cn/docs/ |
+| Alibaba OSS/CDN | `https://feimacode.com` | `/docs` | https://feimacode.com/docs/ |
 
 The CI builds the site **twice** — once per target — using different env vars, ensuring correct asset paths for each deployment.
 
@@ -354,7 +354,7 @@ The documentation is deployed to both GitHub Pages (global) and Alibaba OSS + CD
 | Target | `SITE_URL` | `BASE_PATH` | URL |
 |--------|-----------|------------|-----|
 | GitHub Pages | `https://ivenxu.github.io` | `/feima-copilot-llms-extension` | https://ivenxu.github.io/feima-copilot-llms-extension/ |
-| Alibaba OSS | `https://feimacode.cn` | `/docs` | https://feimacode.cn/docs/ |
+| Alibaba OSS | `https://feimacode.com` | `/docs` | https://feimacode.com/docs/ |
 
 Both deployments serve the full bilingual site (CN + EN) — users switch language via the sidebar picker.
 

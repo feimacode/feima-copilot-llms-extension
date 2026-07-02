@@ -15,7 +15,7 @@ This guide covers all the installation options for Feima Copilot.
 
 ### Account Requirements
 
-- Feima account ([sign up](https://feimacode.cn/register))
+- Feima account ([sign up](https://feimacode.com/register))
 - Feima account supports WeChat or Weibo authentication
 
 ## Installation Methods
@@ -152,7 +152,7 @@ Feima Copilot provides direct access to Chinese models without needing to bypass
 
 If you experience issues:
 
-1. Check if `https://idp.feimacode.cn` is accessible
+1. Check if `https://idp.feimacode.com` is accessible
 2. Try using a different network
 3. Contact support if issues persist
 
@@ -174,4 +174,4 @@ Some corporate networks may block OAuth redirects. If you encounter authenticati
 
 - 🐛 [Report Issues](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [Discussions](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [Email Support](mailto:support@feimacode.cn)
+- 📧 [Email Support](mailto:support@feimacode.com)

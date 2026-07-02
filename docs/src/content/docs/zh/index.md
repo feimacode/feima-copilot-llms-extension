@@ -88,8 +88,8 @@ description: 加速创意落地 - GitHub Copilot Chat 的中国 AI 模型支持
 
 - 🐛 [报告问题](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [功能建议](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [邮件支持](mailto:support@feimacode.cn)
+- 📧 [邮件支持](mailto:support@feimacode.com)
 
 ---
 
-由 [飞码团队](https://feimacode.cn) 用 ❤️ 制作
+由 [飞码团队](https://feimacode.com) 用 ❤️ 制作

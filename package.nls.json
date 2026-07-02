@@ -1,7 +1,7 @@
 {
 	"extension.name": "copilot-more-llms",
 	"extension.displayName": "Feima Copilot Models",
-	"extension.description": "Accelerating intent into execution - Alternative AI models for GitHub Copilot Chat: Claude, Gemini, GPT-4o, Qwen, DeepSeek, GLM, MiniMax, Kimi and more.",
+	"extension.description": "Feima Copilot — add DeepSeek, Qwen, GLM, MiniMax, Kimi, Mimo and more top LLMs to GitHub Copilot Chat in VS Code. Pay-as-you-go, OAuth sign-in, chain-of-thought and vision support.",
 	
 	"error.notAuthenticated": "Not authenticated",
 	"error.invalidRequest.noMessages": "Invalid request: no messages.",

@@ -47,7 +47,7 @@ Claude Code 是 Anthropic 官方的 AI 编程助手，可与命令行配合使�
 
 3. **设置自定义基础 URL**：
    ```bash
-   export ANTHROPIC_BASE_URL="https://api.feimacode.cn/v1"
+   export ANTHROPIC_BASE_URL="https://api.feimacode.com/v1"
    ```
 
 4. **验证安装**：
@@ -83,7 +83,7 @@ claude-code "为这个模块编写单元测试"
 ```json
 {
   "apiKey": "feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  "baseUrl": "https://api.feimacode.cn/v1",
+  "baseUrl": "https://api.feimacode.com/v1",
   "model": "glm-5"
 }
 ```
@@ -111,7 +111,7 @@ CC Switch 是一个通用提供商，允许您通过单一界面使用多种 AI 
    ```bash
    cc-switch config set provider claude
    cc-switch config set api-key "feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-   cc-switch config set base-url "https://api.feimacode.cn/v1"
+   cc-switch config set base-url "https://api.feimacode.com/v1"
    ```
 
 3. **验证配置**：
@@ -140,12 +140,12 @@ cc-switch "编写一个 JavaScript 函数来排序数组"
 {
   "claude": {
     "apiKey": "feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    "baseUrl": "https://api.feimacode.cn/v1",
+    "baseUrl": "https://api.feimacode.com/v1",
     "model": "glm-5"
   },
   "openai": {
     "apiKey": "feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    "baseUrl": "https://api.feimacode.cn/v1",
+    "baseUrl": "https://api.feimacode.com/v1",
     "model": "glm-5"
   }
 }
@@ -169,13 +169,13 @@ Codex CLI 是一个 OpenAI 兼容的命令行工具，用于 AI 编程辅助。
 2. **配置 API 密钥**：
    ```bash
    export OPENAI_API_KEY="feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-   export OPENAI_BASE_URL="https://api.feimacode.cn/v1"
+   export OPENAI_BASE_URL="https://api.feimacode.com/v1"
    ```
 
    或添加到您的 shell 配置文件：
    ```bash
    echo 'export OPENAI_API_KEY="feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"' >> ~/.bashrc
-   echo 'export OPENAI_BASE_URL="https://api.feimacode.cn/v1"' >> ~/.bashrc
+   echo 'export OPENAI_BASE_URL="https://api.feimacode.com/v1"' >> ~/.bashrc
    source ~/.bashrc
    ```
 
@@ -212,7 +212,7 @@ codex --test "path/to/file.js"
 ```json
 {
   "apiKey": "feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  "baseUrl": "https://api.feimacode.cn/v1",
+  "baseUrl": "https://api.feimacode.com/v1",
   "model": "glm-5",
   "temperature": 0.7
 }
@@ -235,7 +235,7 @@ codex --test "path/to/file.js"
    ```bash
    cc-switch config set provider openai
    cc-switch config set api-key "feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-   cc-switch config set base-url "https://api.feimacode.cn/v1"
+   cc-switch config set base-url "https://api.feimacode.com/v1"
    ```
 
 #### 使用
@@ -269,7 +269,7 @@ Copilot CLI 是 GitHub Copilot 的命令行界面。
 
 3. **配置自定义端点**：
    ```bash
-   copilot config set endpoint https://api.feimacode.cn/v1
+   copilot config set endpoint https://api.feimacode.com/v1
    copilot config set api-key "feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
    ```
 
@@ -302,7 +302,7 @@ OpenCode 是一个 OpenAI 兼容的编程助手。
 2. **配置 API 密钥**：
    ```bash
    export OPENCODE_API_KEY="feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-   export OPENCODE_BASE_URL="https://api.feimacode.cn/v1"
+   export OPENCODE_BASE_URL="https://api.feimacode.com/v1"
    ```
 
 3. **验证安装**：
@@ -339,7 +339,7 @@ OpenClaw 是一个 OpenAI 兼容的 AI 编程工具。
 2. **配置 API 密钥**：
    ```bash
    export OPENCLAW_API_KEY="feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-   export OPENCLAW_BASE_URL="https://api.feimacode.cn/v1"
+   export OPENCLAW_BASE_URL="https://api.feimacode.com/v1"
    ```
 
 3. **验证安装**：
@@ -376,7 +376,7 @@ Hermes 是一个 OpenAI 兼容的 AI 编程助手。
 2. **配置 API 密钥**：
    ```bash
    export HERMES_API_KEY="feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-   export HERMES_BASE_URL="https://api.feimacode.cn/v1"
+   export HERMES_BASE_URL="https://api.feimacode.com/v1"
    ```
 
 3. **验证安装**：
@@ -413,7 +413,7 @@ Gemini CLI 是一个 OpenAI 兼容的工具，用于使用 Google 的 Gemini 模
 2. **配置 API 密钥**：
    ```bash
    export GEMINI_API_KEY="feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-   export GEMINI_BASE_URL="https://api.feimacode.cn/v1"
+   export GEMINI_BASE_URL="https://api.feimacode.com/v1"
    ```
 
 3. **验证安装**：
@@ -445,15 +445,15 @@ gemini fix "path/to/file.ts"
 ```bash
 # Anthropic 兼容工具
 export ANTHROPIC_API_KEY="feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-export ANTHROPIC_BASE_URL="https://api.feimacode.cn/v1"
+export ANTHROPIC_BASE_URL="https://api.feimacode.com/v1"
 
 # OpenAI 兼容工具
 export OPENAI_API_KEY="feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-export OPENAI_BASE_URL="https://api.feimacode.cn/v1"
+export OPENAI_BASE_URL="https://api.feimacode.com/v1"
 
 # Feima 特定（对于支持它的工具）
 export FEIMA_API_KEY="feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-export FEIMA_BASE_URL="https://api.feimacode.cn/v1"
+export FEIMA_BASE_URL="https://api.feimacode.com/v1"
 ```
 
 ### 配置文件
@@ -466,7 +466,7 @@ mkdir -p ~/.feima
 cat > ~/.feima/config.json << EOF
 {
   "apiKey": "feima_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  "baseUrl": "https://api.feimacode.cn/v1",
+  "baseUrl": "https://api.feimacode.com/v1",
   "model": "glm-5",
   "temperature": 0.7
 }
@@ -497,8 +497,8 @@ alias cc='cc-switch'
 #### "连接被拒绝"
 
 - 检查您的互联网连接
-- 验证基础 URL 正确：`https://api.feimacode.cn/v1`
-- 检查 API 是否在 [status.feimacode.cn](https://status.feimacode.cn) 运行
+- 验证基础 URL 正确：`https://api.feimacode.com/v1`
+- 检查 API 是否在 [status.feimacode.com](https://status.feimacode.com) 运行
 
 #### "速率限制"
 
@@ -544,7 +544,7 @@ codex -v "编写一个函数"
 
 定期检查您的 API 使用情况：
 
-- 访问 [feimacode.cn/profile](https://feimacode.cn/profile)
+- 访问 [feimacode.com/profile](https://feimacode.com/profile)
 - 检查响应头（`x-feima-quota-snapshot`）
 - 使用 VS Code 扩展状态栏
 
@@ -568,7 +568,7 @@ fi
 
 ```json
 {
-  "baseUrl": "https://api.feimacode.cn/v1",
+  "baseUrl": "https://api.feimacode.com/v1",
   "model": "glm-5",
   "temperature": 0.7
   // 注意：永远不要提交 API 密钥！
@@ -593,4 +593,4 @@ export ANTHROPIC_API_KEY="$(cat ~/.feima/api-key.txt)"
 
 - 检查工具的官方文档
 - 访问我们的 [常见问题](./faq.md)
-- 通过 support@feimacode.cn 联系支持
+- 通过 support@feimacode.com 联系支持

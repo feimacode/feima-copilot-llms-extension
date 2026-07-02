@@ -32,6 +32,7 @@ Before you begin, make sure you have:
 | **GLM-4.7** | Zhipu AI | Long-form content and documentation |
 | **GLM 5.2** | Zhipu AI | 1M context, advanced reasoning |
 | **MiniMax M2.5** | MiniMax | Balanced performance |
+| **MiniMax M3** | MiniMax | 1M context, advanced reasoning |
 | **Kimi K2.6** | Moonshot | 256K context with vision support |
 | **Kimi K2.7 Code** | Moonshot | 256K context, code-specialized, vision |
 | **Mimo V2.5** | Xiaomi | 1M context, vision, advanced reasoning |

@@ -18,7 +18,7 @@ description: 飞码扣配置完整参考
 OAuth2 认证服务器基础 URL。
 
 **类型**: `string`
-**默认值**: `"https://auth.feimacode.cn"`
+**默认值**: `"https://auth.feimacode.com"`
 **作用域**: machine-overridable
 
 **说明**:
@@ -27,13 +27,13 @@ OAuth2 认证服务器基础 URL。
 - 仅在调试或使用自定义认证服务器时修改
 
 **有效值**:
-- `"https://auth.feimacode.cn"` - 中国区生产环境
+- `"https://auth.feimacode.com"` - 中国区生产环境
 - `"http://localhost:8000"` - 本地开发环境
 
 **示例**:
 ```json
 {
-  "feima.auth.baseUrl": "https://auth.feimacode.cn"
+  "feima.auth.baseUrl": "https://auth.feimacode.com"
 }
 ```
 
@@ -66,7 +66,7 @@ OAuth2 客户端 ID。
 OAuth2 发行者 URL。
 
 **类型**: `string`
-**默认值**: `"https://auth.feimacode.cn"`
+**默认值**: `"https://auth.feimacode.com"`
 **作用域**: machine-overridable
 
 **说明**:
@@ -77,7 +77,7 @@ OAuth2 发行者 URL。
 **示例**:
 ```json
 {
-  "feima.auth.issuer": "https://auth.feimacode.cn"
+  "feima.auth.issuer": "https://auth.feimacode.com"
 }
 ```
 
@@ -90,7 +90,7 @@ OAuth2 发行者 URL。
 模型推理 API 服务器基础 URL。
 
 **类型**: `string`
-**默认值**: `"https://api.feimacode.cn/v1"`
+**默认值**: `"https://api.feimacode.com/v1"`
 **作用域**: machine-overridable
 
 **说明**:
@@ -99,13 +99,13 @@ OAuth2 发行者 URL。
 - 仅在调试或使用自定义 API 服务器时修改
 
 **有效值**:
-- `"https://api.feimacode.cn/v1"` - 中国区生产环境
+- `"https://api.feimacode.com/v1"` - 中国区生产环境
 - `"http://localhost:8001/v1"` - 本地开发环境
 
 **示例**:
 ```json
 {
-  "feima.api.baseUrl": "https://api.feimacode.cn/v1"
+  "feima.api.baseUrl": "https://api.feimacode.com/v1"
 }
 ```
 
@@ -166,7 +166,7 @@ OAuth2 发行者 URL。
 额度促销页面 URL。
 
 **类型**: `string`
-**默认值**: `"https://feimacode.cn/promotion"`
+**默认值**: `"https://feimacode.com/promotion"`
 **作用域**: machine-overridable
 
 **说明**:
@@ -177,7 +177,7 @@ OAuth2 发行者 URL。
 **示例**:
 ```json
 {
-  "feima.promotionUrl": "https://feimacode.cn/promotion"
+  "feima.promotionUrl": "https://feimacode.com/promotion"
 }
 ```
 
@@ -209,11 +209,11 @@ OAuth2 发行者 URL。
 
 ```json
 {
-  "feima.auth.baseUrl": "https://auth.feimacode.cn",
-  "feima.api.baseUrl": "https://api.feimacode.cn/v1",
+  "feima.auth.baseUrl": "https://auth.feimacode.com",
+  "feima.api.baseUrl": "https://api.feimacode.com/v1",
   "feima.auth.clientId": "vscode-feima-client",
-  "feima.auth.issuer": "https://auth.feimacode.cn",
-  "feima.promotionUrl": "https://feimacode.cn/promotion",
+  "feima.auth.issuer": "https://auth.feimacode.com",
+  "feima.promotionUrl": "https://feimacode.com/promotion",
   "feima.showQuotaInStatusBar": true,
   "feima.warnWhenQuotaLow": 50
 }
@@ -269,7 +269,7 @@ OAuth2 发行者 URL。
 
 - 🐛 [报告问题](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [讨论区](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [邮件支持](mailto:support@feimacode.cn)
+- 📧 [邮件支持](mailto:support@feimacode.com)
 
 **Type**: `number`
 **Default**: `30000`
@@ -431,7 +431,7 @@ Custom API endpoint.
 **Example**:
 ```json
 {
-  "feima.apiEndpoint": "https://api.feimacode.cn"
+  "feima.apiEndpoint": "https://api.feimacode.com"
 }
 ```
 
@@ -450,7 +450,7 @@ Custom authentication endpoint.
 **Example**:
 ```json
 {
-  "feima.authEndpoint": "https://idp.feimacode.cn"
+  "feima.authEndpoint": "https://idp.feimacode.com"
 }
 ```
 
@@ -673,4 +673,4 @@ To reset all settings to defaults:
 
 - 🐛 [Report Issues](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [Discussions](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [Email Support](mailto:support@feimacode.cn)
+- 📧 [Email Support](mailto:support@feimacode.com)

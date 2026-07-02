@@ -7,7 +7,7 @@ description: 了解飞码如何对 AI 请求计费并优化您的使用
 
 > ⏰ **重要提示：促销积分 30 天后过期**
 > 
-> 通过启动包、每周预览、推荐计划、Bug 报告、功能请求、博客文章和视频内容获得的所有积分**在获得 30 天后过期**。定期查看您的 [个人中心](https://feimacode.cn/profile) 了解过期日期，在积分过期前使用它们！
+> 通过启动包、每周预览、推荐计划、Bug 报告、功能请求、博客文章和视频内容获得的所有积分**在获得 30 天后过期**。定期查看您的 [个人中心](https://feimacode.com/profile) 了解过期日期，在积分过期前使用它们！
 
 ## 计费公式
 
@@ -120,7 +120,7 @@ Token 是 AI 模型处理文本的基本单位：
 
 1. 点击飞码状态栏项
 2. 查看剩余请求次数
-3. 在 [网页仪表板](https://feimacode.cn/profile) 查看交易历史
+3. 在 [网页仪表板](https://feimacode.com/profile) 查看交易历史
 
 ## 查看余额
 
@@ -132,7 +132,7 @@ Token 是 AI 模型处理文本的基本单位：
 
 ### 在网页上
 
-1. 访问 [feimacode.cn/profile](https://feimacode.cn/profile)
+1. 访问 [feimacode.com/profile](https://feimacode.com/profile)
 2. 查看钱包余额和交易历史
 3. 查看已获得的积分和过期日期
 
@@ -205,13 +205,13 @@ Token 是 AI 模型处理文本的基本单位：
 - **积分过期**: 获得后30天
 - **备注**: 视频必须得到我们团队的批准
 
-> **提示**: 所有促销积分30天后过期。使用它们或失去它们！查看您的 [个人中心](https://feimacode.cn/profile) 查看过期日期。
+> **提示**: 所有促销积分30天后过期。使用它们或失去它们！查看您的 [个人中心](https://feimacode.com/profile) 查看过期日期。
 
 ## 常见问题
 
 ### 如何查看当前余额？
 
-登录后，您可以在 [飞码网站](https://feimacode.cn/profile) 的个人中心页面查看余额和交易历史。
+登录后，您可以在 [飞码网站](https://feimacode.com/profile) 的个人中心页面查看余额和交易历史。
 
 ### 上下文区间会变化吗？
 
@@ -227,7 +227,7 @@ Token 根据请求的总输入和输出计算。输入包括您的提示和提�
 
 ### 可以查看计费历史吗？
 
-可以，您可以在 [飞码网站](https://feimacode.cn/profile) 查看完整的计费历史，包括：
+可以，您可以在 [飞码网站](https://feimacode.com/profile) 查看完整的计费历史，包括：
 
 - 交易时间戳
 - 使用的模型
@@ -240,19 +240,19 @@ Token 根据请求的总输入和输出计算。输入包括您的提示和提�
 
 邀请朋友使用飞码，双方都可以获得免费请求：
 
-1. 从您的 [个人中心页面](https://feimacode.cn/profile/referrals) 获取专属推荐链接
+1. 从您的 [个人中心页面](https://feimacode.com/profile/referrals) 获取专属推荐链接
 2. 将链接分享给朋友
 3. 当他们注册并安装扩展时，双方都能获得奖励
 
 ### 促销活动
 
-查看 [推广页面](https://feimacode.cn/promotion) 了解当前优惠和赚取免费请求的机会。
+查看 [推广页面](https://feimacode.com/promotion) 了解当前优惠和赚取免费请求的机会。
 
 
 ## 支持
 
 如果您对计费有疑问或需要账户帮助：
 
-- 访问 [飞码网站](https://feimacode.cn)
-- 查看 [常见问题部分](https://feimacode.cn/pricing)
-- 通过您的 [个人中心页面](https://feimacode.cn/profile) 联系客服
+- 访问 [飞码网站](https://feimacode.com)
+- 查看 [常见问题部分](https://feimacode.com/pricing)
+- 通过您的 [个人中心页面](https://feimacode.com/profile) 联系客服

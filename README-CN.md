@@ -10,12 +10,12 @@
 
 ## 快速链接
 
-- 🛒 [VS Code 插件市场](https://marketplace.visualstudio.com/items?itemName=feima.copilot-cn-models) | [下载飞码扣](https://feimacode.cn/download)
-- 📖 [英文文档](https://ivenxu.github.io/feima-copilot-llms-extension/) | [中文文档](https://docs.feimacode.cn/)
-- 🚀 [快速入门](https://ivenxu.github.io/feima-copilot-llms-extension/guides/quickstart/) | [快速入门（中文）](https://docs.feimacode.cn/guides/quickstart/)
-- 📦 [安装指南](https://ivenxu.github.io/feima-copilot-llms-extension/guides/installation/) | [安装指南（中文）](https://docs.feimacode.cn/guides/installation/)
-- 🔧 [配置选项](https://ivenxu.github.io/feima-copilot-llms-extension/guides/configuration/) | [配置选项（中文）](https://docs.feimacode.cn/guides/configuration/)
-- 💻 [开发指南](https://ivenxu.github.io/feima-copilot-llms-extension/dev/setup/) | [开发指南（中文）](https://docs.feimacode.cn/dev/setup/)
+- 🛒 [VS Code 插件市场](https://marketplace.visualstudio.com/items?itemName=feima.copilot-cn-models) | [下载飞码扣](https://feimacode.com/download)
+- 📖 [英文文档](https://ivenxu.github.io/feima-copilot-llms-extension/) | [中文文档](https://docs.feimacode.com/zh/)
+- 🚀 [快速入门](https://ivenxu.github.io/feima-copilot-llms-extension/guides/quickstart/) | [快速入门（中文）](https://docs.feimacode.com/zh/guides/quickstart/)
+- 📦 [安装指南](https://ivenxu.github.io/feima-copilot-llms-extension/guides/installation/) | [安装指南（中文）](https://docs.feimacode.com/zh/guides/installation/)
+- 🔧 [配置选项](https://ivenxu.github.io/feima-copilot-llms-extension/guides/configuration/) | [配置选项（中文）](https://docs.feimacode.com/zh/guides/configuration/)
+- 💻 [开发指南](https://ivenxu.github.io/feima-copilot-llms-extension/dev/setup/) | [开发指南（中文）](https://docs.feimacode.com/zh/dev/setup/)
 
 ## 简介
 
@@ -51,6 +51,7 @@
 | GLM-4.7 | 智谱AI | 200K 上下文，高级推理 |
 | GLM 5.2 | 智谱AI | 1M 上下文，高级推理 |
 | MiniMax M2.5 | MiniMax | 200K 上下文，思维链推理 |
+| MiniMax M3 | MiniMax | 1M 上下文，高级推理 |
 | Kimi K2.6 | Moonshot | 256K 上下文，思维链推理，视觉 |
 | Kimi K2.7 Code | Moonshot | 256K 上下文，代码专精，视觉 |
 | Mimo V2.5 | 小米 | 1M 上下文，视觉，高级推理 |
@@ -104,7 +105,7 @@ git push --follow-tags
 
 ## 贡献
 
-我们欢迎社区贡献！请查看[完整文档](https://docs.feimacode.cn/dev/setup/)了解如何参与开发。
+我们欢迎社区贡献！请查看[完整文档](https://docs.feimacode.com/zh/dev/setup/)了解如何参与开发。
 
 ```bash
 # 克隆仓库
@@ -126,21 +127,21 @@ code .
 ## 文档
 
 完整的文档请访问：
-- [中文文档](https://docs.feimacode.cn/)
+- [中文文档](https://docs.feimacode.com/zh/)
 - [英文文档](https://ivenxu.github.io/feima-copilot-llms-extension/)
 
 ## 支持与联系
 
 - 🐛 [报告问题](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [功能建议](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [邮件支持](mailto:support@feimacode.cn)
+- 📧 [邮件支持](mailto:support@feimacode.com)
 - 💬 微信交流群：扫码下方二维码加入
 
 ## 微信交流群
 
 扫码加入飞码扣用户交流群，获取最新资讯和技术支持：
 
-![微信群二维码](https://feimacode.cn/wechat-barcode.png)
+![微信群二维码](https://feimacode.com/wechat-barcode.png)
 
 ## 开源协议
 
@@ -150,5 +151,5 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 
 <p align="center">
   <strong>加速创意落地 - Accelerating intent into execution</strong><br>
-  Made with ❤️ by <a href="https://feimacode.cn">Feimacode Team</a>
+  Made with ❤️ by <a href="https://feimacode.com">Feimacode Team</a>
 </p>

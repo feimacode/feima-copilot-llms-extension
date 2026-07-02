@@ -198,7 +198,7 @@ VS Code Insiders 版本与稳定版功能相同，飞码扣在两个版本中都
 - **邀请好友**：邀请朋友注册，双方获得奖励
 - **参与推广**：定期活动赚取额外积分
 
-[了解如何赚取更多额度 →](https://feimacode.cn/promotion)
+[了解如何赚取更多额度 →](https://feimacode.com/promotion)
 
 ---
 
@@ -208,7 +208,7 @@ VS Code Insiders 版本与稳定版功能相同，飞码扣在两个版本中都
 
 1. **状态栏**：启用 `feima.showQuotaInStatusBar` 设置
 2. **命令面板**：`Ctrl+Shift+P` → "飞码: 查看账号"
-3. **网站**：访问 [feimacode.cn/dashboard](https://feimacode.cn/profile)
+3. **网站**：访问 [feimacode.com/dashboard](https://feimacode.com/profile)
 
 ---
 
@@ -218,7 +218,7 @@ VS Code Insiders 版本与稳定版功能相同，飞码扣在两个版本中都
 
 - **等待每周赠送**：每周自动获得 50 点积分
 - **邀请好友**：获得奖励积分
-- **购买额度**：访问 [feimacode.cn/pricing](https://feimacode.cn/pricing)
+- **购买额度**：访问 [feimacode.com/pricing](https://feimacode.com/pricing)
 
 ---
 
@@ -263,7 +263,7 @@ VS Code Insiders 版本与稳定版功能相同，飞码扣在两个版本中都
 
 **A: 不会。**
 
-代码仅在请求时发送给 AI 模型进行处理，不会被存储或用于其他目的。详见我们的[隐私政策](https://feimacode.cn/privacy)。
+代码仅在请求时发送给 AI 模型进行处理，不会被存储或用于其他目的。详见我们的[隐私政策](https://feimacode.com/privacy)。
 
 ---
 
@@ -426,7 +426,7 @@ VS Code Insiders 版本与稳定版功能相同，飞码扣在两个版本中都
 
 ### 邮件支持
 
-- **邮箱**: [support@feimacode.cn](mailto:support@feimacode.cn)
+- **邮箱**: [support@feimacode.com](mailto:support@feimacode.com)
 
 ---
 
@@ -441,4 +441,4 @@ VS Code Insiders 版本与稳定版功能相同，飞码扣在两个版本中都
 
 **还有其他问题？**
 
-[联系我们](mailto:support@feimacode.cn) 或 [参与讨论](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
+[联系我们](mailto:support@feimacode.com) 或 [参与讨论](https://github.com/feimacode/feima-copilot-llms-extension/discussions)

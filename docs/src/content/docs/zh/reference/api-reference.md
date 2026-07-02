@@ -10,7 +10,7 @@ description: Feima OpenAI 兼容端点的完整 API 参考
 ## 基础 URL
 
 ```
-https://api.feimacode.cn
+https://api.feimacode.com
 ```
 
 ## 身份验证
@@ -140,7 +140,7 @@ type Usage = {
 #### 示例请求（非流式）
 
 ```bash
-curl https://api.feimacode.cn/v1/chat/completions \
+curl https://api.feimacode.com/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -156,7 +156,7 @@ curl https://api.feimacode.cn/v1/chat/completions \
 #### 示例请求（流式）
 
 ```bash
-curl https://api.feimacode.cn/v1/chat/completions \
+curl https://api.feimacode.com/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -171,7 +171,7 @@ curl https://api.feimacode.cn/v1/chat/completions \
 #### 示例请求（带工具）
 
 ```bash
-curl https://api.feimacode.cn/v1/chat/completions \
+curl https://api.feimacode.com/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -235,7 +235,7 @@ type Model = {
 #### 示例请求
 
 ```bash
-curl https://api.feimacode.cn/v1/models \
+curl https://api.feimacode.com/v1/models \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -288,7 +288,7 @@ POST /v1/embeddings
 #### 示例请求
 
 ```bash
-curl https://api.feimacode.cn/v1/embeddings \
+curl https://api.feimacode.com/v1/embeddings \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -419,7 +419,7 @@ def make_request_with_backoff(request_func, max_retries=5):
 
 - **响应头**：`x-feima-quota-snapshot` 包含实时配额信息
 - **VS Code 扩展**：状态栏显示剩余配额
-- **Web 仪表板**：访问 [feimacode.cn/profile](https://feimacode.cn/profile)
+- **Web 仪表板**：访问 [feimacode.com/profile](https://feimacode.com/profile)
 
 ## 最佳实践
 
@@ -428,7 +428,7 @@ def make_request_with_backoff(request_func, max_retries=5):
 流式传输提供更快的响应时间和更好的用户体验：
 
 ```typescript
-const response = await fetch('https://api.feimacode.cn/v1/chat/completions', {
+const response = await fetch('https://api.feimacode.com/v1/chat/completions', {
   method: 'POST',
   headers: {
     'Authorization': `Bearer ${apiKey}`,
@@ -459,7 +459,7 @@ while (true) {
 
 ```typescript
 try {
-  const response = await fetch('https://api.feimacode.cn/v1/chat/completions', {
+  const response = await fetch('https://api.feimacode.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
@@ -531,6 +531,6 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
 
 获取 API 支持：
 
-- 文档：[docs.feimacode.cn](https://docs.feimacode.cn)
-- 邮箱：support@feimacode.cn
-- 状态页面：[status.feimacode.cn](https://status.feimacode.cn)
+- 文档：[docs.feimacode.com/zh](https://docs.feimacode.com/zh)
+- 邮箱：support@feimacode.com
+- 状态页面：[status.feimacode.com](https://status.feimacode.com)

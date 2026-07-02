@@ -202,7 +202,7 @@ describe('OAuth Integration Tests', () => {
 
     // Start sign in
     const authUrl = await service.getAuthorizationUrl();
-    expect(authUrl).toContain('idp.feimacode.cn');
+    expect(authUrl).toContain('idp.feimacode.com');
 
     // Simulate callback
     const code = 'mock-authorization-code';
@@ -344,7 +344,7 @@ it('should sign in user', async () => {
 // Bad - tests implementation
 it('should call API with correct endpoint', async () => {
   await service.signIn();
-  expect(mockApi.calledWith).toBe('https://idp.feimacode.cn');
+  expect(mockApi.calledWith).toBe('https://idp.feimacode.com');
 });
 ```
 

@@ -26,7 +26,7 @@ description: 自定义飞码扣设置和偏好
 ### `feima.auth.baseUrl`
 
 **类型**: `string`
-**默认值**: `"https://auth.feimacode.cn"`
+**默认值**: `"https://auth.feimacode.com"`
 **作用域**: machine-overridable（机器可覆盖）
 
 OAuth2 认证服务器基础 URL。覆盖区域默认值。
@@ -39,7 +39,7 @@ OAuth2 认证服务器基础 URL。覆盖区域默认值。
 **示例**:
 ```json
 {
-  "feima.auth.baseUrl": "https://auth.feimacode.cn"
+  "feima.auth.baseUrl": "https://auth.feimacode.com"
 }
 ```
 
@@ -48,7 +48,7 @@ OAuth2 认证服务器基础 URL。覆盖区域默认值。
 ### `feima.api.baseUrl`
 
 **类型**: `string`
-**默认值**: `"https://api.feimacode.cn/v1"`
+**默认值**: `"https://api.feimacode.com/v1"`
 **作用域**: machine-overridable（机器可覆盖）
 
 模型推理 API 服务器基础 URL。覆盖区域默认值。
@@ -61,7 +61,7 @@ OAuth2 认证服务器基础 URL。覆盖区域默认值。
 **示例**:
 ```json
 {
-  "feima.api.baseUrl": "https://api.feimacode.cn/v1"
+  "feima.api.baseUrl": "https://api.feimacode.com/v1"
 }
 ```
 
@@ -92,7 +92,7 @@ OAuth2 认证服务器基础 URL。覆盖区域默认值。
 ### `feima.auth.issuer`
 
 **类型**: `string`
-**默认值**: `"https://auth.feimacode.cn"`
+**默认值**: `"https://auth.feimacode.com"`
 **作用域**: machine-overridable（机器可覆盖）
 
 OAuth2 发行者 URL。覆盖区域默认值。
@@ -105,7 +105,7 @@ OAuth2 发行者 URL。覆盖区域默认值。
 **示例**:
 ```json
 {
-  "feima.auth.issuer": "https://auth.feimacode.cn"
+  "feima.auth.issuer": "https://auth.feimacode.com"
 }
 ```
 
@@ -114,7 +114,7 @@ OAuth2 发行者 URL。覆盖区域默认值。
 ### `feima.promotionUrl`
 
 **类型**: `string`
-**默认值**: `"https://feimacode.cn/promotion"`
+**默认值**: `"https://feimacode.com/promotion"`
 **作用域**: machine-overridable（机器可覆盖）
 
 额度促销页面 URL。余额不足时显示。
@@ -127,7 +127,7 @@ OAuth2 发行者 URL。覆盖区域默认值。
 **示例**:
 ```json
 {
-  "feima.promotionUrl": "https://feimacode.cn/promotion"
+  "feima.promotionUrl": "https://feimacode.com/promotion"
 }
 ```
 
@@ -218,8 +218,8 @@ OAuth2 发行者 URL。覆盖区域默认值。
 
 ```json
 {
-  "feima.auth.baseUrl": "https://auth.feimacode.cn",
-  "feima.api.baseUrl": "https://api.feimacode.cn/v1",
+  "feima.auth.baseUrl": "https://auth.feimacode.com",
+  "feima.api.baseUrl": "https://api.feimacode.com/v1",
   "feima.showQuotaInStatusBar": true,
   "feima.warnWhenQuotaLow": 50
 }
@@ -364,7 +364,7 @@ OAuth2 发行者 URL。覆盖区域默认值。
 
 - 🐛 [报告问题](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [讨论区](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [邮件支持](mailto:support@feimacode.cn)
+- 📧 [邮件支持](mailto:support@feimacode.com)
 **Default**: `true`
 
 Whether to show the Feima status bar item displaying your account and remaining requests.
@@ -609,4 +609,4 @@ To share your Feima configuration with your team:
 
 - 🐛 [Report Issues](https://github.com/feimacode/feima-copilot-llms-extension/issues)
 - 💬 [Discussions](https://github.com/feimacode/feima-copilot-llms-extension/discussions)
-- 📧 [Email Support](mailto:support@feimacode.cn)
+- 📧 [Email Support](mailto:support@feimacode.com)

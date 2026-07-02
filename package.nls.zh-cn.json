@@ -1,7 +1,7 @@
 {
 	"extension.name": "copilot-cn-models",
 	"extension.displayName": "飞码扣(Feimacode)",
-	"extension.description": "加速创意落地 - GitHub Copilot Chat 的中国 AI 模型支持：通义千问、DeepSeek、智谱GLM、MiniMax、Kimi。",
+	"extension.description": "一键接入 GitHub Copilot 国产顶级大模型：DeepSeek、通义千问 Qwen、智谱 GLM、MiniMax、月之暗面 Kimi、小米 Mimo，按次计费、中文优化、思维链与视觉支持。",
 	
 	"error.notAuthenticated": "未身份验证",
 	"error.invalidRequest.noMessages": "无效请求：没有消息。",

@@ -98,7 +98,7 @@ Try this simple example to verify everything is working:
 
 ### Token exchange failed
 
-- Verify feima-idp is accessible: `curl https://idp.feimacode.cn/.well-known/openid-configuration`
+- Verify feima-idp is accessible: `curl https://idp.feimacode.com/.well-known/openid-configuration`
 - Check your network connectivity
 
 ## What's Next?

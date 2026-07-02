@@ -10,12 +10,12 @@ A VS Code extension that adds alternative AI model support to GitHub Copilot Cha
 
 ## Quick Links
 
-- 🛒 [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=feima.copilot-cn-models) | [Download Feima Copilot](https://feimacode.cn/download)
-- 📖 [English Docs](https://ivenxu.github.io/feima-copilot-llms-extension/) | [Chinese Docs](https://docs.feimacode.cn/)
-- 🚀 [Quick Start](https://ivenxu.github.io/feima-copilot-llms-extension/guides/quickstart/) | [快速入门](https://docs.feimacode.cn/guides/quickstart/)
-- 📦 [Installation Guide](https://ivenxu.github.io/feima-copilot-llms-extension/guides/installation/) | [安装指南](https://docs.feimacode.cn/guides/installation/)
-- 🔧 [Configuration Options](https://ivenxu.github.io/feima-copilot-llms-extension/guides/configuration/) | [配置选项](https://docs.feimacode.cn/guides/configuration/)
-- 💻 [Development Guide](https://ivenxu.github.io/feima-copilot-llms-extension/dev/setup/) | [开发指南](https://docs.feimacode.cn/dev/setup/)
+- 🛒 [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=feima.copilot-cn-models) | [Download Feima Copilot](https://feimacode.com/download)
+- 📖 [English Docs](https://docs.feimacode.com/) | [Chinese Docs](https://docs.feimacode.com/zh/)
+- 🚀 [Quick Start](https://docs.feimacode.com/guides/quickstart/) | [快速入门](https://docs.feimacode.com/zh/guides/quickstart/)
+- 📦 [Installation Guide](https://docs.feimacode.com/guides/installation/) | [安装指南](https://docs.feimacode.com/zh/guides/installation/)
+- 🔧 [Configuration Options](https://docs.feimacode.com/guides/configuration/) | [配置选项](https://docs.feimacode.com/zh/guides/configuration/)
+- 💻 [Development Guide](https://docs.feimacode.com/dev/setup/) | [开发指南](https://docs.feimacode.com/zh/dev/setup/)
 
 ## Overview
 
@@ -126,8 +126,8 @@ code .
 ## Documentation
 
 For complete documentation, visit:
-- [Chinese Documentation](https://docs.feimacode.cn/)
-- [English Documentation](https://ivenxu.github.io/feima-copilot-llms-extension/)
+- [Chinese Documentation](https://docs.feimacode.com/zh/)
+- [English Documentation](https://docs.feimacode.com/)
 
 ## Support & Contact
 

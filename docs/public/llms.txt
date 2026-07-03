@@ -1,0 +1,53 @@
+# Feima Copilot Documentation
+
+> Technical documentation for the Feima Copilot VS Code extension. Covers installation, authentication, model configuration, API tools, billing, and VS Code Copilot integration guides. Bilingual (English + 中文), built with Astro Starlight.
+
+## English Documentation
+
+- [Home](https://docs.feimacode.com/): Documentation landing page with quick-start overview
+- [Quick Start](https://docs.feimacode.com/guides/quickstart/): Get Feima working with Copilot Chat in under 5 minutes
+- [Installation](https://docs.feimacode.com/guides/installation/): Installing the extension from the VS Code Marketplace
+- [Authentication](https://docs.feimacode.com/guides/authentication/): OAuth2 sign-in flow and account management
+- [API Keys](https://docs.feimacode.com/guides/api-keys/): Using Feima as a standalone API provider
+- [Using Models](https://docs.feimacode.com/guides/using-models/): Switching between AI models in Copilot Chat
+- [Configuration](https://docs.feimacode.com/guides/configuration/): Extension settings reference
+- [Billing](https://docs.feimacode.com/guides/billing/): Plans, credits, pay-per-use pricing
+- [FAQ](https://docs.feimacode.com/guides/faq/): Frequently asked questions
+
+## 中文文档
+
+- [首页](https://docs.feimacode.com/zh/): 文档首页与快速开始
+- [快速开始](https://docs.feimacode.com/zh/guides/quickstart/): 5 分钟内让飞码接入 Copilot Chat
+- [安装](https://docs.feimacode.com/zh/guides/installation/): 从 VS Code 应用商店安装扩展
+- [认证](https://docs.feimacode.com/zh/guides/authentication/): OAuth2 登录流程与账户管理
+- [API 密钥](https://docs.feimacode.com/zh/guides/api-keys/): 将飞码作为独立 API 服务使用
+- [使用模型](https://docs.feimacode.com/zh/guides/using-models/): 在 Copilot Chat 中切换 AI 模型
+- [配置](https://docs.feimacode.com/zh/guides/configuration/): 扩展设置项参考
+- [计费](https://docs.feimacode.com/zh/guides/billing/): 套餐、积分、按量付费说明
+- [常见问题](https://docs.feimacode.com/zh/guides/faq/): 常见问题解答
+
+## API & Reference
+
+- [API Reference (EN)](https://docs.feimacode.com/reference/api-reference/): OpenAI-compatible API endpoints
+- [Config Reference (EN)](https://docs.feimacode.com/reference/config/): Complete configuration options
+- [API Code Examples](https://docs.feimacode.com/guides/api-code-examples/): Code snippets for Python, Node.js, and curl
+- [API Tool Guides](https://docs.feimacode.com/guides/api-tool-guides/): Integrating Feima with MCP servers and tools
+
+## Developer Docs
+
+- [Development Setup](https://docs.feimacode.com/dev/setup/): Local development environment
+- [Building](https://docs.feimacode.com/dev/building/): Build and packaging instructions
+- [Testing](https://docs.feimacode.com/dev/testing/): Test suite documentation
+
+## VS Code Copilot Guides (中文)
+
+- [Copilot 概览](https://docs.feimacode.com/zh/vscode-copilot/overview/): GitHub Copilot 功能总览
+- [智能体 (Agents)](https://docs.feimacode.com/zh/vscode-copilot/agents/overview/): 智能体模式使用指南
+- [聊天 (Chat)](https://docs.feimacode.com/zh/vscode-copilot/chat/chat-view/): Copilot Chat 完全指南
+- [自定义 (Customization)](https://docs.feimacode.com/zh/vscode-copilot/customization/overview/): 自定义指令、智能体与技能
+
+## Product
+
+- [Feima Home](https://feimacode.com/): Main product website — pricing, download, and model catalog
+- [Terms of Service](https://feimacode.com/terms)
+- [Privacy Policy](https://feimacode.com/privacy)

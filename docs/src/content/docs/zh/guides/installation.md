@@ -1,6 +1,19 @@
 ---
 title: Installation
 description: Detailed installation instructions for Feima Copilot
+head:
+  - tag: script
+    attrs:
+      type: application/ld+json
+    content: |
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "安装飞码扣",
+        "description": "在 VS Code 中安装飞码扣扩展的分步指南",
+        "totalTime": "PT5M",
+        "inLanguage": "zh-CN"
+      }
 ---
 
 This guide covers all the installation options for Feima Copilot.

@@ -389,6 +389,67 @@ export default defineConfig({
         baseUrl: 'https://github.com/feimacode/feima-copilot-llms-extension/edit/main',
       },
       lastUpdated: true,
+
+      // SEO: Custom head tags for enhanced metadata
+      head: [
+        // Global keywords
+        {
+          tag: 'meta',
+          attrs: {
+            name: 'keywords',
+            content: isZh
+              ? '飞码扣, Feima, Feimacode, Feima Copilot, GitHub Copilot 替代, VS Code 扩展, 通义千问, Qwen, DeepSeek, 智谱, GLM, Kimi, 月之暗面, MiniMax, Mimo, 小米, 开源大模型, 替代模型, AI 编程助手, 按请求付费, 思维链, 视觉理解, Claude Code API, Copilot CLI, Codex'
+              : 'Feima, Feimacode, Feima Copilot, GitHub Copilot alternative, VS Code extension, Qwen, DeepSeek, GLM, Kimi, MiniMax, Mimo, open-weight LLM, alternative models, AI coding assistant, pay-per-request, chain-of-thought, vision, Claude Code API, Copilot CLI, Codex',
+          },
+        },
+        // Author
+        {
+          tag: 'meta',
+          attrs: { name: 'author', content: 'Feimacode Team' },
+        },
+        // Open Graph - Site name
+        {
+          tag: 'meta',
+          attrs: { property: 'og:site_name', content: isZh ? '飞码扣文档' : 'Feima Copilot Docs' },
+        },
+        // Open Graph - Type
+        {
+          tag: 'meta',
+          attrs: { property: 'og:type', content: 'website' },
+        },
+        // Open Graph - Locale
+        {
+          tag: 'meta',
+          attrs: { property: 'og:locale', content: isZh ? 'zh_CN' : 'en_US' },
+        },
+        // Twitter Card
+        {
+          tag: 'meta',
+          attrs: { name: 'twitter:card', content: 'summary_large_image' },
+        },
+        // Robots
+        {
+          tag: 'meta',
+          attrs: { name: 'robots', content: 'index, follow, max-image-preview:large' },
+        },
+        // Hreflang tags for bilingual builds
+        ...(!isZh && !isEn
+          ? [
+              {
+                tag: 'link',
+                attrs: { rel: 'alternate', hreflang: 'en', href: `${process.env.SITE_URL ?? 'https://docs.feimacode.com'}${process.env.BASE_PATH ?? '/'}` },
+              },
+              {
+                tag: 'link',
+                attrs: { rel: 'alternate', hreflang: 'zh-CN', href: `${process.env.SITE_URL ?? 'https://docs.feimacode.com'}/zh${process.env.BASE_PATH ?? '/'}` },
+              },
+              {
+                tag: 'link',
+                attrs: { rel: 'alternate', hreflang: 'x-default', href: `${process.env.SITE_URL ?? 'https://docs.feimacode.com'}${process.env.BASE_PATH ?? '/'}` },
+              },
+            ]
+          : []),
+      ],
     }),
   ],
 

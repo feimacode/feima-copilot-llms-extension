@@ -1,6 +1,33 @@
 ---
 title: Tool Guides
 description: Setup instructions for using Feima API with supported AI coding tools
+banner:
+  content: |
+    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
+head:
+  - tag: script
+    attrs:
+      type: application/ld+json
+    content: |
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "API Tool Guides for Feima Copilot",
+        "description": "Setup instructions for using Feima API with supported AI coding tools",
+        "author": {
+          "@type": "Organization",
+          "name": "Feimacode",
+          "url": "https://feimacode.com"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Feimacode",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://docs.feimacode.com/feima-icon.png"
+          }
+        }
+      }
 ---
 
 # Tool Guides

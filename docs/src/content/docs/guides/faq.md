@@ -1,6 +1,60 @@
 ---
 title: Frequently Asked Questions
 description: Common questions about Feima Copilot answered
+banner:
+  content: |
+    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
+head:
+  - tag: script
+    attrs:
+      type: application/ld+json
+    content: |
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Are there any regional restrictions?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Feima Copilot works globally without any regional restrictions or VPN requirements. All model requests are routed through our servers for stable and fast access."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What's the response latency?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Fast and stable. We use Singapore-based servers with excellent global connectivity. Response times vary by model: Qwen3.6 Flash (1-3 seconds), Qwen3.7 Max (3-8 seconds), Thinking Models (5-15 seconds)."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Feima work in mainland China?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. The China instance (auth.feimacode.cn / api.feimacode.cn) has been shut down as of June 22, 2026. Feima is only available through the Global instance (auth.feimacode.com / api.feimacode.com)."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How much does Feima cost?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Feima uses pay-per-request pricing. You get a free tier with weekly credits, and can purchase credit packs that never expire. No monthly subscription required."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which models are supported?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Feima supports 10+ top open-weight LLMs including Qwen 3.7, DeepSeek V4, GLM-5, Kimi K2.7, MiniMax M3, and Mimo V2.5 from leading providers like Alibaba, DeepSeek, Zhipu AI, Moonshot, MiniMax, and Xiaomi."
+            }
+          }
+        ]
+      }
 ---
 
 This page answers frequently asked questions about Feima Copilot. If you have other questions, please contact us through our [feedback channels](#feedback--support).

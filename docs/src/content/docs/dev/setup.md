@@ -1,6 +1,33 @@
 ---
 title: Development Setup
 description: Set up your development environment for contributing to Feima Copilot
+banner:
+  content: |
+    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
+head:
+  - tag: script
+    attrs:
+      type: application/ld+json
+    content: |
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "Development Setup for Feima Copilot",
+        "description": "Set up your development environment for contributing to Feima Copilot",
+        "author": {
+          "@type": "Organization",
+          "name": "Feimacode",
+          "url": "https://feimacode.com"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Feimacode",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://docs.feimacode.com/feima-icon.png"
+          }
+        }
+      }
 ---
 
 # Development Setup

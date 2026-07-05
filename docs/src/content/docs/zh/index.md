@@ -1,6 +1,22 @@
 ---
 title: 欢迎使用飞码扣
 description: 加速创意落地 - GitHub Copilot Chat 的中国 AI 模型支持
+banner:
+  content: |
+    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">安装飞码扣扩展</a>，为 GitHub Copilot 增加中国 AI 模型支持
+head:
+  - tag: script
+    attrs:
+      type: application/ld+json
+    content: |
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "飞码扣文档",
+        "url": "https://docs.feimacode.com/zh",
+        "description": "为 GitHub Copilot 提供中国 AI 模型支持的 VS Code 扩展文档",
+        "inLanguage": ["zh-CN", "en"]
+      }
 ---
 
 **加速创意落地 - Accelerating intent into execution**

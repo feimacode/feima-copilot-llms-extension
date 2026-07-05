@@ -1,6 +1,33 @@
 ---
 title: Using Models
 description: How to select and use different AI models in Feima Copilot
+banner:
+  content: |
+    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
+head:
+  - tag: script
+    attrs:
+      type: application/ld+json
+    content: |
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "Using AI Models in Feima Copilot",
+        "description": "Learn how to select and use different AI models in Feima Copilot",
+        "author": {
+          "@type": "Organization",
+          "name": "Feimacode",
+          "url": "https://feimacode.com"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Feimacode",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://docs.feimacode.com/feima-icon.png"
+          }
+        }
+      }
 ---
 
 # Using Models

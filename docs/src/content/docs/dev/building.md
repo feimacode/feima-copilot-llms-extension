@@ -1,6 +1,33 @@
 ---
 title: Building
 description: Build and package Feima Copilot for distribution
+banner:
+  content: |
+    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
+head:
+  - tag: script
+    attrs:
+      type: application/ld+json
+    content: |
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "Building Feima Copilot",
+        "description": "Build and package Feima Copilot for distribution",
+        "author": {
+          "@type": "Organization",
+          "name": "Feimacode",
+          "url": "https://feimacode.com"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Feimacode",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://docs.feimacode.com/feima-icon.png"
+          }
+        }
+      }
 ---
 
 # Building Guide

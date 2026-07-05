@@ -1,6 +1,48 @@
 ---
 title: Installation
 description: Detailed installation instructions for Feima Copilot
+banner:
+  content: |
+    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
+head:
+  - tag: script
+    attrs:
+      type: application/ld+json
+    content: |
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "Install Feima Copilot",
+        "description": "Step-by-step guide to install Feima Copilot extension in VS Code",
+        "totalTime": "PT5M",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Open VS Code",
+            "text": "Open Visual Studio Code on your computer"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Open Extensions",
+            "text": "Press Ctrl+Shift+X (or Cmd+Shift+X on Mac) to open the Extensions sidebar"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Search for Feima",
+            "text": "Type 'Feima Copilot' in the search box"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Install",
+            "text": "Click the Install button to install the extension"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Sign In",
+            "text": "Click the Feima icon in the sidebar and sign in with your Feimacode account"
+          }
+        ]
+      }
 ---
 
 # Installation Guide

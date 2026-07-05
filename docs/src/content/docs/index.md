@@ -1,6 +1,27 @@
 ---
 title: Feima Copilot Documentation
 description: Accelerating intent into execution - Alternative AI models for GitHub Copilot Chat
+banner:
+  content: |
+    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
+head:
+  - tag: script
+    attrs:
+      type: application/ld+json
+    content: |
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Feima Copilot Docs",
+        "url": "https://docs.feimacode.com",
+        "description": "VS Code extension for GitHub Copilot with open-weight AI model support",
+        "inLanguage": ["en", "zh-CN"],
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://docs.feimacode.com/?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
 ---
 
 # Welcome to Feima Copilot

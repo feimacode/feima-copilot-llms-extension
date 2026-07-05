@@ -1,6 +1,43 @@
 ---
 title: Quick Start
 description: Get up and running with Feima Copilot in minutes
+banner:
+  content: |
+    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
+head:
+  - tag: script
+    attrs:
+      type: application/ld+json
+    content: |
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "Quick Start with Feima Copilot",
+        "description": "Get started with Feima Copilot in just a few minutes",
+        "totalTime": "PT10M",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Install Extension",
+            "text": "Install Feima Copilot from VS Code Marketplace"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Sign In",
+            "text": "Sign in with your Feimacode account via OAuth2"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Select Model",
+            "text": "Choose your preferred AI model in Copilot Chat"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Start Coding",
+            "text": "Ask questions, get code suggestions, and boost your productivity"
+          }
+        ]
+      }
 ---
 
 # Quick Start Guide

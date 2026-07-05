@@ -1,6 +1,21 @@
 ---
 title: 常见问题
 description: 飞码扣常见问题解答
+banner:
+  content: |
+    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">安装飞码扣扩展</a>，为 GitHub Copilot 增加中国 AI 模型支持
+head:
+  - tag: script
+    attrs:
+      type: application/ld+json
+    content: |
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "name": "飞码扣常见问题",
+        "description": "飞码扣常见问题解答",
+        "inLanguage": "zh-CN"
+      }
 ---
 
 本页面解答关于飞码扣的常见问题。如有其他问题，请通过[反馈渠道](#反馈与支持)联系我们。

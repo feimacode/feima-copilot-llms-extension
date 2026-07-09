@@ -312,12 +312,12 @@ The following models are compatible with the Anthropic Messages API:
 
 | Model ID | Model Name |
 |----------|------------|
-| `feima/minimax-m3` | MiniMax M3 |
-| `feima/minimax-m2.7` | MiniMax M2.7 |
-| `feima/minimax-m2.5` | MiniMax M2.5 |
-| `feima/qwen3.7-max` | Qwen 3.7 Max |
-| `feima/qwen3.7-plus` | Qwen 3.7 Plus |
-| `feima/qwen3.6-plus` | Qwen 3.6 Plus |
+| `minimax-m3` | MiniMax M3 |
+| `minimax-m2.7` | MiniMax M2.7 |
+| `minimax-m2.5` | MiniMax M2.5 |
+| `qwen3.7-max` | Qwen 3.7 Max |
+| `qwen3.7-plus` | Qwen 3.7 Plus |
+| `qwen3.6-plus` | Qwen 3.6 Plus |
 
 ### Configuring Claude Code
 
@@ -326,11 +326,11 @@ Set the `ANTHROPIC_BASE_URL` and `ANTHROPIC_MODEL` to use one of the compatible 
 ```bash
 export ANTHROPIC_BASE_URL=https://api.feimacode.com
 export ANTHROPIC_API_KEY=feima_sk_your_key_here
-export ANTHROPIC_MODEL=feima/minimax-m3
-export ANTHROPIC_DEFAULT_HAIKU_MODEL=feima/minimax-m3
-export ANTHROPIC_DEFAULT_SONNET_MODEL=feima/minimax-m3
-export ANTHROPIC_DEFAULT_OPUS_MODEL=feima/minimax-m3
-export ANTHROPIC_REASONING_MODEL=feima/minimax-m3
+export ANTHROPIC_MODEL=minimax-m3
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=minimax-m3
+export ANTHROPIC_DEFAULT_SONNET_MODEL=minimax-m3
+export ANTHROPIC_DEFAULT_OPUS_MODEL=minimax-m3
+export ANTHROPIC_REASONING_MODEL=minimax-m3
 ```
 
 Or in `~/.claude/settings.json`:
@@ -340,11 +340,11 @@ Or in `~/.claude/settings.json`:
   "env": {
     "ANTHROPIC_AUTH_TOKEN": "feima_sk_your_key_here",
     "ANTHROPIC_BASE_URL": "https://api.feimacode.com",
-    "ANTHROPIC_MODEL": "feima/minimax-m3",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "feima/minimax-m3",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL": "feima/minimax-m3",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "feima/minimax-m3",
-    "ANTHROPIC_REASONING_MODEL": "feima/minimax-m3"
+    "ANTHROPIC_MODEL": "minimax-m3",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "minimax-m3",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "minimax-m3",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "minimax-m3",
+    "ANTHROPIC_REASONING_MODEL": "minimax-m3"
   }
 }
 ```

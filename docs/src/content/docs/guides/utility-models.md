@@ -133,6 +133,53 @@ Explicitly set a fast, inexpensive model for utility flows:
 **Pros**: Uses Copilot's optimized utility models.
 **Cons**: Requires an active GitHub Copilot subscription.
 
+## Anthropic Messages API-Compatible Models
+
+When using Feima models with **Claude Code** or any tool that speaks the Anthropic Messages API, only a subset of models are available. The Anthropic Messages API format is different from the OpenAI-compatible format, and not all Feima models support it.
+
+The following models are compatible with the Anthropic Messages API:
+
+| Model ID | Model Name |
+|----------|------------|
+| `feima/minimax-m3` | MiniMax M3 |
+| `feima/minimax-m2.7` | MiniMax M2.7 |
+| `feima/minimax-m2.5` | MiniMax M2.5 |
+| `feima/qwen3.7-max` | Qwen 3.7 Max |
+| `feima/qwen3.7-plus` | Qwen 3.7 Plus |
+| `feima/qwen3.6-plus` | Qwen 3.6 Plus |
+
+### Configuring Claude Code
+
+Set the `ANTHROPIC_BASE_URL` and `ANTHROPIC_MODEL` to use one of the compatible models:
+
+```bash
+export ANTHROPIC_BASE_URL=https://api.feimacode.com
+export ANTHROPIC_API_KEY=feima_sk_your_key_here
+export ANTHROPIC_MODEL=feima/minimax-m3
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=feima/minimax-m3
+export ANTHROPIC_DEFAULT_SONNET_MODEL=feima/minimax-m3
+export ANTHROPIC_DEFAULT_OPUS_MODEL=feima/minimax-m3
+export ANTHROPIC_REASONING_MODEL=feima/minimax-m3
+```
+
+Or in `~/.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "feima_sk_your_key_here",
+    "ANTHROPIC_BASE_URL": "https://api.feimacode.com",
+    "ANTHROPIC_MODEL": "feima/minimax-m3",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "feima/minimax-m3",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "feima/minimax-m3",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "feima/minimax-m3",
+    "ANTHROPIC_REASONING_MODEL": "feima/minimax-m3"
+  }
+}
+```
+
+> **Note:** `ANTHROPIC_BASE_URL` should point to the root API URL — do not append `/v1`. This is the Anthropic Messages API convention.
+
 ## Recommended Feima Models for Utility Tasks
 
 For utility flows, we recommend fast, cost-effective models:

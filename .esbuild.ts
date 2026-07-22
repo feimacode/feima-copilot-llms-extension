@@ -28,7 +28,13 @@ const extensionBuildOptions = {
 		{ in: './src/extension/extension.ts', out: 'extension' },
 	],
 	external: [
-		'vscode' // the vscode-module is created on-the-fly and must be excluded
+		'vscode', // the vscode-module is created on-the-fly and must be excluded
+		// Agent SDKs have native .node binaries (koffi FFI, prebuilds) that
+		// esbuild cannot bundle. They are loaded from node_modules at runtime.
+		'@github/copilot-sdk',
+		'@github/copilot',
+		'@anthropic-ai/claude-agent-sdk',
+		'koffi',
 	],
 	platform: 'node',
 	mainFields: ["module", "main"],

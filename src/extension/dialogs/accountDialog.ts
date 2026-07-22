@@ -8,6 +8,8 @@ import { FeimaAuthenticationService } from '../platform/authentication/vscode/fe
 import { ILogger } from '../platform/log/common/logService';
 import { getResolvedConfig } from '../../config/configService';
 import { FEIMA_REGION } from '../../config/regions';
+import { getProxyInfo, detectCliStatuses, type CliStatus } from '../agents/agentDiagnostics';
+import type { ProxyInfo } from '../agents/common/proxy/proxyManager';
 
 // ============= Data Interfaces =============
 
@@ -340,6 +342,12 @@ export async function showAccountDialog(
 	const transactions = await fetchTransactions(authService, 20, logger);
 	const apiCalls = await fetchApiCalls(authService, 20, logger);
 
+	// Fetch agent diagnostics: proxy endpoints/nonces + CLI install status.
+	// These let users configure external CLIs (Claude Code, Codex, Copilot)
+	// and provide diagnostic info when a participant misbehaves.
+	const proxyInfo = await getProxyInfo();
+	const cliStatuses = detectCliStatuses();
+
 	// Get warning threshold from settings
 	const config = vscode.workspace.getConfiguration('feima');
 	const warnThreshold = config.get<number>('warnWhenQuotaLow', 50);
@@ -381,6 +389,12 @@ export async function showAccountDialog(
 					if (message.text) {
 						await vscode.env.clipboard.writeText(message.text);
 						vscode.window.showInformationMessage(vscode.l10n.t('Referral code copied to clipboard'));
+					}
+					break;
+				case 'copyText':
+					if (message.text) {
+						await vscode.env.clipboard.writeText(message.text);
+						vscode.window.showInformationMessage(vscode.l10n.t('Copied to clipboard'));
 					}
 					break;
 				case 'viewMore':
@@ -426,6 +440,8 @@ export async function showAccountDialog(
 		apiCalls,
 		profileUrl: `${getResolvedConfig().websiteBaseUrl || 'https://feimacode.cn'}/profile`,
 		isGlobalMarket: FEIMA_REGION === 'global',
+		proxyInfo,
+		cliStatuses,
 	});
 
 	logger.info(`[AccountDialog] Dialog shown for user: ${userName}`);
@@ -450,6 +466,8 @@ function getAccountHtml(data: {
 	apiCalls: ApiCall[];
 	profileUrl: string;
 	isGlobalMarket: boolean;
+	proxyInfo: ProxyInfo | null;
+	cliStatuses: CliStatus[];
 }): string {
 	const formatNumber = (n: number) => n.toLocaleString();
 	const _formatDate = (dateStr: string) => {
@@ -555,6 +573,65 @@ function getAccountHtml(data: {
 				</tbody>
 			</table>
 			${data.apiCalls.length > 0 ? `<button class="link-btn" onclick="viewMore('#api-calls')">${t('View More')} →</button>` : ''}
+		</div>
+	`;
+
+	// ── Agent Proxy section ──
+	// Shows the localhost proxy endpoints + nonces so users can point external
+	// CLIs (Claude Code, Codex, Copilot) at Feima's model routing.
+	const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+	const proxySection = data.proxyInfo ? `
+		<div class="section">
+			<h3>🔌 ${t('Agent Proxy')}</h3>
+			<p class="section-hint">${t('Use these endpoints to route Claude Code, Codex, or Copilot CLI through Feima models.')}</p>
+			<div class="kv-row">
+				<span class="kv-label">${t('Responses URL')}</span>
+				<code class="kv-value">${esc(data.proxyInfo.responsesUrl)}</code>
+				<button class="copy-btn" onclick="copyText('${esc(data.proxyInfo.responsesUrl)}', this)">${t('Copy')}</button>
+			</div>
+			<div class="kv-row">
+				<span class="kv-label">${t('Responses Token')}</span>
+				<code class="kv-value secret">${esc(data.proxyInfo.responsesNonce)}</code>
+				<button class="copy-btn" onclick="copyText('${esc(data.proxyInfo.responsesNonce)}', this)">${t('Copy')}</button>
+			</div>
+			<div class="kv-row">
+				<span class="kv-label">${t('Messages URL')}</span>
+				<code class="kv-value">${esc(data.proxyInfo.messagesUrl)}</code>
+				<button class="copy-btn" onclick="copyText('${esc(data.proxyInfo.messagesUrl)}', this)">${t('Copy')}</button>
+			</div>
+			<div class="kv-row">
+				<span class="kv-label">${t('Messages Token')}</span>
+				<code class="kv-value secret">${esc(data.proxyInfo.messagesNonce)}</code>
+				<button class="copy-btn" onclick="copyText('${esc(data.proxyInfo.messagesNonce)}', this)">${t('Copy')}</button>
+			</div>
+		</div>
+	` : '';
+
+	// ── CLI Status section ──
+	// Shows whether each agent CLI is installed and its resolved location, to
+	// help users diagnose participant issues.
+	const cliRows = data.cliStatuses.map(cli => {
+		const status = cli.installed
+			? `<span class="cli-status cli-ok">✓ ${t('Installed')}</span>`
+			: `<span class="cli-status cli-missing">✗ ${t('Not found')}</span>`;
+		const location = cli.installed && cli.path
+			? `<code class="kv-value">${esc(cli.path)}</code><button class="copy-btn" onclick="copyText('${esc(cli.path)}', this)">${t('Copy')}</button>`
+			: `<span class="cli-hint">${t('Set {0} or add to PATH', cli.settingKey)}</span>`;
+		return `
+			<div class="cli-row">
+				<div class="cli-head">
+					<span class="cli-name">${esc(cli.displayName)}</span>
+					${status}
+				</div>
+				<div class="kv-row">${location}</div>
+			</div>
+		`;
+	}).join('');
+	const cliSection = `
+		<div class="section">
+			<h3>🧰 ${t('Agent CLI Status')}</h3>
+			<p class="section-hint">${t('Locations of the agent CLIs. Share these when reporting participant issues.')}</p>
+			${cliRows}
 		</div>
 	`;
 
@@ -774,6 +851,78 @@ function getAccountHtml(data: {
 		button:hover {
 			opacity: 0.9;
 		}
+		.section-hint {
+			color: var(--vscode-descriptionForeground);
+			font-size: 12px;
+			margin: 0 0 12px;
+		}
+		.kv-row {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 6px 0;
+		}
+		.kv-label {
+			color: var(--vscode-descriptionForeground);
+			font-size: 13px;
+			min-width: 120px;
+			flex-shrink: 0;
+		}
+		.kv-value {
+			background: var(--vscode-input-background);
+			padding: 4px 10px;
+			border-radius: 4px;
+			font-family: var(--vscode-editor-font-family);
+			font-size: 12px;
+			flex: 1;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+		.kv-value.secret {
+			filter: blur(4px);
+			transition: filter 0.15s;
+			cursor: pointer;
+		}
+		.kv-value.secret:hover {
+			filter: none;
+		}
+		.cli-row {
+			padding: 8px 0;
+			border-bottom: 1px solid var(--vscode-editorWidget-border);
+		}
+		.cli-row:last-child {
+			border-bottom: none;
+		}
+		.cli-head {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			margin-bottom: 4px;
+		}
+		.cli-name {
+			font-weight: 600;
+			font-size: 13px;
+		}
+		.cli-status {
+			padding: 2px 8px;
+			border-radius: 10px;
+			font-size: 11px;
+			font-weight: 500;
+		}
+		.cli-ok {
+			background: rgba(0, 128, 0, 0.2);
+			color: #4caf50;
+		}
+		.cli-missing {
+			background: rgba(255, 0, 0, 0.15);
+			color: #f44336;
+		}
+		.cli-hint {
+			color: var(--vscode-descriptionForeground);
+			font-size: 12px;
+			font-style: italic;
+		}
 	</style>
 </head>
 <body>
@@ -787,6 +936,10 @@ function getAccountHtml(data: {
 		</div>
 		${statusBadge}
 	</div>
+
+	${proxySection}
+
+	${cliSection}
 
 	<div class="section">
 		<h3>💰 ${warningIcon} ${t('Balance')}</h3>
@@ -831,6 +984,14 @@ function getAccountHtml(data: {
 		}
 		function copyReferralCode() {
 			vscode.postMessage({ command: 'copyReferralCode', text: referralCode });
+		}
+		function copyText(text, btn) {
+			vscode.postMessage({ command: 'copyText', text: text });
+			if (btn) {
+				const original = btn.textContent;
+				btn.textContent = '✓';
+				setTimeout(() => { btn.textContent = original; }, 1200);
+			}
 		}
 		function viewMore(hash) {
 			vscode.postMessage({ command: 'viewMore', url: profileUrl + hash });

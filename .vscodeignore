@@ -12,7 +12,15 @@ src/i18n/**
 **/*.ts
 **/tsconfig.json
 **/.esbuild.ts
-**/node_modules/**
+# Exclude all node_modules by default, then re-include the agent SDK
+# packages that are marked external in esbuild (native .node binaries,
+# koffi FFI, platform prebuilds) and cannot be bundled into dist/.
+node_modules/*
+!node_modules/@github/
+!node_modules/@anthropic-ai/
+!node_modules/koffi/
+!node_modules/vscode-jsonrpc/
+!node_modules/zod/
 **/.vscode/**
 **/.github/**
 **/test/**

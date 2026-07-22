@@ -1,230 +1,350 @@
 {
-  "name": "copilot-cn-models",
-  "displayName": "%extension.displayName%",
-  "description": "%extension.description%",
-  "version": "0.1.24",
-  "publisher": "feima",
-  "author": {
-    "name": "Feima",
-    "email": "support@feimacode.cn"
-  },
-  "license": "MIT",
-  "icon": "assets/ext-icon3.png",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/feimacode/feima-copilot-llms-extension"
-  },
-  "bugs": {
-    "url": "https://github.com/feimacode/feima-copilot-llms-extension/issues"
-  },
-  "homepage": "https://github.com/feimacode/feima-copilot-llms-extension#readme",
-  "keywords": [
-    "Copilot",
-    "GitHub Copilot",
-    "Copilot Chat",
-    "VS Code",
-    "飞码扣",
-    "Feimacode",
-    "Feima",
-    "DeepSeek",
-    "Qwen",
-    "通义千问",
-    "Tongyi",
-    "GLM",
-    "智谱",
-    "Zhipu",
-    "ChatGLM",
-    "MiniMax",
-    "Kimi",
-    "月之暗面",
-    "Moonshot",
-    "Mimo",
-    "Xiaomi",
-    "小米",
-    "AI",
-    "LLM",
-    "large-language-model",
-    "language-model",
-    "chat-model",
-    "chatbot",
-    "assistant",
-    "code-assistant",
-    "coding-assistant",
-    "completion",
-    "agent",
-    "programming",
-    "developer-tools"
-  ],
-  "categories": [
-    "AI",
-    "Programming Languages",
-    "Chat"
-  ],
-  "engines": {
-    "vscode": "^1.85.0"
-  },
-  "enabledApiProposals": [
-    "chatProvider",
-    "inlineCompletionsAdditions",
-    "languageModelThinkingPart"
-  ],
-  "extensionDependencies": [
-    "github.copilot-chat"
-  ],
-  "activationEvents": [
-    "onStartupFinished",
-    "onLanguageModelChatProvider:feima"
-  ],
-  "l10n": "./l10n",
-  "main": "./dist/extension.js",
-  "contributes": {
-    "languageModelChatProviders": [
-      {
-        "vendor": "feima",
-        "displayName": "%extension.displayName% (Feima)"
-      }
-    ],
-    "commands": [
-      {
-        "command": "feima.signIn",
-        "title": "%command.signIn.title%",
-        "category": "%command.signIn.category%"
-      },
-      {
-        "command": "feima.signOut",
-        "title": "%command.signOut.title%",
-        "category": "%command.signOut.category%"
-      },
-      {
-        "command": "feima.showAccount",
-        "title": "%command.showAccount.title%",
-        "category": "%command.showAccount.category%"
-      }
-    ],
-    "configuration": {
-      "title": "%extension.displayName%",
-      "properties": {
-        "feima.auth.baseUrl": {
-          "type": "string",
-          "default": "%default.auth.baseUrl%",
-          "markdownDescription": "%settings.auth.baseUrl.description%",
-          "scope": "machine-overridable"
-        },
-        "feima.api.baseUrl": {
-          "type": "string",
-          "default": "%default.api.baseUrl%",
-          "markdownDescription": "%settings.api.baseUrl.description%",
-          "scope": "machine-overridable"
-        },
-        "feima.auth.clientId": {
-          "type": "string",
-          "default": "vscode-feima-client",
-          "markdownDescription": "%settings.auth.clientId.description%",
-          "scope": "machine-overridable"
-        },
-        "feima.auth.issuer": {
-          "type": "string",
-          "default": "%default.auth.issuer%",
-          "markdownDescription": "%settings.auth.issuer.description%",
-          "scope": "machine-overridable"
-        },
-        "feima.promotionUrl": {
-          "type": "string",
-          "default": "%default.promotionUrl%",
-          "markdownDescription": "%settings.promotionUrl.description%",
-          "scope": "machine-overridable"
-        },
-        "feima.website.baseUrl": {
-          "type": "string",
-          "default": "%default.website.baseUrl%",
-          "markdownDescription": "%settings.website.baseUrl.description%",
-          "scope": "machine-overridable"
-        },
-        "feima.showQuotaInStatusBar": {
-          "type": "boolean",
-          "default": true,
-          "description": "%settings.showQuotaInStatusBar.description%"
-        },
-        "feima.warnWhenQuotaLow": {
-          "type": "number",
-          "default": 50,
-          "description": "%settings.warnWhenQuotaLow.description%"
-        }
-      }
-    },
-    "icons": {
-      "feima-logo": {
-        "description": "Feima icon",
-        "default": {
-          "fontPath": "assets/feima-icons.woff",
-          "fontCharacter": "\\f101"
-        }
-      }
-    },
-    "iconFonts": [
-      {
-        "id": "feima-font",
-        "src": [
-          {
-            "path": "assets/feima-icons.woff",
-            "format": "woff"
-          }
-        ]
-      }
-    ]
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run ext:package",
-    "ext:build": "tsx .esbuild.ts",
-    "ext:compile": "tsx .esbuild.ts --dev",
-    "ext:build:global": "FEIMA_REGION=global tsx .esbuild.ts",
-    "ext:watch": "tsx .esbuild.ts --watch --dev",
-    "ext:package": "tsx .esbuild.ts",
-    "ext:compile-tests": "tsc -p . --outDir out",
-    "ext:watch-tests": "tsc -p . -w --outDir out",
-    "ext:pretest": "npm run ext:compile-tests && npm run ext:compile && npm run ext:lint",
-    "ext:lint": "eslint src --ext ts",
-    "ext:test": "node ./out/test/runTest.js",
-    "docs:dev": "cd docs && npm run dev",
-    "docs:build": "cd docs && npm run build",
-    "docs:preview": "cd docs && npm run preview",
-    "build": "tsx .esbuild.ts",
-    "build:cn": "FEIMA_REGION=cn tsx build/build.ts",
-    "build:global": "FEIMA_REGION=global tsx build/build.ts",
-    "build:all": "npm run build:cn && npm run build:global",
-    "compile": "tsx .esbuild.ts --dev",
-    "watch": "tsx .esbuild.ts --watch --dev",
-    "package": "tsx .esbuild.ts",
-    "package:cn": "FEIMA_REGION=cn npm run package",
-    "package:global": "FEIMA_REGION=global npm run package",
-    "compile-tests": "tsc -p . --outDir out",
-    "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "npm run compile-tests && npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js",
-    "test:unit": "tsc -p src/test/unit/tsconfig.json --outDir out --noEmit false && mocha 'out/test/unit/**/*.test.js' --timeout 5000",
-    "validate:vsix": "./build/validate-vsix.sh"
-  },
-  "devDependencies": {
-    "@types/glob": "^8.1.0",
-    "@types/mocha": "^10.0.6",
-    "@types/node": "18.x",
-    "@types/node-fetch": "^2.6.11",
-    "@types/vscode": "^1.85.0",
-    "@typescript-eslint/eslint-plugin": "^6.15.0",
-    "@typescript-eslint/parser": "^6.15.0",
-    "@vscode/test-electron": "^2.3.8",
-    "@vscode/vsce": "^3.2.1",
-    "esbuild": "^0.25.6",
-    "eslint": "^8.56.0",
-    "fantasticon": "^4.1.0",
-    "glob": "^10.3.10",
-    "mocha": "^10.2.0",
-    "tsx": "^4.7.0",
-    "typescript": "^5.3.3"
-  },
-  "dependencies": {
-    "js-tiktoken": "^1.0.12",
-    "node-fetch": "^2.7.0"
-  }
+	"name": "copilot-more-llms",
+	"displayName": "Feima Copilot Models",
+	"description": "Feima Copilot — add DeepSeek, Qwen, GLM, MiniMax, Kimi, Mimo and more top LLMs to GitHub Copilot Chat in VS Code. Pay-as-you-go, OAuth sign-in, chain-of-thought and vision support.",
+	"version": "0.1.24",
+	"publisher": "feima",
+	"author": {
+		"name": "Feima",
+		"email": "support@feimacode.cn"
+	},
+	"license": "MIT",
+	"icon": "assets/ext-icon3.png",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/feimacode/feima-copilot-llms-extension"
+	},
+	"bugs": {
+		"url": "https://github.com/feimacode/feima-copilot-llms-extension/issues"
+	},
+	"homepage": "https://github.com/feimacode/feima-copilot-llms-extension#readme",
+	"keywords": [
+		"Copilot",
+		"GitHub Copilot",
+		"Copilot Chat",
+		"VS Code",
+		"飞码扣",
+		"Feimacode",
+		"Feima",
+		"DeepSeek",
+		"Qwen",
+		"通义千问",
+		"Tongyi",
+		"GLM",
+		"智谱",
+		"Zhipu",
+		"ChatGLM",
+		"MiniMax",
+		"Kimi",
+		"月之暗面",
+		"Moonshot",
+		"Mimo",
+		"Xiaomi",
+		"小米",
+		"AI",
+		"LLM",
+		"large-language-model",
+		"language-model",
+		"chat-model",
+		"chatbot",
+		"assistant",
+		"code-assistant",
+		"coding-assistant",
+		"completion",
+		"agent",
+		"programming",
+		"developer-tools"
+	],
+	"categories": [
+		"AI",
+		"Programming Languages",
+		"Chat"
+	],
+	"engines": {
+		"vscode": "^1.85.0"
+	},
+	"enabledApiProposals": [
+		"chatProvider",
+		"chatParticipantAdditions",
+		"inlineCompletionsAdditions",
+		"languageModelThinkingPart"
+	],
+	"extensionDependencies": [
+		"github.copilot-chat"
+	],
+	"activationEvents": [
+		"onStartupFinished",
+		"onLanguageModelChatProvider:feima",
+		"onLanguageModelChatProvider:codex",
+		"onLanguageModelChatProvider:claude-code",
+		"onChatParticipant:codex.participant",
+		"onChatParticipant:copilot-cli.participant",
+		"onChatParticipant:claude.participant"
+	],
+	"l10n": "./l10n",
+	"main": "./dist/extension.js",
+	"contributes": {
+		"languageModelChatProviders": [
+			{
+				"vendor": "feima",
+				"displayName": "Feima Copilot Models (Feima)"
+			},
+			{
+				"vendor": "codex",
+				"displayName": "Codex (OpenAI)"
+			},
+			{
+				"vendor": "claude-code",
+				"displayName": "Claude Code"
+			}
+		],
+		"chatParticipants": [
+			{
+				"id": "codex.participant",
+				"name": "codex",
+				"description": "Codex AI agent — edits files, runs commands, and explores your codebase",
+				"isSticky": true
+			},
+			{
+				"id": "copilot-cli.participant",
+				"name": "copilot-cli",
+				"description": "GitHub Copilot CLI agent — coding and terminal tasks via Copilot CLI",
+				"isSticky": true
+			},
+			{
+				"id": "claude.participant",
+				"name": "claude",
+				"description": "Claude Code agent — edits files, runs commands, and explores your codebase",
+				"isSticky": true
+			}
+		],
+		"commands": [
+			{
+				"command": "feima.signIn",
+				"title": "Sign In",
+				"category": "Feima"
+			},
+			{
+				"command": "feima.signOut",
+				"title": "Sign Out",
+				"category": "Feima"
+			},
+			{
+				"command": "feima.showAccount",
+				"title": "View Account",
+				"category": "Feima"
+			},
+			{
+				"command": "feima.agents.clearCodexToolCache",
+				"title": "Clear Codex Dynamic Tool Cache",
+				"category": "Feima Agents"
+			}
+		],
+		"configuration": {
+			"title": "Feima Copilot Models",
+			"properties": {
+				"feima.auth.baseUrl": {
+					"type": "string",
+					"default": "https://auth.feimacode.com",
+					"markdownDescription": "OAuth2 authentication server base URL (overrides region default)",
+					"scope": "machine-overridable"
+				},
+				"feima.api.baseUrl": {
+					"type": "string",
+					"default": "https://api.feimacode.com/v1",
+					"markdownDescription": "Model inference API server base URL (overrides region default)",
+					"scope": "machine-overridable"
+				},
+				"feima.auth.clientId": {
+					"type": "string",
+					"default": "vscode-feima-client",
+					"markdownDescription": "OAuth2 client ID for authentication (overrides region default)",
+					"scope": "machine-overridable"
+				},
+				"feima.auth.issuer": {
+					"type": "string",
+					"default": "https://auth.feimacode.com",
+					"markdownDescription": "OAuth2 issuer URL (overrides region default)",
+					"scope": "machine-overridable"
+				},
+				"feima.promotionUrl": {
+					"type": "string",
+					"default": "https://feimacode.com/promotion",
+					"markdownDescription": "URL for the credits promotion page (shown when balance runs out)",
+					"scope": "machine-overridable"
+				},
+				"feima.website.baseUrl": {
+					"type": "string",
+					"default": "https://feimacode.com",
+					"markdownDescription": "Base URL for the Feima website (used for profile and activity log links)",
+					"scope": "machine-overridable"
+				},
+				"feima.showQuotaInStatusBar": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show remaining request quota in status bar"
+				},
+				"feima.warnWhenQuotaLow": {
+					"type": "number",
+					"default": 50,
+					"description": "Show warning when remaining requests drop below this number"
+				},
+				"feima.agents.codex.binaryPath": {
+					"type": "string",
+					"default": "",
+					"markdownDescription": "Absolute path to the `codex` binary. Leave empty to auto-discover via PATH.",
+					"scope": "machine-overridable"
+				},
+				"feima.agents.copilot.binaryPath": {
+					"type": "string",
+					"default": "",
+					"markdownDescription": "Absolute path to the GitHub Copilot CLI binary. Leave empty to auto-discover via PATH.",
+					"scope": "machine-overridable"
+				},
+				"feima.agents.claude.binaryPath": {
+					"type": "string",
+					"default": "",
+					"markdownDescription": "Absolute path to the `claude` binary. Leave empty to auto-discover via PATH.",
+					"scope": "machine-overridable"
+				},
+				"feima.agents.codex.mcpServers": {
+					"type": "object",
+					"default": {},
+					"markdownDescription": "MCP server configuration passed to Codex. Each key is a server name; value is `{ command, args?, env?, url? }`.",
+					"additionalProperties": {
+						"type": "object",
+						"properties": {
+							"command": {
+								"type": "string"
+							},
+							"args": {
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							},
+							"env": {
+								"type": "object",
+								"additionalProperties": {
+									"type": "string"
+								}
+							},
+							"url": {
+								"type": "string"
+							}
+						},
+						"additionalProperties": true
+					},
+					"scope": "machine-overridable"
+				},
+				"feima.agents.claude.mcpServers": {
+					"type": "object",
+					"default": {},
+					"markdownDescription": "MCP server configuration passed to Claude Code. Each key is a server name; value is `{ command, args?, env?, url? }`.",
+					"additionalProperties": {
+						"type": "object",
+						"properties": {
+							"command": {
+								"type": "string"
+							},
+							"args": {
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							},
+							"env": {
+								"type": "object",
+								"additionalProperties": {
+									"type": "string"
+								}
+							},
+							"url": {
+								"type": "string"
+							}
+						},
+						"additionalProperties": true
+					},
+					"scope": "machine-overridable"
+				}
+			}
+		},
+		"icons": {
+			"feima-logo": {
+				"description": "Feima icon",
+				"default": {
+					"fontPath": "assets/feima-icons.woff",
+					"fontCharacter": "\\f101"
+				}
+			}
+		},
+		"iconFonts": [
+			{
+				"id": "feima-font",
+				"src": [
+					{
+						"path": "assets/feima-icons.woff",
+						"format": "woff"
+					}
+				]
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run ext:package",
+		"ext:build": "tsx .esbuild.ts",
+		"ext:compile": "tsx .esbuild.ts --dev",
+		"ext:build:global": "FEIMA_REGION=global tsx .esbuild.ts",
+		"ext:watch": "tsx .esbuild.ts --watch --dev",
+		"ext:package": "tsx .esbuild.ts",
+		"ext:compile-tests": "tsc -p . --outDir out",
+		"ext:watch-tests": "tsc -p . -w --outDir out",
+		"ext:pretest": "npm run ext:compile-tests && npm run ext:compile && npm run ext:lint",
+		"ext:lint": "eslint src --ext ts",
+		"ext:test": "node ./out/test/runTest.js",
+		"docs:dev": "cd docs && npm run dev",
+		"docs:build": "cd docs && npm run build",
+		"docs:preview": "cd docs && npm run preview",
+		"build": "tsx .esbuild.ts",
+		"build:cn": "FEIMA_REGION=cn tsx build/build.ts",
+		"build:global": "FEIMA_REGION=global tsx build/build.ts",
+		"build:all": "npm run build:cn && npm run build:global",
+		"compile": "tsx .esbuild.ts --dev",
+		"watch": "tsx .esbuild.ts --watch --dev",
+		"package": "tsx .esbuild.ts",
+		"package:cn": "FEIMA_REGION=cn npm run package",
+		"package:global": "FEIMA_REGION=global npm run package",
+		"compile-tests": "tsc -p . --outDir out",
+		"watch-tests": "tsc -p . -w --outDir out",
+		"pretest": "npm run compile-tests && npm run compile && npm run lint",
+		"lint": "eslint src --ext ts",
+		"test": "node ./out/test/runTest.js",
+		"test:unit": "tsc -p src/test/unit/tsconfig.json --outDir out --noEmit false && mocha 'out/test/unit/**/*.test.js' --timeout 5000",
+		"validate:vsix": "./build/validate-vsix.sh"
+	},
+	"devDependencies": {
+		"@types/glob": "^8.1.0",
+		"@types/mocha": "^10.0.6",
+		"@types/node": "18.x",
+		"@types/node-fetch": "^2.6.11",
+		"@types/vscode": "^1.85.0",
+		"@typescript-eslint/eslint-plugin": "^6.15.0",
+		"@typescript-eslint/parser": "^6.15.0",
+		"@vscode/test-electron": "^2.3.8",
+		"@vscode/vsce": "^3.2.1",
+		"esbuild": "^0.25.6",
+		"eslint": "^8.56.0",
+		"fantasticon": "^4.1.0",
+		"glob": "^10.3.10",
+		"mocha": "^10.2.0",
+		"tsx": "^4.7.0",
+		"typescript": "^5.3.3"
+	},
+	"dependencies": {
+		"@anthropic-ai/claude-agent-sdk": "^0.3.216",
+		"@github/copilot-sdk": "^1.0.7",
+		"js-tiktoken": "^1.0.12",
+		"node-fetch": "^2.7.0",
+		"zod": "^4.4.3"
+	}
 }

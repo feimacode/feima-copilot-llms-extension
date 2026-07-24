@@ -44,6 +44,9 @@ export interface OptionsBuilderInput {
 	permissionMode?: PermissionMode;
 	/** MCP server configs to pass to the SDK */
 	mcpServers?: Record<string, unknown>;
+	/** Resolved path to the user's `claude` binary. When set, the SDK spawns
+	 *  this instead of its bundled platform binary (which we don't ship). */
+	claudeBinaryPath?: string;
 }
 
 // ─── Options Builder ─────────────────────────────────────────────────────────
@@ -63,6 +66,9 @@ export function buildClaudeOptions(input: OptionsBuilderInput): Options {
 	const options: Options = {
 		cwd,
 		abortController: new AbortController(),
+		// Use the user's locally-installed claude binary. We don't bundle the
+		// platform-specific binary package, so this must resolve from PATH/settings.
+		...(input.claudeBinaryPath ? { pathToClaudeCodeExecutable: input.claudeBinaryPath } : {}),
 		...(input.savedSessionId ? { resume: input.savedSessionId } : {}),
 		env: {
 			...process.env,

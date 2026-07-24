@@ -14,6 +14,7 @@ import { CopilotParticipant } from './copilot/copilotParticipant';
 import { ClaudeParticipant } from './claude/claudeParticipant';
 import { registerClaudeModels } from './claude/claudeModelProvider';
 import { setProxyManager } from './agentDiagnostics';
+import { installSdkStderrRedirect } from './common/sdkStdioRedirect';
 
 /**
  * Registers all agent chat participants (@codex, @copilot-cli, @claude),
@@ -27,8 +28,15 @@ export function registerAgents(context: vscode.ExtensionContext, logService: ILo
 	const log = logService.createSubLogger('Agents');
 	log.info('=== AGENT PARTICIPANTS REGISTRATION ===');
 
+	// ── SDK stderr redirect ───────────────────────────────────────────────
+	// The agent SDKs write diagnostics straight to process.stderr, which
+	// bypasses the Feima output panel. Forward those writes to the logger so
+	// they are visible alongside our own agent logs.
+	const disposeStderrRedirect = installSdkStderrRedirect(log);
+	context.subscriptions.push({ dispose: disposeStderrRedirect });
+
 	// ── LM Proxy (OpenAI Responses + Anthropic Messages) ──────────────────
-	const proxyManager = new ProxyManager(log);
+	const proxyManager = new ProxyManager(log.createSubLogger('Proxy'));
 	const proxyReady = proxyManager.start();
 	proxyReady.then(info => {
 		log.info(`Proxy ready — responses: ${info.responsesUrl}  messages: ${info.messagesUrl}`);

@@ -104,4 +104,9 @@
         "Installed": "已安装",
         "Not found": "未找到",
         "Set {0} or add to PATH": "请设置 {0} 或将其加入 PATH",
-        "Copied to clipboard": "已复制到剪贴板"
+        "Copied to clipboard": "已复制到剪贴板",
+        "Thinking": "思考过程",
+        "Running": "正在运行",
+        "{0} tool call(s)": "{0} 次工具调用",
+        "{0} file(s) changed": "{0} 个文件已更改"
+}

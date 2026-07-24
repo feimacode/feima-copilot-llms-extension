@@ -10,6 +10,7 @@ import { CODEX_PROVIDER_ID } from './codexModelProvider';
 import { ProxyManager } from '../common/proxy/proxyManager';
 import { DynamicToolManager } from '../common/tools/dynamicToolManager';
 import { VS_CODE_TOOL_INSTRUCTIONS } from '../common/constants/toolInstructions';
+import { emitThinkingProgress } from '../common/streamAdditions';
 import { PendingRequestRegistry } from '../common/util/pendingRequestRegistry';
 import { ILogService } from '../../platform/log/common/logService';
 import type {
@@ -349,8 +350,9 @@ export class CodexParticipant {
 				} catch (err) {
 					this._log.error(err instanceof Error ? err : String(err), 'resume failed');
 					stream.progress('Starting new session...');
+					const fallbackModelId = request.model.vendor ? `${request.model.vendor}/${request.model.id}` : request.model.id;
 					codexThread = await conn.startThread({
-						model: request.model.id, cwd,
+						model: fallbackModelId, cwd,
 						approvalPolicy: 'untrusted', sandbox: 'workspace-write',
 						dynamicTools, developerInstructions: VS_CODE_TOOL_INSTRUCTIONS,
 					});
@@ -358,8 +360,9 @@ export class CodexParticipant {
 			}
 		} else {
 			stream.progress('Starting new session...');
+			const modelId = request.model.vendor ? `${request.model.vendor}/${request.model.id}` : request.model.id;
 			codexThread = await conn.startThread({
-				model: request.model.id, cwd,
+				model: modelId, cwd,
 				approvalPolicy: 'untrusted', sandbox: 'workspace-write',
 				dynamicTools, developerInstructions: VS_CODE_TOOL_INSTRUCTIONS,
 			});
@@ -431,15 +434,15 @@ export class CodexParticipant {
 		let thinkingOpen = false;
 		ts.on('item/reasoning/summaryPartAdded', () => {
 			thinkingOpen = true;
-			stream.thinkingProgress!({ id: 'reasoning', text: 'Thinking…' });
+			emitThinkingProgress(stream, 'reasoning', 'Thinking…');
 		});
 		ts.on('item/reasoning/summaryTextDelta', (p: ReasoningSummaryTextDeltaNotification) => {
-			if (!thinkingOpen) { stream.thinkingProgress!({ id: 'reasoning', text: 'Thinking…' }); thinkingOpen = true; }
-			stream.thinkingProgress!({ id: p.itemId, text: p.delta });
+			if (!thinkingOpen) { emitThinkingProgress(stream, 'reasoning', 'Thinking…'); thinkingOpen = true; }
+			emitThinkingProgress(stream, p.itemId, p.delta);
 		});
 		ts.on('item/reasoning/textDelta', (p: ReasoningTextDeltaNotification) => {
-			if (!thinkingOpen) { stream.thinkingProgress!({ id: 'reasoning', text: 'Thinking…' }); thinkingOpen = true; }
-			stream.thinkingProgress!({ id: p.itemId, text: p.delta });
+			if (!thinkingOpen) { emitThinkingProgress(stream, 'reasoning', 'Thinking…'); thinkingOpen = true; }
+			emitThinkingProgress(stream, p.itemId, p.delta);
 		});
 
 		let progressLabel = '';
@@ -513,14 +516,18 @@ export class CodexParticipant {
 		});
 
 		ts.on('thread/tokenUsage/updated', (p: ThreadTokenUsageUpdatedNotification) => { if (p.tokenUsage.last) { this._log.debug(`token usage ${JSON.stringify(p.tokenUsage.last)}`); } });
-		ts.on('error', (err: Error) => {
-			session!.turnActive = false;
-			session!.currentAppTurnId = undefined;
-			session!.pendingCommandApprovals.denyAll('cancel');
-			session!.pendingFileChangeApprovals.denyAll('cancel');
-			session!.pendingMcpApprovals.denyAll('cancel');
-			session!.pendingToolCalls.rejectAll(err);
-			session!.turnReject(err);
+		// The `error` notification is informational — codex may retry (willRetry)
+		// or proceed to `turn/completed`. Do NOT reject the turn here; let
+		// `turn/completed` be the sole authority on turn completion.
+		ts.on('error', (err: unknown) => {
+			const errObj = err as { error?: { message?: string }; willRetry?: boolean };
+			this._log.debug(`codex error notification ${JSON.stringify({ message: errObj?.error?.message, willRetry: errObj?.willRetry })}`);
+			if (!errObj?.willRetry) {
+				// Surface the error to the user but don't end the turn — wait for
+				// turn/completed which carries the definitive status.
+				const msg = errObj?.error?.message ?? String(err);
+				stream.markdown(`\n\n> ⚠️ ${msg}\n`);
+			}
 		});
 		conn.on('error', (err: Error) => {
 			session!.turnActive = false;
@@ -545,7 +552,8 @@ export class CodexParticipant {
 		session.lastToolsHash = newToolsHash;
 		this._log.debug(`starting turn ${JSON.stringify({ prompt: request.prompt.slice(0, 120), threadId: codexThread.id, modelId: request.model.id })}`);
 		try {
-			const startResult = await conn.startTurn({ threadId: codexThread.id, input: [{ type: 'text', text: request.prompt }], model: request.model.id, approvalPolicy: 'untrusted' });
+			const turnModelId = request.model.vendor ? `${request.model.vendor}/${request.model.id}` : request.model.id;
+			const startResult = await conn.startTurn({ threadId: codexThread.id, input: [{ type: 'text', text: request.prompt }], model: turnModelId, approvalPolicy: 'untrusted' });
 			// Store the app-server turn id for cancellation (§8) and steering (§9).
 			session.currentAppTurnId = startResult.id;
 			await session.turnDone;

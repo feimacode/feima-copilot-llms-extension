@@ -6,6 +6,7 @@
 import { ILogService } from '../../../platform/log/common/logService';
 import { ProxyServer } from './proxyServer';
 import { createResponsesHandler, createResponsesModelsHandler } from './responsesProxy';
+import { createChatCompletionsHandler } from './chatCompletionsProxy';
 import { createMessagesHandler, createMessagesCountTokensHandler, createMessagesModelsHandler } from './messagesProxy';
 
 export interface ProxyInfo {
@@ -30,9 +31,11 @@ export class ProxyManager {
 	constructor(private readonly _log: ILogService) {
 		this._responses = new ProxyServer(this._log);
 		this._responses.addRoute('POST', '/v1/responses', createResponsesHandler(this._log));
+		this._responses.addRoute('POST', '/v1/chat/completions', createChatCompletionsHandler(this._log));
 		this._responses.addRoute('GET', '/v1/models', createResponsesModelsHandler(this._log));
-		// Also accept /responses without /v1/ prefix
+		// Also accept without /v1/ prefix
 		this._responses.addRoute('POST', '/responses', createResponsesHandler(this._log));
+		this._responses.addRoute('POST', '/chat/completions', createChatCompletionsHandler(this._log));
 		this._responses.addRoute('GET', '/models', createResponsesModelsHandler(this._log));
 
 		this._messages = new ProxyServer(this._log);

@@ -1,7 +1,7 @@
 {
 	"name": "copilot-more-llms",
-	"displayName": "Feima Copilot Models",
-	"description": "Feima Copilot — add DeepSeek, Qwen, GLM, MiniMax, Kimi, Mimo and more top LLMs to GitHub Copilot Chat in VS Code. Pay-as-you-go, OAuth sign-in, chain-of-thought and vision support.",
+	"displayName": "%extension.displayName%",
+	"description": "%extension.description%",
 	"version": "0.1.24",
 	"publisher": "feima",
 	"author": {
@@ -87,130 +87,130 @@
 		"languageModelChatProviders": [
 			{
 				"vendor": "feima",
-				"displayName": "Feima Copilot Models (Feima)"
+				"displayName": "%extension.displayName% (Feima)"
 			},
 			{
 				"vendor": "codex",
-				"displayName": "Codex (OpenAI)"
+				"displayName": "%provider.codex.displayName%"
 			},
 			{
 				"vendor": "claude-code",
-				"displayName": "Claude Code"
+				"displayName": "%provider.claude.displayName%"
 			}
 		],
 		"chatParticipants": [
 			{
 				"id": "codex.participant",
 				"name": "codex",
-				"description": "Codex AI agent — edits files, runs commands, and explores your codebase",
+				"description": "%participant.codex.description%",
 				"isSticky": true
 			},
 			{
 				"id": "copilot-cli.participant",
 				"name": "copilot-cli",
-				"description": "GitHub Copilot CLI agent — coding and terminal tasks via Copilot CLI",
+				"description": "%participant.copilot.description%",
 				"isSticky": true
 			},
 			{
 				"id": "claude.participant",
 				"name": "claude",
-				"description": "Claude Code agent — edits files, runs commands, and explores your codebase",
+				"description": "%participant.claude.description%",
 				"isSticky": true
 			}
 		],
 		"commands": [
 			{
 				"command": "feima.signIn",
-				"title": "Sign In",
-				"category": "Feima"
+				"title": "%command.signIn.title%",
+				"category": "%command.signIn.category%"
 			},
 			{
 				"command": "feima.signOut",
-				"title": "Sign Out",
-				"category": "Feima"
+				"title": "%command.signOut.title%",
+				"category": "%command.signOut.category%"
 			},
 			{
 				"command": "feima.showAccount",
-				"title": "View Account",
-				"category": "Feima"
+				"title": "%command.showAccount.title%",
+				"category": "%command.showAccount.category%"
 			},
 			{
 				"command": "feima.agents.clearCodexToolCache",
-				"title": "Clear Codex Dynamic Tool Cache",
-				"category": "Feima Agents"
+				"title": "%command.agents.clearCodexToolCache.title%",
+				"category": "%command.agents.category%"
 			}
 		],
 		"configuration": {
-			"title": "Feima Copilot Models",
+			"title": "%extension.displayName%",
 			"properties": {
 				"feima.auth.baseUrl": {
 					"type": "string",
-					"default": "https://auth.feimacode.com",
-					"markdownDescription": "OAuth2 authentication server base URL (overrides region default)",
+					"default": "%default.auth.baseUrl%",
+					"markdownDescription": "%settings.auth.baseUrl.description%",
 					"scope": "machine-overridable"
 				},
 				"feima.api.baseUrl": {
 					"type": "string",
-					"default": "https://api.feimacode.com/v1",
-					"markdownDescription": "Model inference API server base URL (overrides region default)",
+					"default": "%default.api.baseUrl%",
+					"markdownDescription": "%settings.api.baseUrl.description%",
 					"scope": "machine-overridable"
 				},
 				"feima.auth.clientId": {
 					"type": "string",
 					"default": "vscode-feima-client",
-					"markdownDescription": "OAuth2 client ID for authentication (overrides region default)",
+					"markdownDescription": "%settings.auth.clientId.description%",
 					"scope": "machine-overridable"
 				},
 				"feima.auth.issuer": {
 					"type": "string",
-					"default": "https://auth.feimacode.com",
-					"markdownDescription": "OAuth2 issuer URL (overrides region default)",
+					"default": "%default.auth.issuer%",
+					"markdownDescription": "%settings.auth.issuer.description%",
 					"scope": "machine-overridable"
 				},
 				"feima.promotionUrl": {
 					"type": "string",
-					"default": "https://feimacode.com/promotion",
-					"markdownDescription": "URL for the credits promotion page (shown when balance runs out)",
+					"default": "%default.promotionUrl%",
+					"markdownDescription": "%settings.promotionUrl.description%",
 					"scope": "machine-overridable"
 				},
 				"feima.website.baseUrl": {
 					"type": "string",
-					"default": "https://feimacode.com",
-					"markdownDescription": "Base URL for the Feima website (used for profile and activity log links)",
+					"default": "%default.website.baseUrl%",
+					"markdownDescription": "%settings.website.baseUrl.description%",
 					"scope": "machine-overridable"
 				},
 				"feima.showQuotaInStatusBar": {
 					"type": "boolean",
 					"default": true,
-					"description": "Show remaining request quota in status bar"
+					"description": "%settings.showQuotaInStatusBar.description%"
 				},
 				"feima.warnWhenQuotaLow": {
 					"type": "number",
 					"default": 50,
-					"description": "Show warning when remaining requests drop below this number"
+					"description": "%settings.warnWhenQuotaLow.description%"
 				},
 				"feima.agents.codex.binaryPath": {
 					"type": "string",
 					"default": "",
-					"markdownDescription": "Absolute path to the `codex` binary. Leave empty to auto-discover via PATH.",
+					"markdownDescription": "%settings.agents.codex.binaryPath.description%",
 					"scope": "machine-overridable"
 				},
 				"feima.agents.copilot.binaryPath": {
 					"type": "string",
 					"default": "",
-					"markdownDescription": "Absolute path to the GitHub Copilot CLI binary. Leave empty to auto-discover via PATH.",
+					"markdownDescription": "%settings.agents.copilot.binaryPath.description%",
 					"scope": "machine-overridable"
 				},
 				"feima.agents.claude.binaryPath": {
 					"type": "string",
 					"default": "",
-					"markdownDescription": "Absolute path to the `claude` binary. Leave empty to auto-discover via PATH.",
+					"markdownDescription": "%settings.agents.claude.binaryPath.description%",
 					"scope": "machine-overridable"
 				},
 				"feima.agents.codex.mcpServers": {
 					"type": "object",
 					"default": {},
-					"markdownDescription": "MCP server configuration passed to Codex. Each key is a server name; value is `{ command, args?, env?, url? }`.",
+					"markdownDescription": "%settings.agents.codex.mcpServers.description%",
 					"additionalProperties": {
 						"type": "object",
 						"properties": {
@@ -240,7 +240,7 @@
 				"feima.agents.claude.mcpServers": {
 					"type": "object",
 					"default": {},
-					"markdownDescription": "MCP server configuration passed to Claude Code. Each key is a server name; value is `{ command, args?, env?, url? }`.",
+					"markdownDescription": "%settings.agents.claude.mcpServers.description%",
 					"additionalProperties": {
 						"type": "object",
 						"properties": {

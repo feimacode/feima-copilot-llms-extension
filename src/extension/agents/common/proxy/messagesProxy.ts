@@ -387,6 +387,13 @@ async function streamMessagesSSE(
 			// Expected cancellation — clean up silently
 		} else {
 			log.error(err instanceof Error ? err : String(err), 'stream error');
+			// Surface the error as visible text so the user sees it in the chat.
+			openTextBlock();
+			writeNamedSSEEvent(res, 'content_block_delta', {
+				type: 'content_block_delta',
+				index: blockIndex,
+				delta: { type: 'text_delta', text: `\n\n⚠️ ${err instanceof Error ? err.message : String(err)}` },
+			});
 		}
 	}
 

@@ -17,6 +17,7 @@
 
 import * as vscode from 'vscode';
 import * as crypto from 'crypto';
+import { emitThinkingProgress, emitCodeblockUri } from '../common/streamAdditions';
 import {
 	type SDKMessage,
 	type SDKAssistantMessage,
@@ -150,7 +151,7 @@ function handleContentBlockStart(
 			// new ID resets the display to "Thinking…" visually.
 			if (!state.currentThinkingId) {
 				state.currentThinkingId = crypto.randomUUID();
-				stream.thinkingProgress!({ id: state.currentThinkingId!, text: 'Thinking…' });
+				emitThinkingProgress(stream, state.currentThinkingId!, 'Thinking…');
 			}
 			// Reset accumulated text for this new thinking block
 			state.thinkingText = '';
@@ -158,23 +159,19 @@ function handleContentBlockStart(
 		}
 
 		case 'tool_use': {
-			// Tool call started → display as a thinking block in the chat.
+			// Tool call started → show a specific progress label (Codex pattern).
 			const toolName = block.name;
 			const toolId = block.id;
+			const input = block.input as Record<string, unknown>;
 			state.activeToolCalls.set(toolId, toolName);
 
-			// Close any prior tool thinking block before opening a new one
-			if (state.currentToolThinkingId) {
-				state.currentToolThinkingId = null;
-			}
-			state.currentToolThinkingId = crypto.randomUUID();
-			stream.thinkingProgress!({ id: state.currentToolThinkingId!, text: `🔧 ${toolName}` });
+			// Build a descriptive progress label from the tool name + arguments.
+			const label = describeToolCall(toolName, input);
+			stream.progress(label);
 
 			// Track file changes for VS Code's "N files changed" summary.
-			// codeblockUri (chatParticipantAdditions proposal) marks files as
-			// edited and triggers the file-changes UI in the chat panel.
 			if (isFileEditTool(toolName)) {
-				const filePath = extractPathFromToolInput(block.input as Record<string, unknown>);
+				const filePath = extractPathFromToolInput(input);
 				state.fileChanges.push({
 					path: filePath,
 					operation: toolName === 'Edit' ? 'edit' : 'create',
@@ -225,7 +222,7 @@ function handleContentBlockDelta(
 			// so we must send the full accumulated string each time.
 			if (delta.thinking && state.currentThinkingId) {
 				state.thinkingText += delta.thinking;
-				stream.thinkingProgress!({ id: state.currentThinkingId, text: state.thinkingText });
+				emitThinkingProgress(stream, state.currentThinkingId, state.thinkingText);
 			}
 			break;
 		}
@@ -247,6 +244,10 @@ function handleContentBlockStop(
 	stream: vscode.ChatResponseStream,
 	state: RouterState,
 ): RouterState {
+	// When a tool_use block finishes, reset progress to "Continuing…" (Codex pattern).
+	if (state.activeToolCalls.size > 0) {
+		stream.progress('Continuing…');
+	}
 	// Preserve the thinking block ID across blocks — clearing it causes
 	// the chat UI to start a fresh "Thinking…" label on the next block,
 	// which creates ugly flickering. Only clear on turn completion.
@@ -340,10 +341,7 @@ function handleUserMessage(
 	if (state.currentToolThinkingId) {
 		const toolNames = Array.from(state.activeToolCalls.values());
 		if (toolNames.length > 0) {
-			stream.thinkingProgress!({
-				id: state.currentToolThinkingId,
-				text: `✅ ${toolNames.join(', ')}`,
-			});
+			emitThinkingProgress(stream, state.currentToolThinkingId, `✅ ${toolNames.join(', ')}`);
 		}
 		state.currentToolThinkingId = null;
 	}
@@ -400,6 +398,34 @@ function isFileEditTool(toolName: string): boolean {
 	return ['Edit', 'FileWrite', 'file_edit', 'FileEdit', 'Write'].includes(toolName);
 }
 
+/**
+ * Build a descriptive progress label from a tool call (Codex pattern).
+ * Shows the tool name plus a key detail (file path, command, query) so the
+ * user knows exactly what the agent is doing.
+ */
+function describeToolCall(toolName: string, input: Record<string, unknown>): string {
+	const short = (s: string, max = 60) => (s.length > max ? s.slice(0, max) + '…' : s);
+	// File operations — show the path
+	const filePath = extractPathFromToolInput(input);
+	if (filePath !== 'unknown') {
+		const verb = isFileEditTool(toolName) ? 'Editing' : 'Reading';
+		return `${verb} \`${short(filePath)}\``;
+	}
+	// Shell / command execution — show the command
+	if (typeof input.command === 'string') {
+		return `Running \`${short(input.command, 80)}\``;
+	}
+	// Search — show the query
+	if (typeof input.query === 'string') {
+		return `Searching "${short(input.query)}"`;
+	}
+	if (typeof input.pattern === 'string') {
+		return `Searching "${short(input.pattern)}"`;
+	}
+	// Fallback — just the tool name
+	return `Calling ${toolName}…`;
+}
+
 /** Extract the file path from a tool input object, if present. */
 function extractPathFromToolInput(input: Record<string, unknown>): string {
 	if (typeof input.file_path === 'string') { return input.file_path; }
@@ -421,11 +447,5 @@ function _markFileEdited(
 	if (!filePath || filePath === 'unknown') { return; }
 	if (state.reportedFilePaths.has(filePath)) { return; }
 	state.reportedFilePaths.add(filePath);
-	try {
-		// ChatResponseStream.codeblockUri is from the chatParticipantAdditions proposal
-		(stream as unknown as { codeblockUri(uri: vscode.Uri, isEdit?: boolean): void })
-			.codeblockUri(vscode.Uri.file(filePath), true);
-	} catch {
-		// codeblockUri may not be available — silently fall back
-	}
+	emitCodeblockUri(stream, vscode.Uri.file(filePath), true);
 }

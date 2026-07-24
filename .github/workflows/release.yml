@@ -166,10 +166,13 @@ jobs:
           mkdir -p dist/$REGION
           
           # Package VSIX
+          # NOTE: do NOT pass --no-dependencies. The agent SDKs (@github/copilot-sdk,
+          # @anthropic-ai/claude-agent-sdk) are marked external in esbuild and must be
+          # shipped in node_modules. .vscodeignore excludes only the heavy platform
+          # binary packages (~600MB); the JS SDK wrappers are required at runtime.
           echo "🔨 Running vsce package..."
           npx @vscode/vsce package \
             --allow-star-activation \
-            --no-dependencies \
             --out dist/$REGION/feima-$EXT_ID-$VERSION.vsix
           
           # Restore original files
@@ -196,12 +199,15 @@ jobs:
           VSIX="dist/$REGION/feima-${{ env.EXT_ID }}-$VERSION.vsix"
           
           # Check file size
+          # The VSIX legitimately includes the agent SDK JS wrappers (~10-15 MB).
+          # A ceiling of 30 MB still catches regressions where the heavy platform
+          # binary packages (~600 MB) accidentally get re-included.
           SIZE=$(stat -c%s "$VSIX")
-          MAX_SIZE=$((5 * 1024 * 1024))
+          MAX_SIZE=$((30 * 1024 * 1024))
           if [ "$SIZE" -gt "$MAX_SIZE" ]; then
-            echo "⚠️ VSIX exceeds 5 MB: $SIZE bytes"
+            echo "⚠️ VSIX exceeds 30 MB: $SIZE bytes (platform binaries may have leaked in)"
           else
-            echo "✅ VSIX size: $SIZE bytes (under 5 MB limit)"
+            echo "✅ VSIX size: $SIZE bytes (under 30 MB limit)"
           fi
           
           # Validate VSIX structure (VSIX is a ZIP file)

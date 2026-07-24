@@ -88,11 +88,20 @@ export class AppServerClient extends EventEmitter {
 		this.lineReader.on('line', (line) => {
 			if (!line.trim()) { return; }
 			this._log?.debug('[app-server] raw line: ' + line.slice(0, 500));
+			// Parse and handle in separate try/catch so a handler error (e.g. a
+			// participant throwing while processing a notification) is not
+			// misreported as a JSON parse failure.
+			let message: AppServerMessage;
 			try {
-				const message = JSON.parse(line) as AppServerMessage;
-				this.handleMessage(message);
+				message = JSON.parse(line) as AppServerMessage;
 			} catch {
 				this.emit('error', new Error(`Failed to parse JSON-RPC message: ${line}`));
+				return;
+			}
+			try {
+				this.handleMessage(message);
+			} catch (err) {
+				this.emit('error', err instanceof Error ? err : new Error(String(err)));
 			}
 		});
 

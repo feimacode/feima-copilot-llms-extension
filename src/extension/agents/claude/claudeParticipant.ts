@@ -4,12 +4,13 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { query, startup, type Options } from '@anthropic-ai/claude-agent-sdk';
+import { query, startup, getSessionInfo, type Options } from '@anthropic-ai/claude-agent-sdk';
 import type { WarmQuery } from '@anthropic-ai/claude-agent-sdk';
 import { ProxyManager } from '../common/proxy/proxyManager';
 import { routeSDKMessage, createInitialState, type RouterState } from './claudeMessageRouter';
 import { buildClaudeOptions, type OptionsBuilderInput } from './claudeOptionsBuilder';
 import { startClientToolMcpServer, stopClientToolMcpServer, type ClientToolMcpServer } from './clientToolMcpServer';
+import { resolveBinary } from '../common/appServer/client';
 import { ILogService } from '../../platform/log/common/logService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -91,7 +92,23 @@ export class ClaudeParticipant {
 
 		// ── 1. Session management ────────────────────────────────────────────
 		const savedMeta = findMetaInHistory(context.history);
-		const savedSessionId = savedMeta?.sessionId;
+		let savedSessionId = savedMeta?.sessionId;
+
+		// Verify the saved session still exists on disk before attempting resume.
+		// Sessions can be lost after extension reload, CLI cleanup, or if the
+		// project directory hash changed. Fall back to a fresh session if gone.
+		if (savedSessionId) {
+			try {
+				const sessionInfo = await getSessionInfo(savedSessionId, { dir: cwd });
+				if (!sessionInfo) {
+					this._log.warn('saved session not found on disk, starting fresh: ' + savedSessionId);
+					savedSessionId = undefined;
+				}
+			} catch (err) {
+				this._log.warn('failed to verify session, starting fresh: ' + String(err));
+				savedSessionId = undefined;
+			}
+		}
 		this._log.debug('session lookup: ' + JSON.stringify({ savedSessionId, historyLength: context.history.length }));
 
 		const ac = new AbortController();
@@ -101,6 +118,15 @@ export class ClaudeParticipant {
 		const cancellationSub = token.onCancellationRequested(() => ac.abort());
 
 		// ── 2. Build SDK options via builder ──────────────────────────────────
+		// Resolve the user's claude binary so the SDK spawns the local CLI
+		// instead of a bundled platform binary (which we don't ship).
+		let claudeBinaryPath: string | undefined;
+		try {
+			const rawBinaryPath = vscode.workspace.getConfiguration('feima.agents.claude').get<string>('binaryPath') ?? '';
+			claudeBinaryPath = resolveBinary(rawBinaryPath, 'claude', this._log);
+		} catch (err) {
+			this._log.warn('claude binary not found; participant will fail until installed: ' + String(err));
+		}
 		const optionsInput: OptionsBuilderInput = {
 			proxyInfo: { messagesUrl: info.messagesUrl, messagesNonce: info.messagesNonce },
 			request,
@@ -108,6 +134,7 @@ export class ClaudeParticipant {
 			savedSessionId,
 			storagePath: this.storagePath,
 			cwd,
+			claudeBinaryPath,
 		};
 		const options = buildClaudeOptions(optionsInput);
 		options.abortController = ac;

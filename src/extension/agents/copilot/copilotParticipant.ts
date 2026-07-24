@@ -12,11 +12,13 @@ import {
 	type PermissionRequestResult,
 	type ExitPlanModeRequest,
 	type ExitPlanModeResult,
+	type ProviderConfig,
 } from '@github/copilot-sdk';
 import { createInitialRouterState, routeSessionEvent, type RouterState } from './copilotSessionEventRouter';
 import { CopilotPermissionHandler } from './copilotPermissionHandler';
 import { toSdkAttachments, type CopilotMessageAttachment } from './copilotAttachments';
 import { ProxyManager } from '../common/proxy/proxyManager';
+import { resolveBinary } from '../common/appServer/client';
 import { ILogService } from '../../platform/log/common/logService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -143,11 +145,23 @@ export class CopilotParticipant {
 		const routerState = createInitialRouterState();
 		entry.current = { stream, permission, routerState, resolveIdle, toolInvocationToken: request.toolInvocationToken, token };
 
-		// Cancellation → abort the SDK turn, then release the wait.
+		// Cancellation → abort the SDK turn and wait for it to propagate before
+		// releasing the idle wait. This ensures the runtime and proxy actually stop.
 		const cancelSub = token.onCancellationRequested(() => {
 			this._log.debug(`cancellation requested ${JSON.stringify({ sessionId: entry.sessionId })}`);
-			void entry.session.abort().catch(() => { /* best-effort */ });
-			resolveIdle();
+			// Await abort with a timeout fallback — if the runtime doesn't stop
+			// within 5s, release the wait anyway to avoid hanging the UI.
+			const abortTimeout = setTimeout(() => {
+				this._log.warn('abort timed out, releasing idle wait');
+				resolveIdle();
+			}, 5000);
+			void entry.session.abort().then(() => {
+				clearTimeout(abortTimeout);
+				resolveIdle();
+			}).catch(() => {
+				clearTimeout(abortTimeout);
+				resolveIdle();
+			});
 		});
 
 		const agentMode: 'plan' | 'interactive' | 'autopilot' =
@@ -222,6 +236,8 @@ export class CopilotParticipant {
 				const resumeConfig: ResumeSessionConfig = {
 					workingDirectory: workspaceCwd(),
 					streaming: true,
+					reasoningSummary: 'concise',
+					provider: await this._proxyProvider(),
 					onPermissionRequest: this._permissionCallback(entry),
 					onExitPlanModeRequest: this._exitPlanModeCallback(entry),
 				};
@@ -233,12 +249,15 @@ export class CopilotParticipant {
 		}
 
 		stream.progress('Starting Copilot session…');
-		this._log.debug(`creating new session ${JSON.stringify({ model: request.model.id })}`);
+		const modelId = request.model.vendor ? `${request.model.vendor}/${request.model.id}` : request.model.id;
+		this._log.debug(`creating new session ${JSON.stringify({ model: modelId })}`);
 		const entry = this._newEntry();
 		const createConfig: SessionConfig = {
 			workingDirectory: workspaceCwd(),
-			model: request.model.id,
+			model: modelId,
 			streaming: true,
+			reasoningSummary: 'concise',
+			provider: await this._proxyProvider(),
 			onPermissionRequest: this._permissionCallback(entry),
 			onExitPlanModeRequest: this._exitPlanModeCallback(entry),
 		};
@@ -315,33 +334,51 @@ export class CopilotParticipant {
 		if (!this._client) {
 			stream.progress('Connecting to Copilot CLI…');
 
-			// Always route the runtime's model calls through our localhost proxy →
-			// VS Code LM. `COPILOT_API_URL` overrides the model endpoint; the picked
-			// model flows via the per-session `model` id in the request body; disabling
-			// WebSocket keeps all traffic on the HTTP Responses transport the proxy
-			// understands.
-			// The proxy is started once in registerAgents(); here we only wait for it
-			// to be ready before reading its URL/nonce for the subprocess env.
-			await this.proxyManager.ready;
-			const info = this.proxyManager.info;
-			this._log.debug(`model proxy ${JSON.stringify({ responsesUrl: info.responsesUrl })}`);
-			const env: Record<string, string | undefined> = {
-				...process.env,
-				COPILOT_API_URL: info.responsesUrl,
-				GITHUB_COPILOT_API_TOKEN: info.responsesNonce,
-				COPILOT_CLI_DISABLE_WEBSOCKET_RESPONSES: 'true',
-			};
+			// Resolve the user's copilot binary so the SDK spawns the local CLI
+			// instead of the bundled platform runtime (which we don't ship).
+			let copilotBinaryPath: string | undefined;
+			try {
+				const rawBinaryPath = vscode.workspace.getConfiguration('feima.agents.copilot').get<string>('binaryPath') ?? '';
+				copilotBinaryPath = resolveBinary(rawBinaryPath, 'copilot', this._log);
+			} catch (err) {
+				this._log.warn('copilot binary not found; participant will fail until installed: ' + String(err));
+			}
 
-			this._log.debug(`starting CopilotClient ${JSON.stringify({ baseDirectory: this.storagePath })}`);
+			this._log.debug(`starting CopilotClient ${JSON.stringify({ baseDirectory: this.storagePath, copilotBinaryPath })}`);
 			this._client = new CopilotClient({
-				gitHubToken: '',
+				// No GitHub auth — model calls are routed through our proxy via the
+				// per-session BYOK `provider` config (see _proxyProvider()).
+				useLoggedInUser: false,
 				baseDirectory: this.storagePath,
-				connection: RuntimeConnection.forStdio(),
-				env,
+				connection: copilotBinaryPath
+					? RuntimeConnection.forStdio({ path: copilotBinaryPath })
+					: RuntimeConnection.forStdio(),
 			});
 			await this._client.start();
 			this._log.debug('CopilotClient started');
 		}
+	}
+
+	/**
+	 * Build the BYOK provider config that routes the runtime's model calls
+	 * through our localhost Responses proxy → VS Code LM. Per the Copilot SDK
+	 * docs, a session-level `provider` bypasses GitHub Copilot authentication,
+	 * so no GitHub token is required. The picked model flows via the per-session
+	 * `model` id in the request body; the proxy authenticates with its nonce.
+	 */
+	private async _proxyProvider(): Promise<ProviderConfig> {
+		// The proxy is started once in registerAgents(); wait for it to be ready
+		// before reading its URL/nonce.
+		await this.proxyManager.ready;
+		const info = this.proxyManager.info;
+		this._log.debug(`model proxy ${JSON.stringify({ responsesUrl: info.responsesUrl })}`);
+		return {
+			type: 'openai',
+			baseUrl: info.responsesUrl,
+			wireApi: 'responses',
+			bearerToken: info.responsesNonce,
+			transport: 'http',
+		};
 	}
 
 	dispose(): void {

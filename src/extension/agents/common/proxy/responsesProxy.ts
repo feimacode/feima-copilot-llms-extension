@@ -494,11 +494,35 @@ async function streamResponsesSSE(
 		});
 	};
 
-	// Track reasoning item state (reserved for future reasoning support)
-	const _reasoningItemId: string | null = null;
-	const _reasoningOutputIndex = 0;
-	const _reasoningSummaryIndex = 0;
+	// Track reasoning item state — emit full output_item lifecycle so the
+	// Copilot runtime recognizes reasoning (it requires output_item.added →
+	// reasoning_text.delta → output_item.done, matching the tool call pattern).
+	let reasoningItemId: string | null = null;
+	let reasoningOutputIndex = 0;
 	let reasoningContentIndex = 0;
+	let reasoningOpen = false;
+
+	const openReasoningItem = () => {
+		if (reasoningOpen) { return; }
+		reasoningOpen = true;
+		reasoningItemId = makeId('rs');
+		reasoningOutputIndex = outputIndex++;
+		writeSSEEvent(res, {
+			type: 'response.output_item.added',
+			output_index: reasoningOutputIndex,
+			item: { id: reasoningItemId, type: 'reasoning', status: 'in_progress', content: [] },
+		});
+	};
+
+	const closeReasoningItem = () => {
+		if (!reasoningOpen) { return; }
+		reasoningOpen = false;
+		writeSSEEvent(res, {
+			type: 'response.output_item.done',
+			output_index: reasoningOutputIndex,
+			item: { id: reasoningItemId, type: 'reasoning', status: 'completed', content: [] },
+		});
+	};
 
 	// Track tool call output items
 	const toolCallItems: Array<{ id: string; call_id: string; name: string; arguments: string; output_index: number }> = [];
@@ -524,6 +548,8 @@ async function streamResponsesSSE(
 			partCount++;
 
 			if (isText) {
+				// Close any open reasoning item before starting text content.
+				closeReasoningItem();
 				openTextContent();
 				accumulatedText += (part as vscode.LanguageModelTextPart).value;
 				writeSSEEvent(res, {
@@ -534,7 +560,8 @@ async function streamResponsesSSE(
 					delta: (part as vscode.LanguageModelTextPart).value,
 				});
 			} else if (isToolCall) {
-				// Close text content before emitting tool calls
+				// Close reasoning and text content before emitting tool calls
+				closeReasoningItem();
 				closeTextContent();
 				_stopReason = 'tool_calls';
 
@@ -555,14 +582,11 @@ async function streamResponsesSSE(
 					output_index: toolOutputIndex,
 					delta: argsJson,
 				});
-				writeSSEEvent(res, {
-					type: 'response.function_call_arguments.done',
-					item_id: toolItemId,
-					output_index: toolOutputIndex,
-					name: resolved.name,
-					namespace: resolved.namespace,
-					arguments: argsJson,
-				});
+				// NOTE: do NOT send response.function_call_arguments.done — the
+				// Copilot runtime's native client only recognizes .delta, not .done.
+				// Sending an unrecognized event type can cause the parser to error
+				// or skip the tool call. The output_item.done event below closes
+				// the item lifecycle.
 				writeSSEEvent(res, {
 					type: 'response.output_item.done',
 					output_index: toolOutputIndex,
@@ -581,18 +605,30 @@ async function streamResponsesSSE(
 					} catch { /* ignore */ }
 				}
 			} else if (isThinking) {
-				// Forward thinking parts as reasoning content deltas.
-				// Codex's SSE parser REQUIRES `content_index` in
-				// `response.reasoning_text.delta` — without it the
-				// event is silently dropped (codex-api/src/sse/responses.rs:351).
+				// Forward thinking parts as reasoning SUMMARY deltas. The Copilot
+				// runtime's native client (runtime.node) only recognizes
+				// `response.reasoning_summary_text.delta` and
+				// `response.reasoning_summary_part.added` — NOT `reasoning_text.delta`
+				// (which is the raw/encrypted reasoning format). Using the summary
+				// variant ensures the runtime emits `assistant.reasoning_delta`
+				// session events that our router surfaces to the chat UI.
 				const thinkingPart = part as { value?: string };
 				const thinkingText = thinkingPart.value ?? '';
 				if (thinkingText) {
-					log.debug(`reasoning_text.delta ci=${reasoningContentIndex}: ${thinkingText.slice(0, 80)}`);
+					openReasoningItem();
+					log.debug(`reasoning_summary_text.delta ci=${reasoningContentIndex}: ${thinkingText.slice(0, 80)}`);
 					writeSSEEvent(res, {
-						type: 'response.reasoning_text.delta',
+						type: 'response.reasoning_summary_part.added',
+						item_id: reasoningItemId,
+						output_index: reasoningOutputIndex,
+						summary_index: reasoningContentIndex,
+					});
+					writeSSEEvent(res, {
+						type: 'response.reasoning_summary_text.delta',
+						item_id: reasoningItemId,
+						output_index: reasoningOutputIndex,
 						delta: thinkingText,
-						content_index: reasoningContentIndex++,
+						summary_index: reasoningContentIndex++,
 					});
 				}
 			}
@@ -602,6 +638,22 @@ async function streamResponsesSSE(
 		streamError = streamErr instanceof Error ? streamErr : new Error(String(streamErr));
 	}
 	log.debug(`stream iteration done, total parts=${partCount ?? 0}`);
+
+	// Close any open reasoning item now that the stream has ended.
+	closeReasoningItem();
+
+	// Surface stream errors as visible text so the user sees the actual message
+	// in the chat, not just a generic "unknown error" from the client.
+	if (streamError) {
+		openTextContent();
+		writeSSEEvent(res, {
+			type: 'response.output_text.delta',
+			item_id: messageItemId,
+			output_index: msgOutputIndex,
+			content_index: textContentIndex,
+			delta: `\n\n⚠️ ${streamError.message}`,
+		});
+	}
 
 	// Phase 3: Close message item
 	closeTextContent();
@@ -746,6 +798,23 @@ async function collectResponsesResponse(
 }
 
 // ---------------------------------------------------------------------------
+// Model encoding: parse "vendor/modelId" format for precise proxy lookup
+// ---------------------------------------------------------------------------
+
+interface ParsedModel {
+	vendor: string | null;
+	modelId: string;
+}
+
+function parseModelEncoding(raw: string): ParsedModel {
+	const idx = raw.indexOf('/');
+	if (idx !== -1) {
+		return { vendor: raw.slice(0, idx), modelId: raw.slice(idx + 1) };
+	}
+	return { vendor: null, modelId: raw };
+}
+
+// ---------------------------------------------------------------------------
 // Main handler factory
 // ---------------------------------------------------------------------------
 
@@ -762,8 +831,16 @@ export function createResponsesHandler(log: ILogService): RouteHandler {
 			return;
 		}
 
-		// Model lookup — consumer provides exact ID; prefer copilot vendor when multiple matches
-		const models = await vscode.lm.selectChatModels({ id: req.model });
+		// Model lookup — consumer may encode as "vendor/modelId" for precise lookup.
+		const parsedModel = parseModelEncoding(req.model);
+		const modelSelector: vscode.LanguageModelChatSelector = parsedModel.vendor
+			? { vendor: parsedModel.vendor, id: parsedModel.modelId }
+			: { id: parsedModel.modelId };
+		let models = await vscode.lm.selectChatModels(modelSelector);
+		if (models.length === 0 && parsedModel.vendor) {
+			// Fallback to id-only lookup if vendor-filtered lookup fails
+			models = await vscode.lm.selectChatModels({ id: parsedModel.modelId });
+		}
 		log.debug(`model lookup '${req.model}' → ${models.length} match(es)${models.length ? ': ' + models.map(m => `${m.vendor}/${m.id}`).join(', ') : ''}`);
 		if (models.length === 0) {
 			writeJSON(res, 404, { error: { type: 'not_found_error', message: `Model '${req.model}' not found` } });

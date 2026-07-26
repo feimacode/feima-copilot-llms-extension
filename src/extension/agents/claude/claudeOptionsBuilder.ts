@@ -19,6 +19,12 @@ import {
 	type CanUseTool,
 } from '@anthropic-ai/claude-agent-sdk';
 import type { OnElicitation } from '@anthropic-ai/claude-agent-sdk';
+import { CLAUDE_PROVIDER_ID } from './claudeModelProvider';
+import { CLAUDE_EDIT_TOOLS, isClaudeEditTool, getAffectedUrisForEditTool } from './claudeEditTools';
+import type { ExternalEditTracker } from '../common/externalEditTracker';
+import type { PermissionTier } from '../common/permissionTier';
+import { requestConfirmation } from '../common/confirmationTool';
+import type { ILogService } from '../../platform/log/common/logService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,10 +34,18 @@ export interface ProxyInfo {
 }
 
 export interface OptionsBuilderInput {
-	/** Proxy info for routing Anthropic Messages API calls */
-	proxyInfo: ProxyInfo;
+	/** Proxy info for routing Anthropic Messages API calls. Required when
+	 *  `request.model.vendor !== CLAUDE_PROVIDER_ID` (proxy routing); omitted
+	 *  for native `claude-code` models, which talk to the real Anthropic API
+	 *  using the user's own `claude login` subscription. */
+	proxyInfo?: ProxyInfo;
 	/** The VS Code chat request (provides model, toolInvocationToken, etc.) */
 	request: vscode.ChatRequest;
+	/** Overrides `request.model.vendor`/`.id` for routing and the `model` field
+	 *  sent to the SDK. Used when the caller is continuing an existing session
+	 *  under its original routing instead of the model newly picked in the chat
+	 *  UI (see ClaudeParticipant's routing-switch confirmation). */
+	modelOverride?: { vendor: string | undefined; id: string };
 	/** The cancellation token (for AbortController) */
 	token: vscode.CancellationToken;
 	/** Saved session ID for resume, or undefined for new session */
@@ -47,6 +61,40 @@ export interface OptionsBuilderInput {
 	/** Resolved path to the user's `claude` binary. When set, the SDK spawns
 	 *  this instead of its bundled platform binary (which we don't ship). */
 	claudeBinaryPath?: string;
+	/**
+	 * Tracks `stream.externalEdit()` windows for file-editing tools via
+	 * PreToolUse/PostToolUse hooks (see makeEditTrackingHooks). Optional only so
+	 * existing call sites/tests that don't care about edit tracking keep working.
+	 */
+	editTracker?: ExternalEditTracker;
+	/**
+	 * Returns whichever `ChatResponseStream` is *currently* active. A live
+	 * accessor rather than a captured `stream` because this same `Options`
+	 * object (and its hook closures) can outlive the turn it was built for —
+	 * `startup()`-promoted WarmQuery sessions reuse it across turns, each with
+	 * its own stream.
+	 */
+	getCurrentStream?: () => vscode.ChatResponseStream | undefined;
+	/**
+	 * Returns whichever `PermissionMode` is *currently* in effect. A live
+	 * accessor for the same reason as `getCurrentStream`: `canUseTool` is
+	 * fixed at `startup()` time for WarmQuery-promoted sessions, but each
+	 * resumed turn may carry its own `/ask`, `/acceptEdits` or `/fullAuto`
+	 * override — see ClaudeParticipant's `permissionModeBox`.
+	 */
+	getCurrentPermissionMode?: () => PermissionMode;
+	/** Logging service — wired into canUseTool so allow/deny/prompt decisions
+	 *  (and which permission mode was actually in effect) are traceable. */
+	log?: ILogService;
+}
+
+/** Map the normalized cross-participant permission tier onto Claude's native `PermissionMode`. */
+export function mapTierToPermissionMode(tier: PermissionTier): PermissionMode {
+	switch (tier) {
+		case 'fullAuto': return 'bypassPermissions';
+		case 'acceptEdits': return 'acceptEdits';
+		case 'ask': return 'default';
+	}
 }
 
 // ─── Options Builder ─────────────────────────────────────────────────────────
@@ -59,9 +107,26 @@ export interface OptionsBuilderInput {
  */
 export function buildClaudeOptions(input: OptionsBuilderInput): Options {
 	const cwd = input.cwd ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-	const model = input.request.model.id;
-	const vendor = input.request.model.vendor;
-	const permissionMode = input.permissionMode ?? 'bypassPermissions';
+	const model = input.modelOverride?.id ?? input.request.model.id;
+	const vendor = input.modelOverride ? input.modelOverride.vendor : input.request.model.vendor;
+	// Safe-by-default fallback for callers that don't pass a live accessor
+	// (e.g. tests) — real turns always supply one via ClaudeParticipant's
+	// permissionModeBox, resolved from the feima.agents.claude.permissionMode
+	// setting and any per-turn /ask, /acceptEdits, /fullAuto override.
+	const permissionMode = input.permissionMode ?? 'default';
+	const getCurrentPermissionMode = input.getCurrentPermissionMode ?? (() => permissionMode);
+
+	// Native routing (vendor === CLAUDE_PROVIDER_ID): the user picked one of their
+	// own subscription's models (listed via the CLI's own `claude login`), so we
+	// talk to the real Anthropic API with the CLI's own credentials — no proxy,
+	// no CLAUDE_CONFIG_DIR override (that's exactly where `.credentials.json` and
+	// the user's real session history live; isolating it would strand both).
+	//
+	// Proxy routing (any other vendor, e.g. a Copilot-backed model picked while
+	// chatting with @claude): route through our local Anthropic-Messages-shaped
+	// proxy into VS Code's LM API, isolated under our own storagePath so it never
+	// touches the user's real ~/.claude.
+	const isNative = vendor === CLAUDE_PROVIDER_ID;
 
 	const options: Options = {
 		cwd,
@@ -70,13 +135,18 @@ export function buildClaudeOptions(input: OptionsBuilderInput): Options {
 		// platform-specific binary package, so this must resolve from PATH/settings.
 		...(input.claudeBinaryPath ? { pathToClaudeCodeExecutable: input.claudeBinaryPath } : {}),
 		...(input.savedSessionId ? { resume: input.savedSessionId } : {}),
-		env: {
-			...process.env,
-			ANTHROPIC_BASE_URL: input.proxyInfo.messagesUrl,
-			ANTHROPIC_AUTH_TOKEN: input.proxyInfo.messagesNonce,
-			// Isolate session storage from VS Code's built-in Claude agent (~/.claude)
-			CLAUDE_CONFIG_DIR: input.storagePath,
-		},
+		env: isNative
+			? { ...process.env }
+			: (() => {
+				if (!input.proxyInfo) { throw new Error('buildClaudeOptions: proxyInfo is required for proxy routing'); }
+				return {
+					...process.env,
+					ANTHROPIC_BASE_URL: input.proxyInfo.messagesUrl,
+					ANTHROPIC_AUTH_TOKEN: input.proxyInfo.messagesNonce,
+					// Isolate session storage from the user's real ~/.claude.
+					CLAUDE_CONFIG_DIR: input.storagePath,
+				};
+			})(),
 		// ── Enable stream_event processing ──
 		includePartialMessages: true,
 
@@ -84,10 +154,9 @@ export function buildClaudeOptions(input: OptionsBuilderInput): Options {
 		enableFileCheckpointing: true,
 
 		// ── Model override ──
-		// Encode vendor+id for precise proxy-side lookup. Format:
-		//   vendor/modelId  (e.g. "copilot/gpt-5.5")
-		// Falls back to id-only when vendor is unavailable.
-		model: vendor ? `${vendor}/${model}` : model,
+		// Native: pass the bare model id straight through to the real API.
+		// Proxy: encode vendor+id for precise proxy-side lookup, e.g. "copilot/gpt-5.5".
+		model: isNative ? model : (vendor ? `${vendor}/${model}` : model),
 
 		// ── MCP servers (from caller, not config) ──
 		...(input.mcpServers ? { mcpServers: input.mcpServers as Options['mcpServers'] } : {}),
@@ -100,10 +169,18 @@ export function buildClaudeOptions(input: OptionsBuilderInput): Options {
 		// ensures canUseTool is the sole authority for allow/deny.
 		permissionMode,
 		allowDangerouslySkipPermissions: true,
-		canUseTool: makeCanUseTool(input.request, input.token, permissionMode),
+		canUseTool: makeCanUseTool(input.request, input.token, getCurrentPermissionMode, input.log),
 
 		// ── MCP elicitation callback ──
 		onElicitation: makeOnElicitation(input.request, input.token),
+
+		// ── File-edit tracking (PreToolUse/PostToolUse hooks) ──
+		// See common/externalEditTracker.ts for why hooks (not the content-block
+		// stream) are what's needed to register edits with VS Code as real,
+		// diffable, Working-Set-tracked changes.
+		...(input.editTracker && input.getCurrentStream
+			? { hooks: makeEditTrackingHooks(input.editTracker, input.getCurrentStream) }
+			: {}),
 	};
 
 	return options;
@@ -114,8 +191,11 @@ export function buildClaudeOptions(input: OptionsBuilderInput): Options {
 /**
  * Create the `canUseTool` callback for the SDK.
  *
- * Uses `vscode.lm.invokeTool('vscode_get_confirmation', ...)` to show an
- * inline approval in the chat panel — matching the Codex participant pattern.
+ * Uses the shared `requestConfirmation` helper (common/confirmationTool.ts)
+ * to show a real blocking inline approval card in the chat panel.
+ *
+ * `getMode` is called on every tool call rather than closing over a single
+ * mode — see `OptionsBuilderInput.getCurrentPermissionMode` for why.
  *
  * Permission mode affects behavior:
  *   'default'           → prompt user via native chat confirmation dialog
@@ -126,42 +206,40 @@ export function buildClaudeOptions(input: OptionsBuilderInput): Options {
 function makeCanUseTool(
 	request: vscode.ChatRequest,
 	token: vscode.CancellationToken,
-	mode: PermissionMode,
+	getMode: () => PermissionMode,
+	log?: ILogService,
 ): CanUseTool {
 	return async (toolName, _input, _options) => {
+		const mode = getMode();
+		log?.debug(`canUseTool invoked ${JSON.stringify({ toolName, mode })}`);
+
 		if (mode === 'bypassPermissions') {
+			log?.debug(`canUseTool decision: allow (bypassPermissions) ${JSON.stringify({ toolName })}`);
 			return { behavior: 'allow' as const };
 		}
 
 		if (mode === 'dontAsk') {
+			log?.debug(`canUseTool decision: deny (dontAsk) ${JSON.stringify({ toolName })}`);
 			return { behavior: 'deny' as const, message: 'Denied by permission mode (dontAsk)' };
 		}
 
-		if (mode === 'acceptEdits' && isFileEditTool(toolName)) {
+		if (mode === 'acceptEdits' && isClaudeEditTool(toolName)) {
+			log?.debug(`canUseTool decision: allow (acceptEdits, edit tool) ${JSON.stringify({ toolName })}`);
 			return { behavior: 'allow' as const };
 		}
 
-		// Default: prompt via native chat confirmation (inline in chat panel)
-		try {
-			const result = await vscode.lm.invokeTool(
-				'vscode_get_confirmation',
-				{
-					input: {
-						title: 'Allow tool execution?',
-						message: `Claude wants to use: **${toolName}**`,
-						confirmationType: 'basic',
-					},
-					toolInvocationToken: request.toolInvocationToken,
-				},
-				token,
-			);
-			const v = (result.content.at(0) as { value?: unknown } | undefined)?.value;
-			return typeof v === 'string' && v.toLowerCase() === 'yes'
-				? { behavior: 'allow' as const }
-				: { behavior: 'deny' as const, message: 'Denied by user' };
-		} catch {
-			return { behavior: 'deny' as const, message: 'Approval dialog failed' };
-		}
+		// Default: prompt via a real blocking confirmation card (inline in chat panel)
+		log?.debug(`canUseTool prompting user ${JSON.stringify({ toolName, mode })}`);
+		const approved = await requestConfirmation(
+			'Allow tool execution?',
+			`Claude wants to use: **${toolName}**`,
+			request.toolInvocationToken,
+			token,
+		);
+		log?.debug(`canUseTool decision: ${approved ? 'allow' : 'deny'} (user prompt) ${JSON.stringify({ toolName })}`);
+		return approved
+			? { behavior: 'allow' as const }
+			: { behavior: 'deny' as const, message: 'Denied by user' };
 	};
 }
 
@@ -189,8 +267,39 @@ function makeOnElicitation(
 	};
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function isFileEditTool(toolName: string): boolean {
-	return ['Edit', 'FileWrite', 'file_edit', 'FileEdit', 'Write'].includes(toolName);
+/**
+ * Build `PreToolUse`/`PostToolUse` hooks that bracket each file-editing tool
+ * call with an `editTracker` window. Unlike the content-block SSE stream,
+ * these genuinely block the CLI until they resolve — `PreToolUse` fires
+ * synchronously before the tool executes, `PostToolUse` after it completes —
+ * which is what makes the before/after snapshot `stream.externalEdit()` needs
+ * actually line up with the real write instead of racing it.
+ */
+function makeEditTrackingHooks(
+	editTracker: ExternalEditTracker,
+	getCurrentStream: () => vscode.ChatResponseStream | undefined,
+): NonNullable<Options['hooks']> {
+	const matcher = CLAUDE_EDIT_TOOLS.join('|');
+	return {
+		PreToolUse: [{
+			matcher,
+			hooks: [async (input, toolUseId) => {
+				if (input.hook_event_name === 'PreToolUse') {
+					const stream = getCurrentStream();
+					const uris = getAffectedUrisForEditTool(input.tool_name, input.tool_input);
+					if (stream && uris.length > 0) {
+						await editTracker.trackEdit(toolUseId ?? '', uris, stream);
+					}
+				}
+				return {};
+			}],
+		}],
+		PostToolUse: [{
+			matcher,
+			hooks: [async (_input, toolUseId) => {
+				await editTracker.completeEdit(toolUseId ?? '');
+				return {};
+			}],
+		}],
+	};
 }

@@ -42,7 +42,7 @@ interface AnthropicTool {
 	type?: string;
 }
 
-interface MessagesRequest {
+export interface MessagesRequest {
 	model: string;
 	messages: AnthropicMessage[];
 	system?: string | Array<{ type: string; text?: string }>;
@@ -277,6 +277,11 @@ async function streamMessagesSSE(
 	let outputTokens = 0;
 	let stopReason = 'end_turn';
 	const toolCalls: string[] = []; // track if any tool_use blocks were opened
+	// Buffer thinking text that arrives AFTER text content has started.
+	// The SSE format requires thinking blocks to come before text blocks, but some
+	// LMs (e.g. DeepSeek) interleave thinking and text. We buffer post-text
+	// thinking and emit it as a summary block at the end.
+	const thinkingBuffer: string[] = [];
 
 	const openTextBlock = () => {
 		if (textBlockOpen) { return; }
@@ -291,6 +296,30 @@ async function streamMessagesSSE(
 	const closeTextBlock = () => {
 		if (!textBlockOpen) { return; }
 		textBlockOpen = false;
+		writeNamedSSEEvent(res, 'content_block_stop', { type: 'content_block_stop', index: blockIndex });
+		blockIndex++;
+	};
+
+	/**
+	 * Flush buffered thinking as a single reasoning block AFTER text content.
+	 * This handles the case where the LM interleaved thinking and text.
+	 * The router's handleContentBlockDelta will close any active thinking panel
+	 * when the text_delta arrives, so the thinking summary won't replace the
+	 * accumulated text — it arrives as a separate content_block_start block.
+	 */
+	const flushThinkingBuffer = () => {
+		if (thinkingBuffer.length === 0) { return; }
+		const fullThinking = thinkingBuffer.join('');
+		writeNamedSSEEvent(res, 'content_block_start', {
+			type: 'content_block_start',
+			index: blockIndex,
+			content_block: { type: 'thinking', thinking: '' },
+		});
+		writeNamedSSEEvent(res, 'content_block_delta', {
+			type: 'content_block_delta',
+			index: blockIndex,
+			delta: { type: 'thinking_delta', thinking: fullThinking },
+		});
 		writeNamedSSEEvent(res, 'content_block_stop', { type: 'content_block_stop', index: blockIndex });
 		blockIndex++;
 	};
@@ -310,6 +339,8 @@ async function streamMessagesSSE(
 					delta: { type: 'text_delta', text: part.value },
 				});
 			} else if (part instanceof vscode.LanguageModelToolCallPart) {
+				// Flush buffered thinking before starting tool calls
+				flushThinkingBuffer();
 				// Close any open text block first
 				closeTextBlock();
 				stopReason = 'tool_use';
@@ -336,47 +367,50 @@ async function streamMessagesSSE(
 					} catch { /* ignore */ }
 				}
 			} else if (ThinkingPartCtor && part instanceof ThinkingPartCtor) {
-				// Unencrypted thinking — emit as thinking block BEFORE text content
-				// Only forward if we haven't started the text block yet
+				// Thinking block — emit immediately if before text, buffer if after text.
 				const thinkPart = part as { value: string | string[]; metadata?: Record<string, unknown> };
 				const isDone = thinkPart.metadata?.['vscode_reasoning_done'] || thinkPart.metadata?.['vscodeReasoningDone'];
 				const thinkText = Array.isArray(thinkPart.value) ? thinkPart.value.join('') : (thinkPart.value ?? '');
 
-				if (!isDone && thinkText && !textBlockOpen && toolCalls.length === 0) {
-					// Open a thinking block if one isn't already open
-					if (!thinkText) { continue; }
-					writeNamedSSEEvent(res, 'content_block_start', {
-						type: 'content_block_start',
-						index: blockIndex,
-						content_block: { type: 'thinking', thinking: '' },
-					});
-					writeNamedSSEEvent(res, 'content_block_delta', {
-						type: 'content_block_delta',
-						index: blockIndex,
-						delta: { type: 'thinking_delta', thinking: thinkText },
-					});
-					writeNamedSSEEvent(res, 'content_block_stop', { type: 'content_block_stop', index: blockIndex });
-					blockIndex++;
+				if (!isDone && thinkText) {
+					if (!textBlockOpen && toolCalls.length === 0) {
+						writeNamedSSEEvent(res, 'content_block_start', {
+							type: 'content_block_start',
+							index: blockIndex,
+							content_block: { type: 'thinking', thinking: '' },
+						});
+						writeNamedSSEEvent(res, 'content_block_delta', {
+							type: 'content_block_delta',
+							index: blockIndex,
+							delta: { type: 'thinking_delta', thinking: thinkText },
+						});
+						writeNamedSSEEvent(res, 'content_block_stop', { type: 'content_block_stop', index: blockIndex });
+						blockIndex++;
+					} else {
+						thinkingBuffer.push(thinkText);
+					}
 				}
-				// If textBlockOpen or after tool calls, drop thinking (it arrived too late to insert)
 			} else if ((part as object)?.constructor?.name === 'LanguageModelThinkingPart') {
-				// Same handling via constructor name fallback (same as flowEngine.ts pattern)
 				const thinkPart = part as { value: string | string[]; metadata?: Record<string, unknown> };
 				const isDone = thinkPart.metadata?.['vscode_reasoning_done'] || thinkPart.metadata?.['vscodeReasoningDone'];
 				const thinkText = Array.isArray(thinkPart.value) ? thinkPart.value.join('') : (thinkPart.value ?? '');
-				if (!isDone && thinkText && !textBlockOpen && toolCalls.length === 0) {
-					writeNamedSSEEvent(res, 'content_block_start', {
-						type: 'content_block_start',
-						index: blockIndex,
-						content_block: { type: 'thinking', thinking: '' },
-					});
-					writeNamedSSEEvent(res, 'content_block_delta', {
-						type: 'content_block_delta',
-						index: blockIndex,
-						delta: { type: 'thinking_delta', thinking: thinkText },
-					});
-					writeNamedSSEEvent(res, 'content_block_stop', { type: 'content_block_stop', index: blockIndex });
-					blockIndex++;
+				if (!isDone && thinkText) {
+					if (!textBlockOpen && toolCalls.length === 0) {
+						writeNamedSSEEvent(res, 'content_block_start', {
+							type: 'content_block_start',
+							index: blockIndex,
+							content_block: { type: 'thinking', thinking: '' },
+						});
+						writeNamedSSEEvent(res, 'content_block_delta', {
+							type: 'content_block_delta',
+							index: blockIndex,
+							delta: { type: 'thinking_delta', thinking: thinkText },
+						});
+						writeNamedSSEEvent(res, 'content_block_stop', { type: 'content_block_stop', index: blockIndex });
+						blockIndex++;
+					} else {
+						thinkingBuffer.push(thinkText);
+					}
 				}
 			}
 		}
@@ -399,6 +433,8 @@ async function streamMessagesSSE(
 
 	// Close any open text block
 	closeTextBlock();
+	// Flush any buffered thinking that arrived after text
+	flushThinkingBuffer();
 
 	// Finalize — guard against write-after-abort (client disconnected mid-stream)
 	try {

@@ -16,11 +16,7 @@
 import * as vscode from 'vscode';
 import type { SessionEvent } from '@github/copilot-sdk';
 import { ILogService } from '../../platform/log/common/logService';
-
-/** Duck-typed stream with the proposed thinkingProgress method. */
-type ThinkingStream = {
-	thinkingProgress: (d: { text?: string | string[]; id?: string; metadata?: Record<string, unknown> }) => void;
-};
+import { ThinkingPanelHelper } from '../common/thinkingPanelHelper';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -36,8 +32,8 @@ export interface TokenUsage {
 export interface RouterState {
 	/** Id of the reasoning block currently being streamed, or null. */
 	currentReasoningId: string | null;
-	/** Whether a thinking panel is currently active (needs closing). */
-	thinkingActive: boolean;
+	/** Manages the native thinking panel lifecycle. */
+	thinking: ThinkingPanelHelper;
 	/** Active tool calls: toolCallId → toolName. */
 	activeToolCalls: Map<string, string>;
 	/** Number of tool executions this turn. */
@@ -52,10 +48,10 @@ export interface RouterState {
 	completed: boolean;
 }
 
-export function createInitialRouterState(): RouterState {
+export function createInitialRouterState(stream: vscode.ChatResponseStream): RouterState {
 	return {
 		currentReasoningId: null,
-		thinkingActive: false,
+		thinking: new ThinkingPanelHelper(stream, 'copilot-reasoning'),
 		activeToolCalls: new Map(),
 		toolCallCount: 0,
 		fileChanges: new Map(),
@@ -84,30 +80,21 @@ export function routeSessionEvent(
 	const ed = event.data as Record<string, unknown> | undefined;
 	log.debug(`event: ${event.type}${ephemeral ? ' (ephemeral)' : ''} keys=${ed ? Object.keys(ed).join(',') : 'none'}`);
 	// Duck-type the proposed thinkingProgress API (available with chatParticipantAdditions)
-	const thinkingStream = typeof (stream as unknown as ThinkingStream).thinkingProgress === 'function'
-		? (stream as unknown as ThinkingStream)
-		: undefined;
+	const thinking = state.thinking;
 
 	switch (event.type) {
 		case 'assistant.reasoning': {
 			state.currentReasoningId = event.data.reasoningId;
-			state.thinkingActive = true;
-			if (thinkingStream) {
-				thinkingStream.thinkingProgress({ text: 'Thinking…', id: event.data.reasoningId });
-			} else {
-				stream.progress('Thinking…');
-			}
+			thinking.open();
 			return state;
 		}
 		case 'assistant.reasoning_delta': {
 			const id = event.data.reasoningId;
 			state.currentReasoningId = id;
 			const delta = event.data.deltaContent ?? '';
-			if (thinkingStream) {
-				thinkingStream.thinkingProgress({ text: delta, id });
+			if (delta) {
+				thinking.pushDelta(delta);
 			}
-			// No fallback for individual deltas — the native panel appends
-			// internally; the fallback path only shows the initial "Thinking…".
 			return state;
 		}
 		case 'assistant.streaming_delta':
@@ -133,11 +120,7 @@ export function routeSessionEvent(
 		}
 		// ── Assistant message ──
 		case 'assistant.message_delta': {
-			// Close thinking panel when text content starts arriving.
-			if (state.thinkingActive && thinkingStream) {
-				thinkingStream.thinkingProgress({ id: '', text: '', metadata: { vscodeReasoningDone: true, stopReason: 'text' } });
-				state.thinkingActive = false;
-			}
+			thinking.closeForText();
 			const text = event.data.deltaContent;
 			if (text) {
 				stream.markdown(text);
@@ -154,11 +137,7 @@ export function routeSessionEvent(
 			return state;
 		}
 		case 'tool.execution_start': {
-			// Close thinking panel when tool calls start (model switched to action).
-			if (state.thinkingActive && thinkingStream) {
-				thinkingStream.thinkingProgress({ id: '', text: '', metadata: { vscodeReasoningDone: true, stopReason: 'other' } });
-				state.thinkingActive = false;
-			}
+			thinking.closeForAction();
 			state.activeToolCalls.set(event.data.toolCallId, event.data.toolName);
 			state.toolCallCount++;
 			const label = describeCopilotToolCall(event.data.toolName, event.data.arguments);
@@ -166,12 +145,21 @@ export function routeSessionEvent(
 			return state;
 		}
 		case 'tool.execution_complete': {
+			const toolName = state.activeToolCalls.get(event.data.toolCallId);
 			state.activeToolCalls.delete(event.data.toolCallId);
 			if (event.data.success === false && event.data.error) {
 				const message = typeof event.data.error === 'string'
 					? event.data.error
 					: (event.data.error as { message?: string }).message ?? 'tool error';
-				stream.markdown(`\n\n> ⚠️ ${vscode.l10n.t('Tool failed')}: ${message}\n`);
+				// Copilot CLI's own turn loop already feeds this failure back to
+				// the model regardless of what we show here — this is a UI-only
+				// choice. A prominent inline warning reads as "the extension is
+				// broken" for what's usually a transient, self-correctable
+				// hiccup (e.g. the model calling a tool name that doesn't exist).
+				// Log it fully, but surface it in the chat the same low-key way
+				// as an ordinary tool-call label rather than an alarming blockquote.
+				log.warn(`tool '${toolName ?? event.data.toolCallId}' failed: ${message}`);
+				stream.progress(`${vscode.l10n.t('Tool failed')}: ${message.slice(0, 120)}`);
 			} else {
 				stream.progress('Continuing…');
 			}

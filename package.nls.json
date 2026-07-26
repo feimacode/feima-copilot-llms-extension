@@ -110,5 +110,13 @@
 	"settings.agents.copilot.binaryPath.description": "Absolute path to the GitHub Copilot CLI binary. Leave empty to auto-discover via PATH.",
 	"settings.agents.claude.binaryPath.description": "Absolute path to the `claude` binary. Leave empty to auto-discover via PATH.",
 	"settings.agents.codex.mcpServers.description": "MCP server configuration passed to Codex. Each key is a server name; value is `{ command, args?, env?, url? }`.",
-	"settings.agents.claude.mcpServers.description": "MCP server configuration passed to Claude Code. Each key is a server name; value is `{ command, args?, env?, url? }`."
+	"settings.agents.claude.mcpServers.description": "MCP server configuration passed to Claude Code. Each key is a server name; value is `{ command, args?, env?, url? }`.",
+
+	"settings.agents.codex.permissionMode.description": "Default permission tier for @codex: how much it asks before running commands or changing files. Override for a single turn with `/ask`, `/acceptEdits` or `/fullAuto`.",
+	"settings.agents.copilot.permissionMode.description": "Default permission tier for @copilot-cli: how much it asks before running commands or changing files. Override for a single turn with `/ask`, `/acceptEdits` or `/fullAuto`.",
+	"settings.agents.claude.permissionMode.description": "Default permission tier for @claude: how much it asks before running commands or changing files. Override for a single turn with `/ask`, `/acceptEdits` or `/fullAuto`.",
+
+	"chatCommand.permission.ask.description": "Ask for approval before every tool action, for this turn only",
+	"chatCommand.permission.acceptEdits.description": "Auto-approve file edits and ask for the rest, for this turn only",
+	"chatCommand.permission.fullAuto.description": "Auto-approve everything and never ask, for this turn only"
 }

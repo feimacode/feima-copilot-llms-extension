@@ -55,6 +55,8 @@ export class AppServerConnection extends EventEmitter {
 	/** Connection-level MCP notification handlers */
 	private readonly _mcpHandlers = new Map<string, (...args: unknown[]) => void>();
 	private _connected = false;
+	/** Diagnostic counter to identify per-thread emitter instances in logs. */
+	private _nextEmitterId = 0;
 
 	constructor(options: ConnectionOptions, log: ILogService) {
 		super();
@@ -109,6 +111,10 @@ export class AppServerConnection extends EventEmitter {
 			if (threadId) {
 				const session = this._threads.get(threadId);
 				if (session) {
+					const lc = session.listenerCount(n.method!);
+					if (lc === 0) {
+						this._log.warn(`[app-server] notif dispatch: ZERO listeners for '${n.method}' on threadId ${threadId}, emitterId=${(session as unknown as { __id?: number }).__id} — event will be silently dropped`);
+					}
 					session.emit(n.method!, n.params);
 				} else if (n.method?.startsWith('item/')) {
 					this._log.debug(`[app-server] WARN: no session for threadId ${threadId}, event ${n.method}`);
@@ -124,6 +130,7 @@ export class AppServerConnection extends EventEmitter {
 		this._client.on('request', (request: unknown) => {
 			const r = request as { method?: string; id: string | number; params?: { threadId?: string } };
 			const threadId = r.params?.threadId;
+			this._log.debug(`[app-server] request dispatch ${JSON.stringify({ method: r.method, id: r.id, threadId, knownThreads: [...this._threads.keys()] })}`);
 
 			// ── MCP connection-level requests ──
 			if (r.method && this._mcpHandlers.has(r.method)) {
@@ -135,7 +142,10 @@ export class AppServerConnection extends EventEmitter {
 			if (threadId) {
 				const session = this._threads.get(threadId);
 				if (session) {
+					this._log.debug(`[app-server] request dispatch → session.emit('request', ...) for threadId ${threadId}, listenerCount=${session.listenerCount('request')}, emitterId=${(session as unknown as { __id?: number }).__id}`);
 					session.emit('request', request);
+				} else {
+					this._log.debug(`[app-server] request dispatch: NO session found for threadId ${threadId}`);
 				}
 			}
 			// Also emit on connection
@@ -189,7 +199,11 @@ export class AppServerConnection extends EventEmitter {
 		let session = this._threads.get(threadId);
 		if (!session) {
 			session = new EventEmitter();
+			(session as unknown as { __id: number }).__id = ++this._nextEmitterId;
+			this._log.debug(`[app-server] subscribe: created NEW emitter for threadId ${threadId}, emitterId=${(session as unknown as { __id?: number }).__id}`);
 			this._threads.set(threadId, session);
+		} else {
+			this._log.debug(`[app-server] subscribe: REUSING emitter for threadId ${threadId}, emitterId=${(session as unknown as { __id?: number }).__id}, existingRequestListeners=${session.listenerCount('request')}`);
 		}
 		return session;
 	}

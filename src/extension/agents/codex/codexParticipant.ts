@@ -10,8 +10,11 @@ import { CODEX_PROVIDER_ID } from './codexModelProvider';
 import { ProxyManager } from '../common/proxy/proxyManager';
 import { DynamicToolManager } from '../common/tools/dynamicToolManager';
 import { VS_CODE_TOOL_INSTRUCTIONS } from '../common/constants/toolInstructions';
-import { emitThinkingProgress } from '../common/streamAdditions';
+import { ThinkingPanelHelper } from '../common/thinkingPanelHelper';
+import { ExternalEditTracker } from '../common/externalEditTracker';
 import { PendingRequestRegistry } from '../common/util/pendingRequestRegistry';
+import { resolvePermissionTier, type PermissionTier } from '../common/permissionTier';
+import { requestConfirmation } from '../common/confirmationTool';
 import { ILogService } from '../../platform/log/common/logService';
 import type {
 	DynamicToolSpec,
@@ -39,6 +42,7 @@ import type {
 	McpServerElicitationRequestResponse,
 	McpInventoryEntry,
 	McpServerStatusListParams,
+	AskForApproval,
 } from '../common/protocol/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -71,6 +75,11 @@ interface SessionState {
 	pendingMcpApprovals: PendingRequestRegistry<ApprovalDecision>;
 	/** Whether a turn is currently active (item stream is being processed). */
 	turnActive: boolean;
+	/** Resolved permission tier for the turn currently in flight (or the most
+	 *  recent one) — configured default, overridden per-turn by /ask,
+	 *  /acceptEdits or /fullAuto. Read by _approveCommand/_approveFileChange
+	 *  to auto-accept without prompting where the tier allows it. */
+	permissionTier: PermissionTier;
 	/** Resolve when the turn completes (success or failure). */
 	turnDone: Promise<void>;
 	turnResolve: () => void;
@@ -79,19 +88,16 @@ interface SessionState {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-interface ChatTurnWithMetadata {
-	result?: {
-		metadata?: Partial<TurnMetadata>;
-	};
-}
-
 function findMetaInHistory(history: readonly (vscode.ChatRequestTurn | vscode.ChatResponseTurn)[]): TurnMetadata | null {
 	for (let i = history.length - 1; i >= 0; i--) {
 		const turn = history[i];
-		if (turn instanceof vscode.ChatRequestTurn) {
-			const meta = (turn as unknown as ChatTurnWithMetadata).result?.metadata;
-			if (meta?.threadId) {
-				return { threadId: meta.threadId };
+		// Metadata is returned on ChatResponseTurn (from our handleRequest return),
+		// NOT on ChatRequestTurn.
+		if ('result' in turn) {
+			const meta = (turn as vscode.ChatResponseTurn).result.metadata;
+			const threadId = meta?.threadId;
+			if (typeof threadId === 'string') {
+				return { threadId };
 			}
 		}
 	}
@@ -141,6 +147,16 @@ function buildMcpConfigArgs(): string[] {
 /** Duration-guard timeout for forced cleanup after turn/interrupt. */
 const INTERRUPT_TIMEOUT_MS = 5_000;
 
+/**
+ * Map the normalized cross-participant permission tier onto Codex's native
+ * `AskForApproval`. There's no native policy that asks for commands but not
+ * file edits, so 'acceptEdits' still asks codex for both — the file-change
+ * side is instead auto-accepted host-side in `_approveFileChange`.
+ */
+function mapTierToApprovalPolicy(tier: PermissionTier): AskForApproval {
+	return tier === 'fullAuto' ? 'never' : 'untrusted';
+}
+
 // ─── Participant ────────────────────────────────────────────────────────────────
 
 export class CodexParticipant {
@@ -150,6 +166,12 @@ export class CodexParticipant {
 	private readonly _sessions = new Map<string, SessionState>();
 	/** MCP server inventory — mirrors agent-host's _mcpInventory. */
 	private _mcpInventory: Map<string, McpInventoryEntry> = new Map();
+	/** Tracks stream.externalEdit() windows for fileChange items (shared across
+	 *  sessions — keyed internally by item id, which codex already guarantees
+	 *  unique per thread). Without this, codex's file edits only ever show up
+	 *  as a markdown diff in the response, never as a real, diffable,
+	 *  Working-Set-tracked change. */
+	private readonly _editTracker = new ExternalEditTracker();
 
 	constructor(
 		private readonly proxyManager: ProxyManager,
@@ -327,6 +349,16 @@ export class CodexParticipant {
 		const savedThreadId = savedMeta?.threadId;
 		this._log.debug(`session lookup ${JSON.stringify({ savedThreadId, routing })}`);
 
+		// ── Resolve this turn's permission tier ──
+		// Configured default, overridden for this turn only by a recognized
+		// /ask, /acceptEdits or /fullAuto slash command (never persisted).
+		const configuredTier = vscode.workspace.getConfiguration('feima.agents.codex').get('permissionMode');
+		const permissionTier = resolvePermissionTier(request.command, configuredTier);
+		const approvalPolicy = mapTierToApprovalPolicy(permissionTier);
+		this._log.debug(`final permission in use ${JSON.stringify({
+			configuredTier, commandOverride: request.command, tier: permissionTier, approvalPolicy,
+		})}`);
+
 		// ── Dynamic tool discovery ──
 		const dynamicTools = await this._toolManager.buildDynamicTools();
 		this._log.debug(`dynamic tools built ${JSON.stringify({ count: dynamicTools.length, names: dynamicTools.map(t => t.name).slice(0, 20) })}`);
@@ -353,7 +385,7 @@ export class CodexParticipant {
 					const fallbackModelId = request.model.vendor ? `${request.model.vendor}/${request.model.id}` : request.model.id;
 					codexThread = await conn.startThread({
 						model: fallbackModelId, cwd,
-						approvalPolicy: 'untrusted', sandbox: 'workspace-write',
+						approvalPolicy, sandbox: 'workspace-write',
 						dynamicTools, developerInstructions: VS_CODE_TOOL_INSTRUCTIONS,
 					});
 				}
@@ -363,7 +395,7 @@ export class CodexParticipant {
 			const modelId = request.model.vendor ? `${request.model.vendor}/${request.model.id}` : request.model.id;
 			codexThread = await conn.startThread({
 				model: modelId, cwd,
-				approvalPolicy: 'untrusted', sandbox: 'workspace-write',
+				approvalPolicy, sandbox: 'workspace-write',
 				dynamicTools, developerInstructions: VS_CODE_TOOL_INSTRUCTIONS,
 			});
 		}
@@ -371,9 +403,6 @@ export class CodexParticipant {
 		// ── Set up per-session state ──
 		session = this._sessions.get(codexThread.id);
 		if (!session) {
-			let turnResolve!: () => void;
-			let turnReject!: (err: Error) => void;
-			const turnDone = new Promise<void>((resolve, reject) => { turnResolve = resolve; turnReject = reject; });
 			session = {
 				thread: codexThread,
 				lastToolsHash: newToolsHash,
@@ -383,21 +412,73 @@ export class CodexParticipant {
 				pendingToolCalls: new PendingRequestRegistry(),
 				pendingMcpApprovals: new PendingRequestRegistry(),
 				turnActive: false,
-				turnDone,
-				turnResolve,
-				turnReject,
+				permissionTier,
+				// Placeholders — always replaced with a fresh promise below,
+				// per-turn, before this turn starts. Never used as-is.
+				turnDone: Promise.resolve(),
+				turnResolve: () => {},
+				turnReject: () => {},
 			};
 			this._sessions.set(codexThread.id, session);
 		}
+		// Existing session reused across turns — refresh with this turn's
+		// resolved tier (a /ask, /acceptEdits or /fullAuto override applies to
+		// this turn only and must not stick from a prior one).
+		session.permissionTier = permissionTier;
 
-		// Start a new turn
+		// If a previous turn on this same thread never reached `turn/completed`
+		// (e.g. a dynamic tool call that never got answered), `turnActive` is
+		// still true and that turn's own `handleRequest` call is still stuck
+		// awaiting `session.turnDone`. Nothing here prevented a second turn
+		// from starting on top of it, and — critically — codex's OWN internal
+		// per-thread turn state stays wedged on the abandoned turn, so a new
+		// `turn/start` on the same thread can silently never progress. Abandon
+		// the stale turn first so the thread isn't permanently poisoned.
+		if (session.turnActive) {
+			this._log.warn(`starting new turn while previous turn still active on thread ${codexThread.id}; stale turn state: ${JSON.stringify({
+				currentAppTurnId: session.currentAppTurnId,
+				pendingToolCalls: session.pendingToolCalls.keys(),
+				pendingCommandApprovals: session.pendingCommandApprovals.keys(),
+				pendingFileChangeApprovals: session.pendingFileChangeApprovals.keys(),
+				pendingMcpApprovals: session.pendingMcpApprovals.keys(),
+			})} — interrupting stale turn before starting the new one`);
+			await this._interruptTurn(conn, session);
+		}
+
+		// Start a new turn. Always create a FRESH completion promise here —
+		// reusing the session's turnDone across turns would mean `await
+		// session.turnDone` below resolves against whatever settled it on a
+		// PRIOR turn (already resolved/rejected), completing this turn
+		// instantly regardless of whether its own turn/completed has arrived.
+		{
+			let turnResolve!: () => void;
+			let turnReject!: (err: Error) => void;
+			const turnDone = new Promise<void>((resolve, reject) => { turnResolve = resolve; turnReject = reject; });
+			session.turnDone = turnDone;
+			session.turnResolve = turnResolve;
+			session.turnReject = turnReject;
+		}
 		session.turnActive = true;
 		session.pendingFileChanges.clear();
 
 		const ts = conn.subscribe(codexThread.id);
+		// `ts` is a long-lived per-thread emitter reused across turns — cleanup
+		// normally happens in this turn's own `finally` below, but if a PRIOR
+		// turn on this same thread never reached `turn/completed` (e.g. a
+		// dynamic tool call that never got answered), that turn's `handleRequest`
+		// call is still suspended awaiting `session.turnDone` and its `finally`
+		// never ran, leaving its listeners (bound to that turn's now-stale
+		// `stream`) still attached. Force-clear here too so a zombie turn can
+		// never poison this one: EventEmitter invokes listeners in registration
+		// order, and a stale listener throwing on a superseded `stream` would
+		// abort the emit before this turn's own (later-registered) listener runs.
+		ts.removeAllListeners();
 
 		// ── Agent delta ──
-		ts.on('item/agentMessage/delta', (p: AgentMessageDeltaNotification) => { stream.markdown(p.delta); });
+		ts.on('item/agentMessage/delta', (p: AgentMessageDeltaNotification) => {
+			thinking.closeForText();
+			stream.markdown(p.delta);
+		});
 
 		// ── Turn lifecycle ──
 		ts.on('turn/completed', (p: TurnCompletedNotification) => {
@@ -430,19 +511,17 @@ export class CodexParticipant {
 			session!.turnResolve();
 		});
 
-		// ── Reasoning ──
-		let thinkingOpen = false;
+		// ── Reasoning (FlowParticipant pattern: ThinkingPanelHelper) ──
+		const thinking = new ThinkingPanelHelper(stream, 'codex-reasoning');
+
 		ts.on('item/reasoning/summaryPartAdded', () => {
-			thinkingOpen = true;
-			emitThinkingProgress(stream, 'reasoning', 'Thinking…');
+			thinking.open();
 		});
 		ts.on('item/reasoning/summaryTextDelta', (p: ReasoningSummaryTextDeltaNotification) => {
-			if (!thinkingOpen) { emitThinkingProgress(stream, 'reasoning', 'Thinking…'); thinkingOpen = true; }
-			emitThinkingProgress(stream, p.itemId, p.delta);
+			thinking.pushDelta(p.delta);
 		});
 		ts.on('item/reasoning/textDelta', (p: ReasoningTextDeltaNotification) => {
-			if (!thinkingOpen) { emitThinkingProgress(stream, 'reasoning', 'Thinking…'); thinkingOpen = true; }
-			emitThinkingProgress(stream, p.itemId, p.delta);
+			thinking.pushDelta(p.delta);
 		});
 
 		let progressLabel = '';
@@ -454,6 +533,7 @@ export class CodexParticipant {
 		ts.on('item/started', (p: ItemStartedNotification) => {
 			const item = p.item;
 			this._log.debug(`item/started ${item.type} ${item.id.slice(0, 13)}`);
+			thinking.closeForAction();
 			if (item.type === 'commandExecution') {
 				const cmd = item.command || item.commandActions?.map(a => a.command).join(' | ') || 'command';
 				setProgress(`Running ${cmd.slice(0, 80)}`);
@@ -467,6 +547,11 @@ export class CodexParticipant {
 				});
 				stream.markdown(diffs.join('\n\n') + '\n');
 				setProgress('Applying file changes…');
+				// Bracket the actual on-disk write (which happens between this
+				// notification and the matching item/completed) so VS Code can
+				// diff the file and record a real, Working-Set-tracked edit —
+				// not just the markdown diff already streamed above.
+				void this._editTracker.trackEdit(item.id, item.changes.map(c => vscode.Uri.file(c.path)), stream);
 			} else if (item.type === 'webSearch') {
 				setProgress(`Searching ${item.query || 'web'}…`);
 			} else if (item.type === 'mcpToolCall') {
@@ -489,12 +574,13 @@ export class CodexParticipant {
 			} else if (item.type === 'fileChange') {
 				setProgress('Continuing…');
 				session!.pendingFileChanges.delete(item.id);
+				void this._editTracker.completeEdit(item.id);
 			} else if (item.type === 'mcpToolCall') {
 				setProgress('Continuing…');
 			} else if (item.type === 'dynamicToolCall') {
 				setProgress('Continuing…');
 			} else if (item.type === 'reasoning') {
-				thinkingOpen = false;
+				thinking.closeForAction();
 			} else if (item.type === 'webSearch') {
 				setProgress('Continuing…');
 			}
@@ -540,7 +626,13 @@ export class CodexParticipant {
 		});
 
 		// ── Requests (approval + dynamic tool calls + MCP) ──
-		ts.on('request', (req: unknown) => { void this._onRequest(request, stream, token, conn, session!, req); });
+		ts.on('request', (req: unknown) => {
+			this._log.debug(`ts 'request' event received ${JSON.stringify(req).slice(0, 300)}`);
+			void this._onRequest(request, stream, token, conn, session!, req).catch(err => {
+				this._log.error(err instanceof Error ? err : String(err), '_onRequest threw (unhandled)');
+			});
+		});
+		this._log.debug(`registered 'request' listener; ts.listenerCount('request')=${ts.listenerCount('request')}, emitterId=${(ts as unknown as { __id?: number }).__id}`);
 
 		// ── Turn cancellation (§8): send turn/interrupt BEFORE rejecting ──
 		// Mirrors agent-host `codexAgent.abortSession` → `turn/interrupt`.
@@ -553,7 +645,7 @@ export class CodexParticipant {
 		this._log.debug(`starting turn ${JSON.stringify({ prompt: request.prompt.slice(0, 120), threadId: codexThread.id, modelId: request.model.id })}`);
 		try {
 			const turnModelId = request.model.vendor ? `${request.model.vendor}/${request.model.id}` : request.model.id;
-			const startResult = await conn.startTurn({ threadId: codexThread.id, input: [{ type: 'text', text: request.prompt }], model: turnModelId, approvalPolicy: 'untrusted' });
+			const startResult = await conn.startTurn({ threadId: codexThread.id, input: [{ type: 'text', text: request.prompt }], model: turnModelId, approvalPolicy });
 			// Store the app-server turn id for cancellation (§8) and steering (§9).
 			session.currentAppTurnId = startResult.id;
 			await session.turnDone;
@@ -561,6 +653,9 @@ export class CodexParticipant {
 			ts.removeAllListeners();
 			conn.removeAllListeners('error');
 			cancelSub.dispose();
+			// Safety net: close any externalEdit windows that never got a matching
+			// item/completed (turn ended early — cancellation, error, interrupt).
+			this._editTracker.flush();
 		}
 
 		return { metadata: { threadId: codexThread.id } };
@@ -574,6 +669,7 @@ export class CodexParticipant {
 		session: SessionState, r: unknown,
 	): Promise<void> {
 		const msg = r as { method: string; id: string | number; params: Record<string, unknown> };
+		this._log.debug(`_onRequest dispatch ${JSON.stringify({ method: msg?.method, id: msg?.id })}`);
 		if (!msg?.method) { return; }
 
 		if (msg.method.includes('requestApproval')) {
@@ -588,7 +684,9 @@ export class CodexParticipant {
 			}
 		} else if (msg.method === 'item/tool/call') {
 			const p = msg.params as unknown as DynamicToolCallParams;
-			void this._handleToolCall(request, token, conn, msg.id, session, p);
+			this._handleToolCall(request, token, conn, msg.id, session, p).catch(err => {
+				this._log.error(err instanceof Error ? err : String(err), '_handleToolCall threw (unhandled)');
+			});
 		// ── MCP Tool Call Routing (MCP-03, MCP-12) ──
 		} else if (msg.method === 'mcpServer/tool/call') {
 			const p = msg.params as unknown as McpServerToolCallParams;
@@ -681,16 +779,12 @@ export class CodexParticipant {
 		session.pendingMcpApprovals.register(key);
 
 		try {
-			const r = await vscode.lm.invokeTool('vscode_get_confirmation', {
-				input: {
-					title: `MCP Tool: ${mcpApprovalQ.label}`,
-					message: mcpApprovalQ.description ?? 'Codex wants to call an MCP tool. Allow?',
-					confirmationType: 'basic',
-				},
-				toolInvocationToken: request.toolInvocationToken,
-			}, token);
-			const v = (r.content.at(0) as { value?: unknown } | undefined)?.value;
-			const approved = typeof v === 'string' && v.toLowerCase() === 'yes';
+			const approved = await requestConfirmation(
+				`MCP Tool: ${mcpApprovalQ.label}`,
+				mcpApprovalQ.description ?? 'Codex wants to call an MCP tool. Allow?',
+				request.toolInvocationToken,
+				token,
+			);
 
 			const answers: ToolRequestUserInputAnswer[] = params.questions.map(q => ({
 				questionId: q.id,
@@ -730,16 +824,12 @@ export class CodexParticipant {
 		this._log.debug(`mcp elicitation ${JSON.stringify({ server: params.serverName, message: params.message })}`);
 
 		try {
-			const r = await vscode.lm.invokeTool('vscode_get_confirmation', {
-				input: {
-					title: `MCP Server "${params.serverName}" Requests`,
-					message: params.message || 'The MCP server is requesting user input.',
-					confirmationType: 'basic',
-				},
-				toolInvocationToken: request.toolInvocationToken,
-			}, token);
-			const v = (r.content.at(0) as { value?: unknown } | undefined)?.value;
-			const approved = typeof v === 'string' && v.toLowerCase() === 'yes';
+			const approved = await requestConfirmation(
+				`MCP Server "${params.serverName}" Requests`,
+				params.message || 'The MCP server is requesting user input.',
+				request.toolInvocationToken,
+				token,
+			);
 			conn.respondToGeneric(requestId, {
 				decision: approved ? 'accept' : 'cancel',
 			} as McpServerElicitationRequestResponse);
@@ -759,6 +849,14 @@ export class CodexParticipant {
 		token: vscode.CancellationToken, conn: AppServerConnection,
 		id: string | number, session: SessionState, p: CommandExecutionRequestApprovalParams,
 	): Promise<void> {
+		// Defense-in-depth: approvalPolicy: 'never' (fullAuto tier) should mean
+		// codex never even sends this request, but guard here too in case of a
+		// race between a tier change and an approval already in flight.
+		if (session.permissionTier === 'fullAuto') {
+			this._log.debug(`command approval auto-accepted ${JSON.stringify({ tier: session.permissionTier })}`);
+			conn.respondToApproval(id, 'accept');
+			return;
+		}
 		stream.progress('Waiting for approval...');
 		const cmd = p.command ?? p.commandActions?.map(a => a.command).join(' ') ?? null;
 		const lines: string[] = [];
@@ -770,12 +868,8 @@ export class CodexParticipant {
 		session.pendingCommandApprovals.register(key);
 
 		try {
-			const r = await vscode.lm.invokeTool('vscode_get_confirmation', {
-				input: { title: 'Allow command execution?', message: lines.join('\n\n'), confirmationType: 'basic' },
-				toolInvocationToken: request.toolInvocationToken,
-			}, token);
-			const v = (r.content.at(0) as { value?: unknown } | undefined)?.value;
-			const decision: ApprovalDecision = typeof v === 'string' && v.toLowerCase() === 'yes' ? 'accept' : 'cancel';
+			const approved = await requestConfirmation('Allow command execution?', lines.join('\n\n'), request.toolInvocationToken, token);
+			const decision: ApprovalDecision = approved ? 'accept' : 'cancel';
 			conn.respondToApproval(id, decision);
 			session.pendingCommandApprovals.respond(key, decision);
 		} catch {
@@ -789,6 +883,13 @@ export class CodexParticipant {
 		token: vscode.CancellationToken, conn: AppServerConnection,
 		id: string | number, session: SessionState, p: FileChangeRequestApprovalParams,
 	): Promise<void> {
+		// Codex's AskForApproval has no edits-only policy, so 'acceptEdits' still
+		// asks codex to send this request — the host auto-accepts it here instead.
+		if (session.permissionTier === 'fullAuto' || session.permissionTier === 'acceptEdits') {
+			this._log.debug(`file change approval auto-accepted ${JSON.stringify({ tier: session.permissionTier })}`);
+			conn.respondToApproval(id, 'accept');
+			return;
+		}
 		stream.progress('Waiting for approval...');
 		const lines: string[] = [];
 		if (p.grantRoot) { lines.push(`**Root:** ${p.grantRoot}`); }
@@ -798,12 +899,8 @@ export class CodexParticipant {
 		session.pendingFileChangeApprovals.register(key);
 
 		try {
-			const r = await vscode.lm.invokeTool('vscode_get_confirmation', {
-				input: { title: 'Allow file changes?', message: lines.join('\n\n') || 'Codex wants to modify files.', confirmationType: 'basic' },
-				toolInvocationToken: request.toolInvocationToken,
-			}, token);
-			const v = (r.content.at(0) as { value?: unknown } | undefined)?.value;
-			const decision: ApprovalDecision = typeof v === 'string' && v.toLowerCase() === 'yes' ? 'accept' : 'cancel';
+			const approved = await requestConfirmation('Allow file changes?', lines.join('\n\n') || 'Codex wants to modify files.', request.toolInvocationToken, token);
+			const decision: ApprovalDecision = approved ? 'accept' : 'cancel';
 			conn.respondToApproval(id, decision);
 			session.pendingFileChangeApprovals.respond(key, decision);
 		} catch {
@@ -842,8 +939,11 @@ export class CodexParticipant {
 		const toolName = params.tool;
 		const _resultPromise = session.pendingToolCalls.register(String(requestId));
 
+		this._log.debug(`dynamic tool call dispatch ${JSON.stringify({ requestId, toolName, args: params.arguments })}`);
+
 		try {
 			const result = await this._invokeTool(toolName, params.arguments as Record<string, unknown>, request, token);
+			this._log.debug(`dynamic tool call result ${JSON.stringify({ requestId, toolName, resultLength: result.length, resultPreview: result.slice(0, 300) })}`);
 			conn.respondToToolCall(requestId, {
 				contentItems: [{ type: 'inputText', text: result }],
 				success: true,
@@ -881,10 +981,13 @@ export class CodexParticipant {
 				const text = result.content
 					.map(part => (typeof part === 'object' && part !== null && 'value' in part ? String(part.value) : JSON.stringify(part)))
 					.join('\n');
+				this._log.debug(`vscode.lm.invokeTool("${toolName}") succeeded: contentParts=${result.content.length} textLength=${text.length}${text.length === 0 ? ' (EMPTY RESULT)' : ''}`);
 				return text;
 			} catch (err) {
 				this._log.warn(`vscode.lm.invokeTool("${toolName}") failed, trying fallback: ${err instanceof Error ? err.message : String(err)}`);
 			}
+		} else {
+			this._log.debug(`vscode.lm.invokeTool not available, using fallback for "${toolName}"`);
 		}
 
 		return this._fallbackInvokeTool(toolName, args, token);

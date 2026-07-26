@@ -103,19 +103,61 @@
 				"id": "codex.participant",
 				"name": "codex",
 				"description": "%participant.codex.description%",
-				"isSticky": true
+				"isSticky": true,
+				"commands": [
+					{
+						"name": "ask",
+						"description": "%chatCommand.permission.ask.description%"
+					},
+					{
+						"name": "acceptEdits",
+						"description": "%chatCommand.permission.acceptEdits.description%"
+					},
+					{
+						"name": "fullAuto",
+						"description": "%chatCommand.permission.fullAuto.description%"
+					}
+				]
 			},
 			{
 				"id": "copilot-cli.participant",
 				"name": "copilot-cli",
 				"description": "%participant.copilot.description%",
-				"isSticky": true
+				"isSticky": true,
+				"commands": [
+					{
+						"name": "ask",
+						"description": "%chatCommand.permission.ask.description%"
+					},
+					{
+						"name": "acceptEdits",
+						"description": "%chatCommand.permission.acceptEdits.description%"
+					},
+					{
+						"name": "fullAuto",
+						"description": "%chatCommand.permission.fullAuto.description%"
+					}
+				]
 			},
 			{
 				"id": "claude.participant",
 				"name": "claude",
 				"description": "%participant.claude.description%",
-				"isSticky": true
+				"isSticky": true,
+				"commands": [
+					{
+						"name": "ask",
+						"description": "%chatCommand.permission.ask.description%"
+					},
+					{
+						"name": "acceptEdits",
+						"description": "%chatCommand.permission.acceptEdits.description%"
+					},
+					{
+						"name": "fullAuto",
+						"description": "%chatCommand.permission.fullAuto.description%"
+					}
+				]
 			}
 		],
 		"commands": [
@@ -266,6 +308,51 @@
 						"additionalProperties": true
 					},
 					"scope": "machine-overridable"
+				},
+				"feima.agents.codex.permissionMode": {
+					"type": "string",
+					"enum": [
+						"ask",
+						"acceptEdits",
+						"fullAuto"
+					],
+					"enumDescriptions": [
+						"Ask for approval before running commands or changing files (safe default).",
+						"Auto-approve file edits; still ask before running commands or other tools.",
+						"Auto-approve everything; never ask. Use with caution."
+					],
+					"default": "ask",
+					"markdownDescription": "%settings.agents.codex.permissionMode.description%"
+				},
+				"feima.agents.copilot.permissionMode": {
+					"type": "string",
+					"enum": [
+						"ask",
+						"acceptEdits",
+						"fullAuto"
+					],
+					"enumDescriptions": [
+						"Ask for approval before running commands or changing files (safe default).",
+						"Auto-approve file edits; still ask before running commands or other tools.",
+						"Auto-approve everything; never ask. Use with caution."
+					],
+					"default": "ask",
+					"markdownDescription": "%settings.agents.copilot.permissionMode.description%"
+				},
+				"feima.agents.claude.permissionMode": {
+					"type": "string",
+					"enum": [
+						"ask",
+						"acceptEdits",
+						"fullAuto"
+					],
+					"enumDescriptions": [
+						"Ask for approval before running commands or changing files (safe default).",
+						"Auto-approve file edits; still ask before running commands or other tools.",
+						"Auto-approve everything; never ask. Use with caution."
+					],
+					"default": "ask",
+					"markdownDescription": "%settings.agents.claude.permissionMode.description%"
 				}
 			}
 		},

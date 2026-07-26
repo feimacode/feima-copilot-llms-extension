@@ -121,4 +121,7 @@ export class PendingRequestRegistry<T> {
 	}
 
 	get size(): number { return this._entries.size; }
+
+	/** Keys of currently-parked (unresolved) entries — for diagnostics. */
+	keys(): string[] { return [...this._entries.keys()]; }
 }

@@ -8,15 +8,17 @@
  *
  * Mirrors the agent-host's `_handlePermissionRequest()` cascade: safe operations
  * are auto-approved without prompting; everything else is parked in a deferred
- * registry keyed by tool-call id and resolved from a `vscode_get_confirmation`
- * dialog. The registry keeps concurrent requests correlated and lets dispose
- * settle any outstanding prompts.
+ * registry keyed by tool-call id and resolved from the shared `requestConfirmation`
+ * dialog (common/confirmationTool.ts). The registry keeps concurrent requests
+ * correlated and lets dispose settle any outstanding prompts.
  */
 
 import * as os from 'os';
 import * as vscode from 'vscode';
 import type { PermissionRequest, PermissionRequestResult } from '@github/copilot-sdk';
 import { PendingRequestRegistry } from '../common/util/pendingRequestRegistry';
+import type { PermissionTier } from '../common/permissionTier';
+import { requestConfirmation } from '../common/confirmationTool';
 import { ILogService } from '../../platform/log/common/logService';
 
 const APPROVE_ONCE: PermissionRequestResult = { kind: 'approve-once' };
@@ -27,6 +29,8 @@ export class CopilotPermissionHandler {
 
 	/**
 	 * @param attachedPaths Absolute paths the user attached to the request; reads of these are auto-approved.
+	 * @param tier Resolved cross-participant permission tier for this turn
+	 *             (configured default, or a /ask, /acceptEdits, /fullAuto override).
 	 * @param _log Logging service.
 	 */
 	constructor(
@@ -34,6 +38,7 @@ export class CopilotPermissionHandler {
 		private readonly toolInvocationToken: vscode.ChatRequest['toolInvocationToken'],
 		private readonly token: vscode.CancellationToken,
 		private readonly attachedPaths: ReadonlySet<string>,
+		private readonly tier: PermissionTier,
 		private readonly _log: ILogService,
 	) {}
 
@@ -45,6 +50,17 @@ export class CopilotPermissionHandler {
 			// Fail-safe: a request we cannot correlate is rejected.
 			this._log.debug(`reject (no toolCallId) ${JSON.stringify({ kind: request.kind })}`);
 			return REJECT;
+		}
+
+		// Tier: fullAuto → auto-approve everything.
+		if (this.tier === 'fullAuto') {
+			this._log.debug(`auto-approve (fullAuto tier) ${JSON.stringify({ kind: request.kind })}`);
+			return APPROVE_ONCE;
+		}
+		// Tier: acceptEdits → auto-approve file writes; shell/custom-tool/other reads still prompt.
+		if (this.tier === 'acceptEdits' && request.kind === 'write') {
+			this._log.debug(`auto-approve (acceptEdits tier) ${JSON.stringify({ path: request.fileName })}`);
+			return APPROVE_ONCE;
 		}
 
 		// Tier: read of a user-attached file → auto-approve.
@@ -79,28 +95,13 @@ export class CopilotPermissionHandler {
 
 	private async _confirm(request: PermissionRequest, toolCallId: string): Promise<void> {
 		this.stream.progress('Waiting for approval…');
-		try {
-			const result = await vscode.lm.invokeTool(
-				'vscode_get_confirmation',
-				{
-					input: {
-						title: 'Copilot CLI — Allow operation?',
-						message: describePermission(request),
-						confirmationType: 'basic',
-					},
-					toolInvocationToken: this.toolInvocationToken,
-				},
-				this.token,
-			);
-			const firstPart = result.content.at(0);
-			const rawValue: unknown = firstPart !== null && typeof firstPart === 'object' && 'value' in firstPart
-				? (firstPart as { value: unknown }).value
-				: undefined;
-			const approved = typeof rawValue === 'string' && rawValue.toLowerCase() === 'yes';
-			this._pending.respondOrBuffer(toolCallId, approved);
-		} catch {
-			this._pending.respondOrBuffer(toolCallId, false);
-		}
+		const approved = await requestConfirmation(
+			'Copilot CLI — Allow operation?',
+			describePermission(request),
+			this.toolInvocationToken,
+			this.token,
+		);
+		this._pending.respondOrBuffer(toolCallId, approved);
 	}
 }
 

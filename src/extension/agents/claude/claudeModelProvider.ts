@@ -13,14 +13,20 @@ import { ILogService } from '../../platform/log/common/logService';
 /**
  * Provider ID used when registering with VS Code's LM system.
  * All models returned by this provider will have `vendor === CLAUDE_PROVIDER_ID`.
+ *
+ * Namespaced (not just "claude-code") because that generic name is a likely
+ * pick for any extension wrapping the Claude Code CLI — including other
+ * extensions from this same codebase's lineage — and VS Code's model/agent
+ * registries are global across all installed extensions, so a plain
+ * "claude-code" collides the moment two such extensions are active at once.
  */
-export const CLAUDE_PROVIDER_ID = 'claude-code';
+export const CLAUDE_PROVIDER_ID = 'feima-claude-code';
 
 /**
  * Family assigned to all Claude-native models. Groups them visually in the picker
  * and is used as a secondary routing signal alongside `vendor`.
  */
-export const CLAUDE_FAMILY = 'claude-code';
+export const CLAUDE_FAMILY = 'feima-claude-code';
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 

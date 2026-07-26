@@ -16,8 +16,9 @@
  */
 
 import * as vscode from 'vscode';
-import * as crypto from 'crypto';
-import { emitThinkingProgress, emitCodeblockUri } from '../common/streamAdditions';
+import { emitCodeblockUri } from '../common/streamAdditions';
+import { ThinkingPanelHelper } from '../common/thinkingPanelHelper';
+import { isClaudeEditTool, extractEditToolPath } from './claudeEditTools';
 import {
 	type SDKMessage,
 	type SDKAssistantMessage,
@@ -33,14 +34,19 @@ import { ILogService } from '../../platform/log/common/logService';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface RouterState {
-	/** Current thinking block being streamed (id → text), null if none active */
-	currentThinkingId: string | null;
-	/** Accumulated thinking text for the current thinking block */
-	thinkingText: string;
-	/** Current tool display thinking block id, null if none active */
-	currentToolThinkingId: string | null;
+	/** Manages the native thinking panel lifecycle. */
+	thinking: ThinkingPanelHelper;
 	/** Map of active tool call id → tool name */
 	activeToolCalls: Map<string, string>;
+	/**
+	 * In-progress tool_use blocks, keyed by content-block index. Anthropic
+	 * streams a tool call's `input` as a JSON string split across
+	 * `input_json_delta` events — the `content_block_start` event always
+	 * carries an empty `input`. We buffer the partial JSON here and only
+	 * decode it once the block closes (`content_block_stop`), which is the
+	 * first point the real arguments (e.g. a file path) actually exist.
+	 */
+	pendingToolInputs: Map<number, { toolId: string; toolName: string; json: string }>;
 	/** Set of file paths already reported via codeblockUri (dedup) */
 	reportedFilePaths: Set<string>;
 	/** Ordered list of file changes made this turn */
@@ -61,13 +67,12 @@ export interface FileChangeEntry {
 	description: string;
 }
 
-export function createInitialState(): RouterState {
+export function createInitialState(stream: vscode.ChatResponseStream): RouterState {
 	return {
-		currentThinkingId: null,
-		thinkingText: '',
-		currentToolThinkingId: null,
+		thinking: new ThinkingPanelHelper(stream, 'claude-reasoning'),
 		reportedFilePaths: new Set(),
 		activeToolCalls: new Map(),
+		pendingToolInputs: new Map(),
 		fileChanges: [],
 		usage: null,
 		sessionId: null,
@@ -86,11 +91,11 @@ export function routeSDKMessage(
 	msg: SDKMessage,
 	stream: vscode.ChatResponseStream,
 	log: ILogService,
-	state: RouterState = createInitialState(),
+	state: RouterState = createInitialState(stream),
 ): RouterState {
 	switch (msg.type) {
 		case 'stream_event':
-			return handleStreamEvent(msg, stream, state);
+			return handleStreamEvent(msg, stream, state, log);
 		case 'assistant':
 			return handleAssistantMessage(msg, stream, state);
 		case 'result':
@@ -111,14 +116,15 @@ function handleStreamEvent(
 	msg: SDKPartialAssistantMessage,
 	stream: vscode.ChatResponseStream,
 	state: RouterState,
+	log: ILogService,
 ): RouterState {
 	const event = msg.event;
 
 	switch (event.type) {
 		case 'content_block_start':
-			return handleContentBlockStart(event, stream, state);
+			return handleContentBlockStart(event, stream, state, log);
 		case 'content_block_delta':
-			return handleContentBlockDelta(event, stream, state);
+			return handleContentBlockDelta(event, stream, state, log);
 		case 'content_block_stop':
 			return handleContentBlockStop(event, stream, state);
 		case 'message_delta':
@@ -141,44 +147,30 @@ function handleContentBlockStart(
 	event: BetaRawMessageStreamEvent & { type: 'content_block_start' },
 	stream: vscode.ChatResponseStream,
 	state: RouterState,
+	_log: ILogService,
 ): RouterState {
 	const block = event.content_block;
 
 	switch (block.type) {
 		case 'thinking': {
-			// Reuse the same thinking block ID across the entire turn to avoid
-			// flickering — the model emits many tiny thinking blocks and each
-			// new ID resets the display to "Thinking…" visually.
-			if (!state.currentThinkingId) {
-				state.currentThinkingId = crypto.randomUUID();
-				emitThinkingProgress(stream, state.currentThinkingId!, 'Thinking…');
-			}
-			// Reset accumulated text for this new thinking block
-			state.thinkingText = '';
+			state.thinking.open();
 			break;
 		}
 
 		case 'tool_use': {
-			// Tool call started → show a specific progress label (Codex pattern).
+			// Tool call started → close thinking panel and show progress.
+			// NOTE: `block.input` is always empty here — Anthropic streams the
+			// real arguments incrementally via `input_json_delta` on
+			// content_block_delta, only fully known once the block closes. Buffer
+			// it (see pendingToolInputs) and defer the descriptive label / file-
+			// change tracking to handleContentBlockStop.
+			state.thinking.closeForAction();
 			const toolName = block.name;
 			const toolId = block.id;
-			const input = block.input as Record<string, unknown>;
 			state.activeToolCalls.set(toolId, toolName);
+			state.pendingToolInputs.set(event.index, { toolId, toolName, json: '' });
 
-			// Build a descriptive progress label from the tool name + arguments.
-			const label = describeToolCall(toolName, input);
-			stream.progress(label);
-
-			// Track file changes for VS Code's "N files changed" summary.
-			if (isFileEditTool(toolName)) {
-				const filePath = extractPathFromToolInput(input);
-				state.fileChanges.push({
-					path: filePath,
-					operation: toolName === 'Edit' ? 'edit' : 'create',
-					description: `Editing via ${toolName}`,
-				});
-				_markFileEdited(stream, state, filePath);
-			}
+			stream.progress(`Calling ${toolName}…`);
 			break;
 		}
 
@@ -191,9 +183,6 @@ function handleContentBlockStart(
 	if (event.index !== undefined) {
 		// Track session ID from the enclosing partial message
 	}
-	if (state.currentThinkingId === null || state.currentThinkingId !== state.currentThinkingId) {
-		// noop
-	}
 
 	return state;
 }
@@ -204,12 +193,14 @@ function handleContentBlockDelta(
 	event: BetaRawMessageStreamEvent & { type: 'content_block_delta' },
 	stream: vscode.ChatResponseStream,
 	state: RouterState,
+	_log: ILogService,
 ): RouterState {
 	const delta = event.delta;
 
 	switch (delta.type) {
 		case 'text_delta': {
-			// Text content delta → stream as markdown
+			// Text content delta → close thinking panel and stream as markdown
+			state.thinking.closeForText();
 			if (delta.text) {
 				stream.markdown(delta.text);
 			}
@@ -217,19 +208,20 @@ function handleContentBlockDelta(
 		}
 
 		case 'thinking_delta': {
-			// Thinking delta → accumulate and re-emit full text so far.
-			// VS Code thinkingProgress replaces the displayed text (doesn't append),
-			// so we must send the full accumulated string each time.
-			if (delta.thinking && state.currentThinkingId) {
-				state.thinkingText += delta.thinking;
-				emitThinkingProgress(stream, state.currentThinkingId, state.thinkingText);
+			// Thinking delta → send to the native thinking panel.
+			if (delta.thinking) {
+				state.thinking.pushDelta(delta.thinking);
 			}
 			break;
 		}
 
 		case 'input_json_delta': {
-			// Tool input JSON — silently track; don't stream raw JSON to the user.
-			// The tool call progress notification (set on tool_use start) is sufficient.
+			// Buffer the tool's input JSON; don't stream raw partial JSON to the
+			// user. Decoded and acted on once the block closes (content_block_stop).
+			const pending = state.pendingToolInputs.get(event.index);
+			if (pending && delta.partial_json) {
+				pending.json += delta.partial_json;
+			}
 			break;
 		}
 	}
@@ -244,13 +236,43 @@ function handleContentBlockStop(
 	stream: vscode.ChatResponseStream,
 	state: RouterState,
 ): RouterState {
-	// When a tool_use block finishes, reset progress to "Continuing…" (Codex pattern).
+	const pending = state.pendingToolInputs.get(event.index);
+	if (pending) {
+		state.pendingToolInputs.delete(event.index);
+
+		let input: Record<string, unknown> = {};
+		try {
+			input = pending.json ? (JSON.parse(pending.json) as Record<string, unknown>) : {};
+		} catch {
+			// Malformed/incomplete JSON — proceed with an empty input rather than
+			// losing the whole tool-call notification.
+		}
+
+		// Now that the real arguments are known, show the descriptive label and
+		// track file changes for VS Code's "N files changed" summary. The actual
+		// diffable/Working-Set-tracked edit is handled separately via the SDK's
+		// PreToolUse/PostToolUse hooks (see claudeOptionsBuilder.ts) — those fire
+		// right before/after the CLI executes the tool, which this stream event
+		// can't guarantee (it only marks when the *model's message* finished
+		// transmitting, which can race the CLI's own tool execution).
+		stream.progress(describeToolCall(pending.toolName, input));
+		if (isClaudeEditTool(pending.toolName)) {
+			const filePath = extractEditToolPath(pending.toolName, input);
+			state.fileChanges.push({
+				path: filePath,
+				operation: pending.toolName === 'Write' ? 'create' : 'edit',
+				description: `Editing via ${pending.toolName}`,
+			});
+			_markFileEdited(stream, state, filePath);
+		}
+		return state;
+	}
+
+	// Non-tool_use block finished (text/thinking) — reset progress to
+	// "Continuing…" while a tool call is still active (Codex pattern).
 	if (state.activeToolCalls.size > 0) {
 		stream.progress('Continuing…');
 	}
-	// Preserve the thinking block ID across blocks — clearing it causes
-	// the chat UI to start a fresh "Thinking…" label on the next block,
-	// which creates ugly flickering. Only clear on turn completion.
 	return state;
 }
 
@@ -333,18 +355,11 @@ function handleResultMessage(
 
 function handleUserMessage(
 	msg: SDKMessage & { type: 'user' },
-	stream: vscode.ChatResponseStream,
+	_stream: vscode.ChatResponseStream,
 	state: RouterState,
 ): RouterState {
-	// User messages carry tool results from the SDK.
-	// Update the tool thinking block to show completion status.
-	if (state.currentToolThinkingId) {
-		const toolNames = Array.from(state.activeToolCalls.values());
-		if (toolNames.length > 0) {
-			emitThinkingProgress(stream, state.currentToolThinkingId, `✅ ${toolNames.join(', ')}`);
-		}
-		state.currentToolThinkingId = null;
-	}
+	// User messages carry tool results from the SDK — close thinking if still open.
+	state.thinking.closeForAction();
 
 	if (msg.session_id) {
 		state.sessionId = msg.session_id;
@@ -393,11 +408,6 @@ function _extractText(msg: SDKAssistantMessage): string {
 	return '';
 }
 
-/** Check if a tool name is a file-editing tool. */
-function isFileEditTool(toolName: string): boolean {
-	return ['Edit', 'FileWrite', 'file_edit', 'FileEdit', 'Write'].includes(toolName);
-}
-
 /**
  * Build a descriptive progress label from a tool call (Codex pattern).
  * Shows the tool name plus a key detail (file path, command, query) so the
@@ -406,9 +416,9 @@ function isFileEditTool(toolName: string): boolean {
 function describeToolCall(toolName: string, input: Record<string, unknown>): string {
 	const short = (s: string, max = 60) => (s.length > max ? s.slice(0, max) + '…' : s);
 	// File operations — show the path
-	const filePath = extractPathFromToolInput(input);
+	const filePath = extractEditToolPath(toolName, input);
 	if (filePath !== 'unknown') {
-		const verb = isFileEditTool(toolName) ? 'Editing' : 'Reading';
+		const verb = isClaudeEditTool(toolName) ? 'Editing' : 'Reading';
 		return `${verb} \`${short(filePath)}\``;
 	}
 	// Shell / command execution — show the command
@@ -424,14 +434,6 @@ function describeToolCall(toolName: string, input: Record<string, unknown>): str
 	}
 	// Fallback — just the tool name
 	return `Calling ${toolName}…`;
-}
-
-/** Extract the file path from a tool input object, if present. */
-function extractPathFromToolInput(input: Record<string, unknown>): string {
-	if (typeof input.file_path === 'string') { return input.file_path; }
-	if (typeof input.path === 'string') { return input.path; }
-	if (typeof input.filePath === 'string') { return input.filePath; }
-	return 'unknown';
 }
 
 /**

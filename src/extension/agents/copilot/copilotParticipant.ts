@@ -19,6 +19,8 @@ import { CopilotPermissionHandler } from './copilotPermissionHandler';
 import { toSdkAttachments, type CopilotMessageAttachment } from './copilotAttachments';
 import { ProxyManager } from '../common/proxy/proxyManager';
 import { resolveBinary } from '../common/appServer/client';
+import { resolvePermissionTier } from '../common/permissionTier';
+import { requestConfirmation } from '../common/confirmationTool';
 import { ILogService } from '../../platform/log/common/logService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -137,12 +139,19 @@ export class CopilotParticipant {
 
 		const attachments = toSdkAttachments(request);
 		const attachedPaths = collectAttachedPaths(attachments);
-		const permission = new CopilotPermissionHandler(stream, request.toolInvocationToken, token, attachedPaths, this._log);
+		// Configured default, overridden for this turn only by a recognized
+		// /ask, /acceptEdits or /fullAuto slash command (never persisted).
+		const configuredTier = vscode.workspace.getConfiguration('feima.agents.copilot').get('permissionMode');
+		const permissionTier = resolvePermissionTier(request.command, configuredTier);
+		this._log.debug(`final permission in use ${JSON.stringify({
+			configuredTier, commandOverride: request.command, tier: permissionTier,
+		})}`);
+		const permission = new CopilotPermissionHandler(stream, request.toolInvocationToken, token, attachedPaths, permissionTier, this._log);
 
 		// Establish the mutable turn context read by the shared event/permission callbacks.
 		let resolveIdle!: () => void;
 		const idle = new Promise<void>(resolve => { resolveIdle = resolve; });
-		const routerState = createInitialRouterState();
+		const routerState = createInitialRouterState(stream);
 		entry.current = { stream, permission, routerState, resolveIdle, toolInvocationToken: request.toolInvocationToken, token };
 
 		// Cancellation → abort the SDK turn and wait for it to propagate before
@@ -304,29 +313,14 @@ export class CopilotParticipant {
 				return { approved: false };
 			}
 			this._log.debug(`exit plan mode requested ${JSON.stringify({ sessionId: entry.sessionId, summary: req.summary?.slice(0, 120) })}`);
-			try {
-				const result = await vscode.lm.invokeTool(
-					'vscode_get_confirmation',
-					{
-						input: {
-							title: 'Copilot CLI — Exit plan mode and start executing?',
-							message: req.summary || 'The agent has finished planning and wants to begin making changes.',
-							confirmationType: 'basic',
-						},
-						toolInvocationToken: current.toolInvocationToken,
-					},
-					current.token,
-				);
-				const firstPart = result.content.at(0);
-				const rawValue: unknown = firstPart !== null && typeof firstPart === 'object' && 'value' in firstPart
-					? (firstPart as { value: unknown }).value
-					: undefined;
-				const approved = typeof rawValue === 'string' && rawValue.toLowerCase() === 'yes';
-				this._log.debug(`exit plan mode decision ${JSON.stringify({ sessionId: entry.sessionId, approved })}`);
-				return { approved };
-			} catch {
-				return { approved: false };
-			}
+			const approved = await requestConfirmation(
+				'Copilot CLI — Exit plan mode and start executing?',
+				req.summary || 'The agent has finished planning and wants to begin making changes.',
+				current.toolInvocationToken,
+				current.token,
+			);
+			this._log.debug(`exit plan mode decision ${JSON.stringify({ sessionId: entry.sessionId, approved })}`);
+			return { approved };
 		};
 	}
 

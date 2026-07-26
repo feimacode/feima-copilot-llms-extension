@@ -7,7 +7,6 @@ import * as vscode from 'vscode';
 import { ILogService } from '../platform/log/common/logService';
 import { ProxyManager } from './common/proxy/proxyManager';
 import { DynamicToolManager } from './common/tools/dynamicToolManager';
-import { registerApprovalTool } from './common/approvalBridge';
 import { CodexParticipant } from './codex/codexParticipant';
 import { registerCodexModels } from './codex/codexModelProvider';
 import { CopilotParticipant } from './copilot/copilotParticipant';
@@ -15,11 +14,12 @@ import { ClaudeParticipant } from './claude/claudeParticipant';
 import { registerClaudeModels } from './claude/claudeModelProvider';
 import { setProxyManager } from './agentDiagnostics';
 import { installSdkStderrRedirect } from './common/sdkStdioRedirect';
+import { registerConfirmationTool } from './common/confirmationTool';
 
 /**
  * Registers all agent chat participants (@codex, @copilot-cli, @claude),
- * their language model providers, the LM proxy servers, dynamic tool
- * discovery, and the approval tool.
+ * their language model providers, the LM proxy servers, and dynamic tool
+ * discovery.
  *
  * Called once from `extension.ts` during activation. Non-fatal: if any
  * part fails, the error is logged but the extension continues to work.
@@ -34,6 +34,9 @@ export function registerAgents(context: vscode.ExtensionContext, logService: ILo
 	// they are visible alongside our own agent logs.
 	const disposeStderrRedirect = installSdkStderrRedirect(log);
 	context.subscriptions.push({ dispose: disposeStderrRedirect });
+
+	// ── Shared blocking confirmation tool (canUseTool / approval flows) ───
+	registerConfirmationTool(context, log);
 
 	// ── LM Proxy (OpenAI Responses + Anthropic Messages) ──────────────────
 	const proxyManager = new ProxyManager(log.createSubLogger('Proxy'));
@@ -57,9 +60,6 @@ export function registerAgents(context: vscode.ExtensionContext, logService: ILo
 			vscode.window.showInformationMessage(vscode.l10n.t('Codex dynamic tool cache cleared'));
 		})
 	);
-
-	// ── Approval tool (inline confirmation card for Codex) ────────────────
-	registerApprovalTool(context, log);
 
 	// ── Model providers (picker-only signals for native models) ───────────
 	registerCodexModels(context, log);

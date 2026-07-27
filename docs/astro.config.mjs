@@ -61,6 +61,19 @@ const sidebarBilingual = [
     ],
   },
   {
+    // EN-only for now — no zh/ mirror yet. Starlight's built-in i18n fallback
+    // shows the English content (with a "not yet translated" notice) when this
+    // slug is visited from the /zh/ locale, so it's safe to list here before a
+    // Chinese translation lands.
+    label: 'Agent Participants',
+    translations: { 'zh-CN': '智能体参与者' },
+    items: [
+      { slug: 'guides/agent-participants' },
+      { slug: 'guides/agent-participants-setup' },
+      { slug: 'guides/agent-proxy' },
+    ],
+  },
+  {
     label: 'API Tools',
     translations: { 'zh-CN': 'API 工具' },
     items: [
@@ -200,6 +213,14 @@ const sidebarEnOnly = [
       { label: 'Utility Model Config', link: '/guides/utility-models' },
       { label: 'Billing', link: '/guides/billing' },
       { label: 'FAQ', link: '/guides/faq' },
+    ],
+  },
+  {
+    label: 'Agent Participants',
+    items: [
+      { label: 'Overview', link: '/guides/agent-participants' },
+      { label: 'Setup & Troubleshooting', link: '/guides/agent-participants-setup' },
+      { label: 'Agent Proxy', link: '/guides/agent-proxy' },
     ],
   },
   {

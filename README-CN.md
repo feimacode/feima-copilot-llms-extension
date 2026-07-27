@@ -15,6 +15,7 @@
 - 🚀 [快速入门](https://ivenxu.github.io/feima-copilot-llms-extension/guides/quickstart/) | [快速入门（中文）](https://docs.feimacode.com/zh/guides/quickstart/)
 - 📦 [安装指南](https://ivenxu.github.io/feima-copilot-llms-extension/guides/installation/) | [安装指南（中文）](https://docs.feimacode.com/zh/guides/installation/)
 - 🔧 [配置选项](https://ivenxu.github.io/feima-copilot-llms-extension/guides/configuration/) | [配置选项（中文）](https://docs.feimacode.com/zh/guides/configuration/)
+- 🤖 [智能体参与者](https://ivenxu.github.io/feima-copilot-llms-extension/guides/agent-participants/) | [智能体参与者（中文）](https://docs.feimacode.com/zh/guides/agent-participants/)
 - 💻 [开发指南](https://ivenxu.github.io/feima-copilot-llms-extension/dev/setup/) | [开发指南（中文）](https://docs.feimacode.com/zh/dev/setup/)
 
 ## 简介
@@ -28,6 +29,7 @@
 - 💰 **按次计费**: 请求数付费，成本可控，告别按月订阅
 - 🔒 **安全可靠**: OAuth2 认证，代码不离开 VS Code
 - 🧠 **深度思考**: 支持思维链推理，复杂问题迎刃而解
+- 🤖 **智能体参与者**: 通过 `@claude`、`@codex`、`@copilot-cli` 在原生 VS Code 聊天中驱动 Claude Code、Codex 和 Copilot CLI —— 使用你自己的订阅或飞码扣/Copilot 模型
 
 ### 为什么选择飞码扣？
 

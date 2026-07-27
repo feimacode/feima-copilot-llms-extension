@@ -306,6 +306,8 @@ Some models have special capabilities:
 
 ## Anthropic Messages API-Compatible Models
 
+> **Looking for `@claude`/`@codex`/`@copilot-cli` in VS Code chat instead?** This section is about Feima's separate **hosted** cloud API (`api.feimacode.com`), for using Feima models from Claude Code or similar tools *outside* VS Code with an API key. If you want to drive Claude Code, Codex, or Copilot CLI from inside VS Code chat using your Copilot/BYOK models instead, see [Agent Participants](/guides/agent-participants) and the [Agent Proxy](/guides/agent-proxy) guide.
+
 When using Feima models with **Claude Code** or any tool that speaks the Anthropic Messages API, only a subset of models are available. The Anthropic Messages API format is different from the OpenAI-compatible format, and not all Feima models support it.
 
 The following models are compatible with the Anthropic Messages API:

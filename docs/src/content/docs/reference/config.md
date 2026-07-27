@@ -339,6 +339,115 @@ Proxy URL for API requests.
 
 ---
 
+## Agent Participant Settings
+
+Settings for the [`@claude`, `@codex`, and `@copilot-cli` agent participants](/guides/agent-participants). See [Agent Participants Setup](/guides/agent-participants-setup) for a task-oriented walkthrough.
+
+### `feima.agents.claude.binaryPath`
+
+Absolute path to the `claude` binary.
+
+**Type**: `string`
+**Default**: `""`
+**Scope**: Machine-overridable
+
+**Description**: Leave empty to auto-discover via `PATH`.
+
+---
+
+### `feima.agents.codex.binaryPath`
+
+Absolute path to the `codex` binary.
+
+**Type**: `string`
+**Default**: `""`
+**Scope**: Machine-overridable
+
+**Description**: Leave empty to auto-discover via `PATH`.
+
+---
+
+### `feima.agents.copilot.binaryPath`
+
+Absolute path to the GitHub Copilot CLI binary.
+
+**Type**: `string`
+**Default**: `""`
+**Scope**: Machine-overridable
+
+**Description**: Leave empty to auto-discover via `PATH`.
+
+---
+
+### `feima.agents.claude.mcpServers`
+
+MCP server configuration passed to Claude Code.
+
+**Type**: `object`
+**Default**: `{}`
+**Scope**: Machine-overridable
+
+**Description**: Each key is a server name; the value is `{ command, args?, env?, url? }`.
+
+**Example**:
+```json
+{
+  "feima.agents.claude.mcpServers": {
+    "my-server": {
+      "command": "npx",
+      "args": ["-y", "@my-org/my-mcp-server"],
+      "env": { "MY_TOKEN": "..." }
+    }
+  }
+}
+```
+
+---
+
+### `feima.agents.codex.mcpServers`
+
+MCP server configuration passed to Codex.
+
+**Type**: `object`
+**Default**: `{}`
+**Scope**: Machine-overridable
+
+**Description**: Each key is a server name; the value is `{ command, args?, env?, url? }`.
+
+---
+
+### `feima.agents.claude.permissionMode`
+
+Default permission tier for `@claude`.
+
+**Type**: `"ask" | "acceptEdits" | "fullAuto"`
+**Default**: `"ask"`
+
+**Description**: How much `@claude` asks before running commands or changing files. Override for a single turn with `/ask`, `/acceptEdits`, or `/fullAuto`.
+- `ask` — Ask for approval before running commands or changing files (safe default).
+- `acceptEdits` — Auto-approve file edits; still ask before running commands or other tools.
+- `fullAuto` — Auto-approve everything; never ask. Use with caution.
+
+---
+
+### `feima.agents.codex.permissionMode`
+
+Default permission tier for `@codex`. Same values and behavior as `feima.agents.claude.permissionMode`, above.
+
+**Type**: `"ask" | "acceptEdits" | "fullAuto"`
+**Default**: `"ask"`
+
+---
+
+### `feima.agents.copilot.permissionMode`
+
+Default permission tier for `@copilot-cli`. Same values and behavior as `feima.agents.claude.permissionMode`, above.
+
+**Type**: `"ask" | "acceptEdits" | "fullAuto"`
+**Default**: `"ask"`
+
+---
+
 ## Security Settings
 
 ### `feima.tokenEncryption`

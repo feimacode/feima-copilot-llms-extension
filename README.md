@@ -15,6 +15,7 @@ A VS Code extension that adds alternative AI model support to GitHub Copilot Cha
 - 🚀 [Quick Start](https://docs.feimacode.com/guides/quickstart/) | [快速入门](https://docs.feimacode.com/zh/guides/quickstart/)
 - 📦 [Installation Guide](https://docs.feimacode.com/guides/installation/) | [安装指南](https://docs.feimacode.com/zh/guides/installation/)
 - 🔧 [Configuration Options](https://docs.feimacode.com/guides/configuration/) | [配置选项](https://docs.feimacode.com/zh/guides/configuration/)
+- 🤖 [Agent Participants](https://docs.feimacode.com/guides/agent-participants/) | [智能体参与者](https://docs.feimacode.com/zh/guides/agent-participants/)
 - 💻 [Development Guide](https://docs.feimacode.com/dev/setup/) | [开发指南](https://docs.feimacode.com/zh/dev/setup/)
 
 ## Overview
@@ -28,6 +29,7 @@ Feima Copilot is a VS Code extension that adds alternative AI model support to G
 - 💰 **Pay-per-Request**: Request-based pricing, cost-controllable, no monthly subscriptions
 - 🔒 **Secure & Reliable**: OAuth2 authentication, code never leaves VS Code
 - 🧠 **Chain-of-Thought**: Full support for reasoning models, solving complex problems effortlessly
+- 🤖 **Agent Participants**: Drive Claude Code, Codex, and Copilot CLI from native VS Code chat with `@claude`, `@codex`, `@copilot-cli` — use your own subscriptions or Feima/Copilot models
 
 ### Why Choose Feima Copilot?
 

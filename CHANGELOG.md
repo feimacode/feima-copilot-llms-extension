@@ -5,6 +5,18 @@ All notable changes to the Feima Copilot LLM Extension will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Agent Participants** - Drive the real Claude Code, Codex, and GitHub Copilot CLI agents from native VS Code chat via `@claude`, `@codex`, and `@copilot-cli`
+  - Keeps VS Code's chat UX (streaming, inline tool-call and diff rendering) while running each CLI's own agent loop
+  - **Native mode**: use your existing Claude/Codex subscription and login, exactly as in a terminal
+  - **Proxy mode**: route the CLI's model calls through your Copilot or BYOK model instead, via a local Agent Proxy
+  - Per-turn permission overrides (`/ask`, `/acceptEdits`, `/fullAuto`) plus persistent `feima.agents.*.permissionMode` settings
+  - Configurable CLI binary paths and MCP servers via `feima.agents.*.binaryPath` / `feima.agents.*.mcpServers` settings
+  - Agent Proxy exposes local OpenAI Responses and Anthropic Messages-compatible endpoints, also usable from an external terminal session (see Account dialog's "Agent Proxy" section)
+  - See the new [Agent Participants](https://docs.feimacode.com/guides/agent-participants/) docs
+
 ## [0.1.20] - 2026-06-01
 
 ### Added

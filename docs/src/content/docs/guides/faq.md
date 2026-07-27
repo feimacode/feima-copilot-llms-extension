@@ -238,6 +238,40 @@ Recommended models:
 
 ---
 
+## Agent Participants
+
+### Q: Which participant or mode should I use for my situation?
+
+**A: See the scenario table in the overview.**
+
+The [Agent Participants overview](/guides/agent-participants#is-this-for-me-common-scenarios) has a table matching common situations (existing Claude/Codex subscription, no subscription, wanting to use it outside VS Code, etc.) to the right participant and mode.
+
+---
+
+### Q: What's the difference between `@claude` and just picking a Claude model in Copilot Chat?
+
+**A: Different agent loop.**
+
+Picking a Claude model in the regular model picker still runs **Copilot's** agent loop with Claude answering the requests. Typing `@claude` instead runs the **real Claude Code CLI's** own agent loop — its own planning, tool use, and edit-review behavior — rendered inside VS Code's chat UI. Same applies to `@codex` versus picking a GPT/Codex model normally.
+
+---
+
+### Q: Do I need a paid Claude or OpenAI subscription to use `@claude` or `@codex`?
+
+**A: No — only if you want native mode.**
+
+You can use both participants in **proxy mode**, where the CLI's requests are answered by a Copilot or BYOK model you already have access to — no separate Anthropic or OpenAI subscription required. A subscription is only needed for **native mode**, where the CLI talks to Anthropic/OpenAI directly using its own login. See [Native vs. proxy routing](/guides/agent-participants#native-vs-proxy-routing).
+
+---
+
+### Q: Can I use `@claude`, `@codex`, or `@copilot-cli` with my own API key instead of Copilot?
+
+**A: Yes, if it's registered as a BYOK model in VS Code.**
+
+Proxy mode routes through whatever model is selected in VS Code's chat model picker — that includes any BYOK model provider you've configured, not just Copilot. Select your BYOK model in the picker before starting the conversation with `@claude`, `@codex`, or `@copilot-cli`.
+
+---
+
 ## Models & Billing
 
 ### Q: How does billing work?

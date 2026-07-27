@@ -6,64 +6,54 @@
 /**
  * Shared blocking confirmation card for the claude/codex/copilot participants.
  *
- * All three participants previously asked for approval via
- * `vscode.lm.invokeTool('vscode_get_confirmation', ...)` — an undocumented
- * internal tool name (no entry in this repo's vendored VS Code API surface)
- * with no contract guaranteeing it blocks on real user input when invoked
- * from code that isn't itself an in-flight model tool call — which describes
- * every call site here: canUseTool hooks and async approval-request events
- * all run after the triggering LM turn has already completed. Measured:
- * it resolves allow/deny in ~130-175ms regardless of risk, i.e. it never
- * actually prompted.
+ * Calls VS Code's own built-in `vscode_get_confirmation_with_options` tool
+ * directly — we never register it ourselves, it already exists in core.
+ * Two earlier approaches were tried and ruled out:
  *
- * `vscode.lm.registerTool` + `prepareInvocation` returning
- * `confirmationMessages` is the documented, stable mechanism for a genuinely
- * blocking interactive Continue/Cancel card in the chat stream — per the
- * stable API docs on `toolInvocationToken`: "if the tool requires user
- * confirmation, it will show up inline in the chat view." This resurrects
- * the pattern the deleted common/approvalBridge.ts used for codex
- * specifically, generalized here for all three participants.
+ *  - `vscode.lm.invokeTool('vscode_get_confirmation', ...)`: resolves
+ *    allow/deny in ~130-175ms regardless of risk — auto-confirmed by VS
+ *    Code's per-toolId "Always Allow" store (`chat/autoconfirm`, keyed only
+ *    on tool id), which any prior click against that shared internal id can
+ *    silently poison for the rest of a session/workspace/profile.
+ *  - Our own `vscode.lm.registerTool` + `confirmationMessages`: genuinely
+ *    interactive, but exposed to the exact same per-toolId auto-confirm
+ *    store, since every call site here funnelled through one shared tool id.
+ *
+ * `vscode_get_confirmation_with_options` is structurally exempt from that
+ * store — VS Code core hardcodes it into `toolIdsThatCannotBeAutoApproved`
+ * (languageModelToolsService.ts), so `isToolEligibleForAutoApproval()` always
+ * returns false for it and the auto-confirm check is never reached, no
+ * matter what's been clicked before. Its `buttons` input also gets us a real
+ * two-way answer: since it's core's own tool (not one we register), its
+ * `invoke()` runs in-process with direct access to which custom button was
+ * clicked, and returns that button's label back to us as plain text — unlike
+ * a custom-registered extension tool, where that selection never crosses the
+ * extension-host RPC boundary at all.
+ *
+ * Caveat: this is still undocumented internal API (no entry in this repo's
+ * vendored VS Code type declarations, no compatibility contract) — the same
+ * category of risk as the original `vscode_get_confirmation` bug. Unlike
+ * that one, though, it has a structural (not incidental) guarantee behind
+ * it, which is why it's worth the bet.
  */
 
 import * as vscode from 'vscode';
-import { ILogService } from '../../platform/log/common/logService';
 
-const CONFIRMATION_TOOL_ID = 'feima.agents.requestConfirmation';
+const CONFIRMATION_TOOL_ID = 'vscode_get_confirmation_with_options';
+const APPROVE_LABEL = 'Continue';
+const DENY_LABEL = 'Cancel';
 
-interface ConfirmationInput {
+interface ConfirmationWithOptionsInput {
 	title: string;
 	message: string;
-}
-
-/** Register the shared confirmation tool. Call once, at extension activation. */
-export function registerConfirmationTool(context: vscode.ExtensionContext, log: ILogService): void {
-	const tool = vscode.lm.registerTool<ConfirmationInput>(CONFIRMATION_TOOL_ID, {
-		prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<ConfirmationInput>): vscode.PreparedToolInvocation {
-			const { title, message } = options.input;
-			return {
-				invocationMessage: title,
-				confirmationMessages: {
-					title,
-					message: new vscode.MarkdownString(message),
-				},
-			};
-		},
-		invoke(): vscode.LanguageModelToolResult {
-			// Reaching here means the user clicked "Continue" on the card built
-			// from prepareInvocation above. A rejected invokeTool() promise
-			// (Cancel) is how requestConfirmation below learns "denied".
-			return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart('approved')]);
-		},
-	});
-	context.subscriptions.push(tool);
-	log.debug('confirmation tool registered');
+	buttons: string[];
 }
 
 /**
  * Request a blocking yes/no confirmation from the user, rendered as an
  * inline Continue/Cancel card in the chat stream. Resolves `true` only if
- * the user clicks Continue; `false` for Cancel, a disposed session, or any
- * error invoking the tool.
+ * the user picks "Continue"; `false` for "Cancel", a disposed session, or
+ * any error invoking the tool.
  */
 export async function requestConfirmation(
 	title: string,
@@ -72,12 +62,17 @@ export async function requestConfirmation(
 	token: vscode.CancellationToken,
 ): Promise<boolean> {
 	try {
-		await vscode.lm.invokeTool(
+		const result = await vscode.lm.invokeTool(
 			CONFIRMATION_TOOL_ID,
-			{ input: { title, message } satisfies ConfirmationInput, toolInvocationToken },
+			{
+				input: { title, message, buttons: [APPROVE_LABEL, DENY_LABEL] } satisfies ConfirmationWithOptionsInput,
+				toolInvocationToken,
+			},
 			token,
 		);
-		return true;
+		const first = result.content.at(0);
+		const selected = first instanceof vscode.LanguageModelTextPart ? first.value : undefined;
+		return selected === APPROVE_LABEL;
 	} catch {
 		return false;
 	}

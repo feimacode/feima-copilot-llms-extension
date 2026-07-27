@@ -15,6 +15,7 @@ import { ExternalEditTracker } from '../common/externalEditTracker';
 import { PendingRequestRegistry } from '../common/util/pendingRequestRegistry';
 import { resolvePermissionTier, type PermissionTier } from '../common/permissionTier';
 import { requestConfirmation } from '../common/confirmationTool';
+import { resolveWorkspaceCwd } from '../common/workspaceUtils';
 import { ILogService } from '../../platform/log/common/logService';
 import type {
 	DynamicToolSpec,
@@ -162,6 +163,12 @@ function mapTierToApprovalPolicy(tier: PermissionTier): AskForApproval {
 export class CodexParticipant {
 	private nativeConn: AppServerConnection | null = null;
 	private proxyConn: AppServerConnection | null = null;
+	/** cwd each connection's app-server process was last spawned with, so a
+	 *  changed workspace/active-editor cwd can trigger a respawn (see
+	 *  _ensureConnection — the app-server's cwd is fixed at spawn time and
+	 *  cannot be changed on a live process). */
+	private nativeConnCwd: string | undefined;
+	private proxyConnCwd: string | undefined;
 	/** Per-session state keyed by threadId. */
 	private readonly _sessions = new Map<string, SessionState>();
 	/** MCP server inventory — mirrors agent-host's _mcpInventory. */
@@ -195,15 +202,26 @@ export class CodexParticipant {
 		}
 	}
 
-	private _ensureConnection(routing: 'native' | 'proxy', binaryPath: string, cwd?: string): AppServerConnection {
+	private _ensureConnection(routing: 'native' | 'proxy', binaryPath: string, cwd: string | undefined): AppServerConnection {
 		if (routing === 'native') {
+			if (this.nativeConn && this.nativeConnCwd !== cwd) {
+				this._log.debug(`cwd changed; respawning native codex app-server ${JSON.stringify({ from: this.nativeConnCwd, to: cwd })}`);
+				this.nativeConn.disconnect();
+				this.nativeConn = null;
+			}
 			if (!this.nativeConn) {
 				const mcpArgs = buildMcpConfigArgs();
 				this.nativeConn = new AppServerConnection({ binaryPath, cwd, extraArgs: mcpArgs }, this._log);
 				this.nativeConn.on('exit', this._onConnectionExit);
 				this._setupMcpHandlers(this.nativeConn);
+				this.nativeConnCwd = cwd;
 			}
 			return this.nativeConn;
+		}
+		if (this.proxyConn && this.proxyConnCwd !== cwd) {
+			this._log.debug(`cwd changed; respawning proxy codex app-server ${JSON.stringify({ from: this.proxyConnCwd, to: cwd })}`);
+			this.proxyConn.disconnect();
+			this.proxyConn = null;
 		}
 		if (!this.proxyConn) {
 			const info = this.proxyManager.info;
@@ -211,6 +229,7 @@ export class CodexParticipant {
 			this.proxyConn = new AppServerConnection({ binaryPath, cwd, proxyBaseUrl: info.responsesUrl, proxyApiKey: info.responsesNonce, extraArgs: mcpArgs }, this._log);
 			this.proxyConn.on('exit', this._onConnectionExit);
 			this._setupMcpHandlers(this.proxyConn);
+			this.proxyConnCwd = cwd;
 		}
 		return this.proxyConn;
 	}
@@ -335,7 +354,7 @@ export class CodexParticipant {
 		}
 
 		const binaryPath = resolveBinary(vscode.workspace.getConfiguration('feima.agents.codex').get<string>('binaryPath') ?? '');
-		const cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+		const cwd = resolveWorkspaceCwd();
 		const conn = this._ensureConnection(routing, binaryPath, cwd);
 
 		if (!conn.isConnected()) {

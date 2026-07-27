@@ -14,7 +14,6 @@ import { ClaudeParticipant } from './claude/claudeParticipant';
 import { registerClaudeModels } from './claude/claudeModelProvider';
 import { setProxyManager } from './agentDiagnostics';
 import { installSdkStderrRedirect } from './common/sdkStdioRedirect';
-import { registerConfirmationTool } from './common/confirmationTool';
 
 /**
  * Registers all agent chat participants (@codex, @copilot-cli, @claude),
@@ -34,9 +33,6 @@ export function registerAgents(context: vscode.ExtensionContext, logService: ILo
 	// they are visible alongside our own agent logs.
 	const disposeStderrRedirect = installSdkStderrRedirect(log);
 	context.subscriptions.push({ dispose: disposeStderrRedirect });
-
-	// ── Shared blocking confirmation tool (canUseTool / approval flows) ───
-	registerConfirmationTool(context, log);
 
 	// ── LM Proxy (OpenAI Responses + Anthropic Messages) ──────────────────
 	const proxyManager = new ProxyManager(log.createSubLogger('Proxy'));

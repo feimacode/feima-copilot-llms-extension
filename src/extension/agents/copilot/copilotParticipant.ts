@@ -21,6 +21,7 @@ import { ProxyManager } from '../common/proxy/proxyManager';
 import { resolveBinary } from '../common/appServer/client';
 import { resolvePermissionTier } from '../common/permissionTier';
 import { requestConfirmation } from '../common/confirmationTool';
+import { resolveWorkspaceCwd } from '../common/workspaceUtils';
 import { ILogService } from '../../platform/log/common/logService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -243,7 +244,7 @@ export class CopilotParticipant {
 			try {
 				const entry = this._newEntry();
 				const resumeConfig: ResumeSessionConfig = {
-					workingDirectory: workspaceCwd(),
+					workingDirectory: resolveWorkspaceCwd(),
 					streaming: true,
 					reasoningSummary: 'concise',
 					provider: await this._proxyProvider(),
@@ -262,7 +263,7 @@ export class CopilotParticipant {
 		this._log.debug(`creating new session ${JSON.stringify({ model: modelId })}`);
 		const entry = this._newEntry();
 		const createConfig: SessionConfig = {
-			workingDirectory: workspaceCwd(),
+			workingDirectory: resolveWorkspaceCwd(),
 			model: modelId,
 			streaming: true,
 			reasoningSummary: 'concise',
@@ -388,10 +389,6 @@ export class CopilotParticipant {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function workspaceCwd(): string | undefined {
-	return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-}
 
 function collectAttachedPaths(attachments: readonly CopilotMessageAttachment[]): ReadonlySet<string> {
 	const paths = new Set<string>();

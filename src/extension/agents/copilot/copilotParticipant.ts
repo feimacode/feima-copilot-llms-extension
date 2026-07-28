@@ -13,6 +13,7 @@ import {
 	type ExitPlanModeRequest,
 	type ExitPlanModeResult,
 	type ProviderConfig,
+	type CopilotClientOptions,
 } from '@github/copilot-sdk';
 import { createInitialRouterState, routeSessionEvent, type RouterState } from './copilotSessionEventRouter';
 import { CopilotPermissionHandler } from './copilotPermissionHandler';
@@ -339,7 +340,15 @@ export class CopilotParticipant {
 				this._log.warn('copilot binary not found; participant will fail until installed: ' + String(err));
 			}
 
-			this._log.debug(`starting CopilotClient ${JSON.stringify({ baseDirectory: this.storagePath, copilotBinaryPath })}`);
+			// Optional verbose logging for the SDK + spawned CLI subprocess
+			// (`--log-level`), for diagnosing issues in the CLI/runtime itself.
+			// The CLI subprocess's stderr is forwarded by the SDK with a
+			// "[CLI subprocess]" prefix onto our own process.stderr, which shows
+			// up in the "Log (Extension Host)" output channel.
+			const rawLogLevel = vscode.workspace.getConfiguration('feima.agents.copilot').get<string>('logLevel') ?? '';
+			const logLevel = rawLogLevel ? (rawLogLevel as NonNullable<CopilotClientOptions['logLevel']>) : undefined;
+
+			this._log.debug(`starting CopilotClient ${JSON.stringify({ baseDirectory: this.storagePath, copilotBinaryPath, logLevel })}`);
 			this._client = new CopilotClient({
 				// No GitHub auth — model calls are routed through our proxy via the
 				// per-session BYOK `provider` config (see _proxyProvider()).
@@ -348,6 +357,7 @@ export class CopilotParticipant {
 				connection: copilotBinaryPath
 					? RuntimeConnection.forStdio({ path: copilotBinaryPath })
 					: RuntimeConnection.forStdio(),
+				logLevel,
 			});
 			await this._client.start();
 			this._log.debug('CopilotClient started');

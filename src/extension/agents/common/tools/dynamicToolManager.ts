@@ -32,15 +32,6 @@ const TOOL_SCHEMA_OVERRIDES: Record<string, DynamicToolSpec['inputSchema']> = {
 		},
 		required: ['uri', 'explanation', 'code'],
 	},
-	'copilot_editFiles': {
-		type: 'object',
-		properties: {
-			uri: { type: 'string', description: 'URI of the file to edit' },
-			explanation: { type: 'string', description: 'Explanation of the edit' },
-			code: { type: 'string', description: 'New code to apply to the file' },
-		},
-		required: ['uri', 'explanation', 'code'],
-	},
 };
 
 /**
@@ -54,8 +45,26 @@ const TOOL_DESCRIPTION_OVERRIDES: Record<string, string> = {
 	'replaceInFile': 'Replace text in a file using exact string matching. Prefer this over shell commands for editing files.',
 	'vscode_editFile_internal': 'Apply an edit to a file. Prefer this over shell commands for modifying files.',
 	'vscode_editFile': 'Apply an edit to a file. Prefer this over shell commands for modifying files.',
-	'copilot_editFiles': 'Apply edits to files. Prefer this over shell commands for modifying files.',
 };
+
+/**
+ * GitHub Copilot Chat contributes some `copilot_*` tools to `vscode.lm.tools`
+ * as manifest-only entries for its own in-process agent mode — it never
+ * calls `vscode.lm.registerTool()` for them, so `vscode.lm.invokeTool` throws
+ * "does not have an implementation registered" when another participant
+ * calls one (confirmed at runtime, not a guess). Codex already has its own
+ * native file-editing flow (apply_patch via the app-server's approval
+ * mechanism), so there's nothing to gain from advertising these — filter out
+ * the ones we've confirmed are unsupported up front instead of paying for a
+ * failed round trip (and the `_uninvokable` runtime fallback below) every
+ * time. Add to this set as more are confirmed; don't blanket-match on the
+ * `copilot_` prefix — other tools under that name may be genuinely invokable.
+ */
+const KNOWN_UNSUPPORTED_TOOLS = new Set<string>([
+	'copilot_createFile',
+	'copilot_applyPatch',
+	'copilot_editFiles',
+]);
 
 // ─── Schema validation ────────────────────────────────────────────────────────
 
@@ -104,6 +113,14 @@ export class DynamicToolManager {
 
 	private _cache: DynamicToolSpec[] | null = null;
 	private _pending: Promise<DynamicToolSpec[]> | null = null;
+	/** Tool names confirmed at runtime to be uninvokable — populated by
+	 *  `markUninvokable` when `vscode.lm.invokeTool` reports "does not have an
+	 *  implementation registered" (VS Code's error for tools whose owning
+	 *  extension never registered a runtime implementation, only a manifest
+	 *  entry — e.g. GitHub Copilot Chat's own `copilot_*` tools). Evidence-based,
+	 *  not a name guess: only tools we've actually observed failing this way
+	 *  are excluded. */
+	private readonly _uninvokable = new Set<string>();
 
 	constructor(private readonly _log: ILogService) { }
 
@@ -133,6 +150,21 @@ export class DynamicToolManager {
 		this._pending = null;
 	}
 
+	/**
+	 * Record that `name` is confirmed uninvokable via `vscode.lm.invokeTool`
+	 * (see `_uninvokable` doc) and drop the cache so it's excluded from the
+	 * next dynamic tool list built for Codex — otherwise Codex would keep
+	 * rediscovering and retrying the same dead-end tool every turn.
+	 */
+	markUninvokable(name: string): void {
+		if (this._uninvokable.has(name)) {
+			return;
+		}
+		this._uninvokable.add(name);
+		this._log.warn(`tool "${name}" confirmed uninvokable (no runtime implementation registered) — excluding from future dynamic tool lists`);
+		this.clearCache();
+	}
+
 	// ── Discovery ──────────────────────────────────────────────────────────
 
 	private async _discover(): Promise<DynamicToolSpec[]> {
@@ -155,6 +187,14 @@ export class DynamicToolManager {
 		const result: DynamicToolSpec[] = [];
 
 		for (const t of tools) {
+			if (KNOWN_UNSUPPORTED_TOOLS.has(t.name)) {
+				this._log.debug(`skipping known-unsupported tool "${t.name}" — not invokable by other participants`);
+				continue;
+			}
+			if (this._uninvokable.has(t.name)) {
+				continue;
+			}
+
 			let schema = t.inputSchema as DynamicToolSpec['inputSchema'] | undefined;
 			let schemaSource = 'registered';
 

@@ -991,6 +991,7 @@ export class CodexParticipant {
 		request: vscode.ChatRequest,
 		token: vscode.CancellationToken,
 	): Promise<string> {
+		let invokeErr: unknown;
 		if (typeof (vscode.lm as { invokeTool?: unknown }).invokeTool === 'function') {
 			try {
 				const result = await vscode.lm.invokeTool(toolName, {
@@ -1003,16 +1004,27 @@ export class CodexParticipant {
 				this._log.debug(`vscode.lm.invokeTool("${toolName}") succeeded: contentParts=${result.content.length} textLength=${text.length}${text.length === 0 ? ' (EMPTY RESULT)' : ''}`);
 				return text;
 			} catch (err) {
-				this._log.warn(`vscode.lm.invokeTool("${toolName}") failed, trying fallback: ${err instanceof Error ? err.message : String(err)}`);
+				invokeErr = err;
+				const message = err instanceof Error ? err.message : String(err);
+				this._log.warn(`vscode.lm.invokeTool("${toolName}") failed, trying fallback: ${message}`);
+				// VS Code throws this specific message when a tool is registered
+				// declaratively (so it shows up in vscode.lm.tools) but its owning
+				// extension never called vscode.lm.registerTool() for it — e.g.
+				// GitHub Copilot Chat's own copilot_* tools, which are enumerable
+				// but permanently uninvokable by any other extension. Remember it
+				// so we stop advertising it to Codex on future turns.
+				if (message.includes('does not have an implementation registered')) {
+					this._toolManager.markUninvokable(toolName);
+				}
 			}
 		} else {
 			this._log.debug(`vscode.lm.invokeTool not available, using fallback for "${toolName}"`);
 		}
 
-		return this._fallbackInvokeTool(toolName, args, token);
+		return this._fallbackInvokeTool(toolName, args, token, invokeErr);
 	}
 
-	private async _fallbackInvokeTool(toolName: string, args: Record<string, unknown>, token: vscode.CancellationToken): Promise<string> {
+	private async _fallbackInvokeTool(toolName: string, args: Record<string, unknown>, token: vscode.CancellationToken, invokeErr?: unknown): Promise<string> {
 		const workspaceFolders = vscode.workspace.workspaceFolders;
 		const root = workspaceFolders?.[0]?.uri.fsPath;
 
@@ -1072,6 +1084,15 @@ export class CodexParticipant {
 				}).join('\n');
 			}
 			default:
+				// If vscode.lm.invokeTool actually attempted the call and failed,
+				// that error is almost certainly the real root cause (bad args,
+				// a permission/context requirement the tool has, an internal
+				// exception, cancellation, etc.) — surface it verbatim instead
+				// of masking it with a generic "not available" message, which
+				// makes every distinct failure look like a missing tool.
+				if (invokeErr !== undefined) {
+					throw invokeErr instanceof Error ? invokeErr : new Error(String(invokeErr));
+				}
 				throw new Error(`Tool "${toolName}" is not available. Use vscode.lm.invokeTool or register a fallback.`);
 		}
 	}

@@ -15,6 +15,7 @@ import { startClientToolMcpServer, stopClientToolMcpServer, type ClientToolMcpSe
 import { resolveBinary } from '../common/appServer/client';
 import { resolveWorkspaceCwd } from '../common/workspaceUtils';
 import { resolvePermissionTier } from '../common/permissionTier';
+import { parseAllowedActions, serializeAllowedActions } from '../common/sessionApprovals';
 import { ILogService } from '../../platform/log/common/logService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -38,6 +39,10 @@ interface TurnMetadata {
 		inputTokens?: number;
 		outputTokens?: number;
 	};
+	/** Tool names approved "for the session" via the confirmation card's third
+	 *  button (see common/confirmationTool.ts) — canUseTool skips prompting
+	 *  for any of these for the rest of the conversation. */
+	allowedActions?: string[];
 }
 
 /** Per-session state for WarmQuery sessions (Priority 3c). */
@@ -58,6 +63,8 @@ interface SessionEntry {
 	streamBox: StreamBox;
 	/** See SessionEntry.permissionModeBox. */
 	permissionModeBox: PermissionModeBox;
+	/** See SessionEntry.sessionApprovalsBox. */
+	sessionApprovalsBox: SessionApprovalsBox;
 }
 
 /** See SessionEntry.streamBox. */
@@ -71,6 +78,16 @@ type StreamBox = { current: vscode.ChatResponseStream | undefined };
  * a later turn's choice actually reach the already-built `canUseTool`.
  */
 type PermissionModeBox = { current: PermissionMode };
+
+/**
+ * Same live-accessor problem as PermissionModeBox, for the "allow for the
+ * session" tool-name set: each turn re-parses it fresh from this turn's
+ * `context.history` metadata (so it survives an extension host restart, not
+ * just WarmQuery reuse), and `.current` is reassigned to that turn's set
+ * before consuming the query — mutated in place by `canUseTool` as new
+ * approvals come in, then read back to build this turn's own metadata.
+ */
+type SessionApprovalsBox = { current: Set<string> };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -223,6 +240,7 @@ export class ClaudeParticipant {
 		this._log.debug(`final permission in use ${JSON.stringify({
 			configuredTier, commandOverride: request.command, tier: permissionTier, permissionMode: permissionModeBox.current,
 		})}`);
+		const sessionApprovalsBox: SessionApprovalsBox = { current: parseAllowedActions(savedMeta?.allowedActions) };
 
 		// ── 2. Build SDK options via builder ──────────────────────────────────
 		// Resolve the user's claude binary so the SDK spawns the local CLI
@@ -247,7 +265,9 @@ export class ClaudeParticipant {
 			getCurrentStream: () => streamBox.current,
 			permissionMode: permissionModeBox.current,
 			getCurrentPermissionMode: () => permissionModeBox.current,
+			getSessionApprovals: () => sessionApprovalsBox.current,
 			log: this._log,
+			maxTurns: vscode.workspace.getConfiguration('feima.agents.claude').get<number>('maxApiCallsPerTurn') ?? 50,
 		};
 		const options = buildClaudeOptions(optionsInput);
 		options.abortController = ac;
@@ -279,7 +299,7 @@ export class ClaudeParticipant {
 		// ── 4. Check for existing WarmQuery session ─────────────────────
 		if (savedSessionId && this._warmSessions.has(savedSessionId)) {
 			return this._handleWithWarmQuery(
-				request, stream, token, options, savedSessionId, ac, routing, effectiveVendor, effectiveModelId, streamBox, permissionModeBox,
+				request, stream, token, options, savedSessionId, ac, routing, effectiveVendor, effectiveModelId, streamBox, permissionModeBox, sessionApprovalsBox,
 			);
 		}
 
@@ -326,7 +346,7 @@ export class ClaudeParticipant {
 
 			// Promote to WarmQuery for next turn (deferred, in background)
 			if (finalSessionId && !this._warmSessions.has(finalSessionId)) {
-				this._promoteToWarmQuery(options, finalSessionId, streamBox, permissionModeBox).catch(err => {
+				this._promoteToWarmQuery(options, finalSessionId, streamBox, permissionModeBox, sessionApprovalsBox).catch(err => {
 					this._log.error(err instanceof Error ? err : String(err), 'WarmQuery promotion failed');
 				});
 			}
@@ -347,12 +367,14 @@ export class ClaudeParticipant {
 
 		// ── 6. Persist session ID for the next turn ───────────────────────────
 		if (finalSessionId) {
+			const allowedActions = serializeAllowedActions(sessionApprovalsBox.current);
 			const metadata: TurnMetadata = {
 				sessionId: finalSessionId,
 				routing,
 				modelVendor: effectiveVendor,
 				modelId: effectiveModelId,
 				...(Object.keys(finalUsage).length > 0 ? { tokenUsage: finalUsage } : {}),
+				...(allowedActions ? { allowedActions } : {}),
 			};
 			this._log.debug('returning metadata: ' + JSON.stringify(metadata));
 			return { metadata };
@@ -424,16 +446,19 @@ export class ClaudeParticipant {
 		modelId: string,
 		streamBox: StreamBox,
 		permissionModeBox: PermissionModeBox,
+		sessionApprovalsBox: SessionApprovalsBox,
 	): Promise<vscode.ChatResult> {
 		const entry = this._warmSessions.get(sessionId)!;
 		clearTimeout(entry.idleTimer);
 		this._warmSessions.delete(sessionId);
 
 		// entry.warmQuery's hooks/canUseTool were fixed at startup() time, bound
-		// to entry.streamBox/entry.permissionModeBox — point them at this turn's
-		// stream and resolved permission tier before consuming.
+		// to entry.streamBox/entry.permissionModeBox/entry.sessionApprovalsBox —
+		// point them at this turn's stream, resolved permission tier, and
+		// history-parsed session approvals before consuming.
 		entry.streamBox.current = stream;
 		entry.permissionModeBox.current = permissionModeBox.current;
+		entry.sessionApprovalsBox.current = sessionApprovalsBox.current;
 
 		this._log.debug('using WarmQuery: ' + JSON.stringify({ sessionId, model: options.model }));
 		stream.progress('Continuing Claude session...');
@@ -464,18 +489,20 @@ export class ClaudeParticipant {
 			// (not entry's, which belonged to the now-spent warmQuery) as the new
 			// entry's boxes.
 			if (finalSessionId) {
-				this._promoteToWarmQuery(options, finalSessionId, streamBox, permissionModeBox).catch(err => {
+				this._promoteToWarmQuery(options, finalSessionId, streamBox, permissionModeBox, sessionApprovalsBox).catch(err => {
 					this._log.error(err instanceof Error ? err : String(err), 'WarmQuery re-promotion failed');
 				});
 			}
 
 			if (finalSessionId) {
+				const allowedActions = serializeAllowedActions(sessionApprovalsBox.current);
 				const metadata: TurnMetadata = {
 					sessionId: finalSessionId,
 					routing,
 					modelVendor,
 					modelId,
 					...(Object.keys(finalUsage).length > 0 ? { tokenUsage: finalUsage } : {}),
+					...(allowedActions ? { allowedActions } : {}),
 				};
 				return { metadata };
 			}
@@ -502,7 +529,7 @@ export class ClaudeParticipant {
 	 * claudeOptionsBuilder.ts) — stored on the new SessionEntry so the next
 	 * turn that reuses this WarmQuery can point it at its own stream.
 	 */
-	private async _promoteToWarmQuery(options: Options, sessionId: string, streamBox: StreamBox, permissionModeBox: PermissionModeBox): Promise<void> {
+	private async _promoteToWarmQuery(options: Options, sessionId: string, streamBox: StreamBox, permissionModeBox: PermissionModeBox, sessionApprovalsBox: SessionApprovalsBox): Promise<void> {
 		try {
 			const warmQuery = await startup({
 				options: {
@@ -516,6 +543,7 @@ export class ClaudeParticipant {
 				lastUsed: Date.now(),
 				streamBox,
 				permissionModeBox,
+				sessionApprovalsBox,
 			};
 			entry.idleTimer = setTimeout(() => {
 				this._disposeWarmSession(sessionId).catch(err => {
@@ -611,11 +639,13 @@ function findMetaInHistory(
 				const routing = meta?.['routing'];
 				const modelId = meta?.['modelId'];
 				const modelVendor = meta?.['modelVendor'];
+				const allowedActions = meta?.['allowedActions'];
 				return {
 					sessionId,
 					...(routing === 'native' || routing === 'proxy' ? { routing } : {}),
 					...(typeof modelId === 'string' ? { modelId } : {}),
 					...(typeof modelVendor === 'string' ? { modelVendor } : {}),
+					...(Array.isArray(allowedActions) ? { allowedActions } : {}),
 				};
 			}
 		}

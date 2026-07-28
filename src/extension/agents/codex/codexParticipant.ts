@@ -14,7 +14,8 @@ import { ThinkingPanelHelper } from '../common/thinkingPanelHelper';
 import { ExternalEditTracker } from '../common/externalEditTracker';
 import { PendingRequestRegistry } from '../common/util/pendingRequestRegistry';
 import { resolvePermissionTier, type PermissionTier } from '../common/permissionTier';
-import { requestConfirmation } from '../common/confirmationTool';
+import { requestConfirmation, type ConfirmationOutcome } from '../common/confirmationTool';
+import { parseAllowedActions, serializeAllowedActions } from '../common/sessionApprovals';
 import { resolveWorkspaceCwd } from '../common/workspaceUtils';
 import { ILogService } from '../../platform/log/common/logService';
 import type {
@@ -50,6 +51,11 @@ import type {
 
 interface TurnMetadata {
 	threadId: string;
+	/** Command/grantRoot keys approved "for the session" via the confirmation
+	 *  card's third button (see common/confirmationTool.ts) — checked before
+	 *  prompting again, and also sent to codex as `acceptForSession` so its
+	 *  own live app-server process stops asking too. */
+	allowedActions?: string[];
 }
 
 type ApprovalDecision = 'accept' | 'acceptForSession' | 'decline' | 'cancel';
@@ -81,6 +87,8 @@ interface SessionState {
 	 *  /acceptEdits or /fullAuto. Read by _approveCommand/_approveFileChange
 	 *  to auto-accept without prompting where the tier allows it. */
 	permissionTier: PermissionTier;
+	/** Command/grantRoot keys approved "for the session" — see TurnMetadata.allowedActions. */
+	sessionApprovals: Set<string>;
 	/** Resolve when the turn completes (success or failure). */
 	turnDone: Promise<void>;
 	turnResolve: () => void;
@@ -98,11 +106,21 @@ function findMetaInHistory(history: readonly (vscode.ChatRequestTurn | vscode.Ch
 			const meta = (turn as vscode.ChatResponseTurn).result.metadata;
 			const threadId = meta?.threadId;
 			if (typeof threadId === 'string') {
-				return { threadId };
+				const allowedActions = meta?.allowedActions;
+				return { threadId, ...(Array.isArray(allowedActions) ? { allowedActions } : {}) };
 			}
 		}
 	}
 	return null;
+}
+
+/** Map a `requestConfirmation()` outcome onto codex's native `ApprovalDecision` — 'approvedForSession' maps to codex's own 'acceptForSession' so its live app-server process stops re-asking too. */
+function mapOutcomeToApprovalDecision(outcome: ConfirmationOutcome): ApprovalDecision {
+	switch (outcome) {
+		case 'approved': return 'accept';
+		case 'approvedForSession': return 'acceptForSession';
+		case 'denied': return 'cancel';
+	}
 }
 
 function hashTools(tools: DynamicToolSpec[]): string {
@@ -378,6 +396,17 @@ export class CodexParticipant {
 			configuredTier, commandOverride: request.command, tier: permissionTier, approvalPolicy,
 		})}`);
 
+		// ── Runaway-loop guard for this turn ──
+		// `thread/tokenUsage/updated` fires once per model round-trip within the
+		// turn regardless of routing (native or proxy) — a reliable call counter
+		// even though its token *values* can be unpopulated for proxy-routed
+		// models. If a turn blows through this many round-trips without reaching
+		// `turn/completed`, the model isn't converging (or codex-rs itself is
+		// stuck); force-interrupt rather than let `handleRequest` hang forever.
+		const maxApiCallsPerTurn = vscode.workspace.getConfiguration('feima.agents.codex').get<number>('maxApiCallsPerTurn') ?? 50;
+		let apiCallsThisTurn = 0;
+		let loopGuardTripped = false;
+
 		// ── Dynamic tool discovery ──
 		const dynamicTools = await this._toolManager.buildDynamicTools();
 		this._log.debug(`dynamic tools built ${JSON.stringify({ count: dynamicTools.length, names: dynamicTools.map(t => t.name).slice(0, 20) })}`);
@@ -432,6 +461,7 @@ export class CodexParticipant {
 				pendingMcpApprovals: new PendingRequestRegistry(),
 				turnActive: false,
 				permissionTier,
+				sessionApprovals: parseAllowedActions(savedMeta?.allowedActions),
 				// Placeholders — always replaced with a fresh promise below,
 				// per-turn, before this turn starts. Never used as-is.
 				turnDone: Promise.resolve(),
@@ -620,7 +650,17 @@ export class CodexParticipant {
 			}
 		});
 
-		ts.on('thread/tokenUsage/updated', (p: ThreadTokenUsageUpdatedNotification) => { if (p.tokenUsage.last) { this._log.debug(`token usage ${JSON.stringify(p.tokenUsage.last)}`); } });
+		ts.on('thread/tokenUsage/updated', (p: ThreadTokenUsageUpdatedNotification) => {
+			if (p.tokenUsage.last) { this._log.debug(`token usage ${JSON.stringify(p.tokenUsage.last)}`); }
+
+			apiCallsThisTurn++;
+			if (apiCallsThisTurn >= maxApiCallsPerTurn && !loopGuardTripped) {
+				loopGuardTripped = true;
+				this._log.warn(`turn exceeded maxApiCallsPerTurn (${apiCallsThisTurn}/${maxApiCallsPerTurn}) on thread ${codexThread.id} — force-interrupting`);
+				stream.markdown(`\n\n⚠️ *${vscode.l10n.t('Interrupted: this turn made {0} model calls without completing, which usually means it got stuck in a loop.', apiCallsThisTurn)}*\n`);
+				void this._interruptTurn(conn, session!);
+			}
+		});
 		// The `error` notification is informational — codex may retry (willRetry)
 		// or proceed to `turn/completed`. Do NOT reject the turn here; let
 		// `turn/completed` be the sole authority on turn completion.
@@ -677,7 +717,8 @@ export class CodexParticipant {
 			this._editTracker.flush();
 		}
 
-		return { metadata: { threadId: codexThread.id } };
+		const allowedActions = serializeAllowedActions(session.sessionApprovals);
+		return { metadata: { threadId: codexThread.id, ...(allowedActions ? { allowedActions } : {}) } };
 	}
 
 	// ── Request dispatch (MCP-03, MCP-04, MCP-05, MCP-12) ──────────────────
@@ -798,12 +839,13 @@ export class CodexParticipant {
 		session.pendingMcpApprovals.register(key);
 
 		try {
-			const approved = await requestConfirmation(
+			const outcome = await requestConfirmation(
 				`MCP Tool: ${mcpApprovalQ.label}`,
 				mcpApprovalQ.description ?? 'Codex wants to call an MCP tool. Allow?',
 				request.toolInvocationToken,
 				token,
 			);
+			const approved = outcome !== 'denied';
 
 			const answers: ToolRequestUserInputAnswer[] = params.questions.map(q => ({
 				questionId: q.id,
@@ -843,14 +885,14 @@ export class CodexParticipant {
 		this._log.debug(`mcp elicitation ${JSON.stringify({ server: params.serverName, message: params.message })}`);
 
 		try {
-			const approved = await requestConfirmation(
+			const outcome = await requestConfirmation(
 				`MCP Server "${params.serverName}" Requests`,
 				params.message || 'The MCP server is requesting user input.',
 				request.toolInvocationToken,
 				token,
 			);
 			conn.respondToGeneric(requestId, {
-				decision: approved ? 'accept' : 'cancel',
+				decision: outcome !== 'denied' ? 'accept' : 'cancel',
 			} as McpServerElicitationRequestResponse);
 		} catch {
 			try {
@@ -878,6 +920,11 @@ export class CodexParticipant {
 		}
 		stream.progress('Waiting for approval...');
 		const cmd = p.command ?? p.commandActions?.map(a => a.command).join(' ') ?? null;
+		if (cmd && session.sessionApprovals.has(cmd)) {
+			this._log.debug(`command approval auto-accepted (approved for session) ${JSON.stringify({ cmd })}`);
+			conn.respondToApproval(id, 'acceptForSession');
+			return;
+		}
 		const lines: string[] = [];
 		if (cmd) { lines.push(`**Command:** \`${cmd}\``); }
 		if (p.cwd) { lines.push(`**Directory:** ${p.cwd}`); }
@@ -887,8 +934,11 @@ export class CodexParticipant {
 		session.pendingCommandApprovals.register(key);
 
 		try {
-			const approved = await requestConfirmation('Allow command execution?', lines.join('\n\n'), request.toolInvocationToken, token);
-			const decision: ApprovalDecision = approved ? 'accept' : 'cancel';
+			const outcome = await requestConfirmation('Allow command execution?', lines.join('\n\n'), request.toolInvocationToken, token);
+			if (outcome === 'approvedForSession' && cmd) {
+				session.sessionApprovals.add(cmd);
+			}
+			const decision = mapOutcomeToApprovalDecision(outcome);
 			conn.respondToApproval(id, decision);
 			session.pendingCommandApprovals.respond(key, decision);
 		} catch {
@@ -910,6 +960,11 @@ export class CodexParticipant {
 			return;
 		}
 		stream.progress('Waiting for approval...');
+		if (p.grantRoot && session.sessionApprovals.has(p.grantRoot)) {
+			this._log.debug(`file change approval auto-accepted (approved for session) ${JSON.stringify({ grantRoot: p.grantRoot })}`);
+			conn.respondToApproval(id, 'acceptForSession');
+			return;
+		}
 		const lines: string[] = [];
 		if (p.grantRoot) { lines.push(`**Root:** ${p.grantRoot}`); }
 		if (p.reason) { lines.push(`**Reason:** ${p.reason}`); }
@@ -918,8 +973,11 @@ export class CodexParticipant {
 		session.pendingFileChangeApprovals.register(key);
 
 		try {
-			const approved = await requestConfirmation('Allow file changes?', lines.join('\n\n') || 'Codex wants to modify files.', request.toolInvocationToken, token);
-			const decision: ApprovalDecision = approved ? 'accept' : 'cancel';
+			const outcome = await requestConfirmation('Allow file changes?', lines.join('\n\n') || 'Codex wants to modify files.', request.toolInvocationToken, token);
+			if (outcome === 'approvedForSession' && p.grantRoot) {
+				session.sessionApprovals.add(p.grantRoot);
+			}
+			const decision = mapOutcomeToApprovalDecision(outcome);
 			conn.respondToApproval(id, decision);
 			session.pendingFileChangeApprovals.respond(key, decision);
 		} catch {

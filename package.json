@@ -309,6 +309,12 @@
 					},
 					"scope": "machine-overridable"
 				},
+				"feima.agents.codex.maxApiCallsPerTurn": {
+					"type": "number",
+					"default": 50,
+					"minimum": 1,
+					"markdownDescription": "%settings.agents.codex.maxApiCallsPerTurn.description%"
+				},
 				"feima.agents.codex.permissionMode": {
 					"type": "string",
 					"enum": [
@@ -324,6 +330,12 @@
 					"default": "ask",
 					"markdownDescription": "%settings.agents.codex.permissionMode.description%"
 				},
+				"feima.agents.copilot.maxApiCallsPerTurn": {
+					"type": "number",
+					"default": 50,
+					"minimum": 1,
+					"markdownDescription": "%settings.agents.copilot.maxApiCallsPerTurn.description%"
+				},
 				"feima.agents.copilot.permissionMode": {
 					"type": "string",
 					"enum": [
@@ -338,6 +350,12 @@
 					],
 					"default": "ask",
 					"markdownDescription": "%settings.agents.copilot.permissionMode.description%"
+				},
+				"feima.agents.claude.maxApiCallsPerTurn": {
+					"type": "number",
+					"default": 50,
+					"minimum": 1,
+					"markdownDescription": "%settings.agents.claude.maxApiCallsPerTurn.description%"
 				},
 				"feima.agents.claude.permissionMode": {
 					"type": "string",

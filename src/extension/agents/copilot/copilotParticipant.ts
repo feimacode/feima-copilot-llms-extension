@@ -22,6 +22,7 @@ import { ProxyManager } from '../common/proxy/proxyManager';
 import { resolveBinary } from '../common/appServer/client';
 import { resolvePermissionTier } from '../common/permissionTier';
 import { requestConfirmation } from '../common/confirmationTool';
+import { parseAllowedActions, serializeAllowedActions } from '../common/sessionApprovals';
 import { resolveWorkspaceCwd } from '../common/workspaceUtils';
 import { ILogService } from '../../platform/log/common/logService';
 
@@ -33,6 +34,9 @@ interface TurnMetadata {
 	sessionId: string;
 	tokenUsage?: { inputTokens: number; outputTokens: number };
 	modelId?: string;
+	/** Request keys (see copilotPermissionHandler.ts's keyForPermissionRequest)
+	 *  approved "for the session" via the confirmation card's third button. */
+	allowedActions?: string[];
 }
 
 /** Mutable context for the turn currently executing on a session. */
@@ -43,6 +47,10 @@ interface TurnContext {
 	resolveIdle: () => void;
 	toolInvocationToken: vscode.ChatRequest['toolInvocationToken'];
 	token: vscode.CancellationToken;
+	/** Runaway-loop guard: max `assistant.turn_end` events before force-abort. */
+	maxApiCallsPerTurn: number;
+	/** Set once the loop guard has fired, so it only aborts once per turn. */
+	loopGuardTripped: boolean;
 }
 
 interface SessionEntry {
@@ -54,6 +62,9 @@ interface SessionEntry {
 	current: TurnContext | null;
 	/** Unsubscribe from the session event stream. */
 	unsubscribe: () => void;
+	/** See TurnMetadata.allowedActions. Seeded from history metadata when this
+	 *  entry is created, then mutated in place by CopilotPermissionHandler. */
+	sessionApprovals: Set<string>;
 }
 
 // ─── Participant ──────────────────────────────────────────────────────────────
@@ -94,7 +105,8 @@ export class CopilotParticipant {
 		const client = this._client!;
 
 		// ── 2. Resolve session (create / resume / reuse) ──────────────────────
-		const savedSessionId = findSessionIdInHistory(context.history);
+		const savedMeta = findMetaInHistory(context.history);
+		const savedSessionId = savedMeta?.sessionId;
 		this._log.debug(`handleRequest ${JSON.stringify({
 			modelId: request.model.id,
 			savedSessionId,
@@ -104,7 +116,7 @@ export class CopilotParticipant {
 		})}`);
 		let entry: SessionEntry;
 		try {
-			entry = await this._getOrCreateSession(client, savedSessionId, request, stream);
+			entry = await this._getOrCreateSession(client, savedSessionId, savedMeta?.allowedActions, request, stream);
 		} catch (err) {
 			this._log.error(err instanceof Error ? err : String(err), 'failed to establish session');
 			stream.markdown(`> ⚠️ ${vscode.l10n.t('Failed to start the Copilot CLI session.')}\n\n`);
@@ -136,7 +148,8 @@ export class CopilotParticipant {
 				this._log.error(err instanceof Error ? err : String(err), 'compaction failed');
 				stream.markdown(`> ⚠️ ${vscode.l10n.t('Compaction failed.')}\n`);
 			}
-			return { metadata: { sessionId: entry.sessionId } satisfies TurnMetadata };
+			const compactAllowedActions = serializeAllowedActions(entry.sessionApprovals);
+			return { metadata: { sessionId: entry.sessionId, ...(compactAllowedActions ? { allowedActions: compactAllowedActions } : {}) } satisfies TurnMetadata };
 		}
 
 		const attachments = toSdkAttachments(request);
@@ -148,31 +161,24 @@ export class CopilotParticipant {
 		this._log.debug(`final permission in use ${JSON.stringify({
 			configuredTier, commandOverride: request.command, tier: permissionTier,
 		})}`);
-		const permission = new CopilotPermissionHandler(stream, request.toolInvocationToken, token, attachedPaths, permissionTier, this._log);
+		const permission = new CopilotPermissionHandler(stream, request.toolInvocationToken, token, attachedPaths, permissionTier, entry.sessionApprovals, this._log);
 
 		// Establish the mutable turn context read by the shared event/permission callbacks.
 		let resolveIdle!: () => void;
 		const idle = new Promise<void>(resolve => { resolveIdle = resolve; });
 		const routerState = createInitialRouterState(stream);
-		entry.current = { stream, permission, routerState, resolveIdle, toolInvocationToken: request.toolInvocationToken, token };
+		const maxApiCallsPerTurn = vscode.workspace.getConfiguration('feima.agents.copilot').get<number>('maxApiCallsPerTurn') ?? 50;
+		entry.current = {
+			stream, permission, routerState, resolveIdle,
+			toolInvocationToken: request.toolInvocationToken, token,
+			maxApiCallsPerTurn, loopGuardTripped: false,
+		};
 
 		// Cancellation → abort the SDK turn and wait for it to propagate before
 		// releasing the idle wait. This ensures the runtime and proxy actually stop.
 		const cancelSub = token.onCancellationRequested(() => {
 			this._log.debug(`cancellation requested ${JSON.stringify({ sessionId: entry.sessionId })}`);
-			// Await abort with a timeout fallback — if the runtime doesn't stop
-			// within 5s, release the wait anyway to avoid hanging the UI.
-			const abortTimeout = setTimeout(() => {
-				this._log.warn('abort timed out, releasing idle wait');
-				resolveIdle();
-			}, 5000);
-			void entry.session.abort().then(() => {
-				clearTimeout(abortTimeout);
-				resolveIdle();
-			}).catch(() => {
-				clearTimeout(abortTimeout);
-				resolveIdle();
-			});
+			this._forceAbort(entry, resolveIdle);
 		});
 
 		const agentMode: 'plan' | 'interactive' | 'autopilot' =
@@ -211,12 +217,33 @@ export class CopilotParticipant {
 			entry.current = null;
 		}
 
+		const allowedActions = serializeAllowedActions(entry.sessionApprovals);
 		const metadata: TurnMetadata = {
 			sessionId: entry.sessionId,
 			tokenUsage: { inputTokens: routerState.usage.inputTokens, outputTokens: routerState.usage.outputTokens },
 			modelId: routerState.modelId ?? request.model.id,
+			...(allowedActions ? { allowedActions } : {}),
 		};
 		return { metadata };
+	}
+
+	/**
+	 * Abort the SDK turn and release the idle wait once it propagates (or after
+	 * a 5s fallback, so the UI never hangs on a runtime that doesn't stop).
+	 * Shared by user cancellation and the runaway-loop guard.
+	 */
+	private _forceAbort(entry: SessionEntry, resolveIdle: () => void): void {
+		const abortTimeout = setTimeout(() => {
+			this._log.warn('abort timed out, releasing idle wait');
+			resolveIdle();
+		}, 5000);
+		void entry.session.abort().then(() => {
+			clearTimeout(abortTimeout);
+			resolveIdle();
+		}).catch(() => {
+			clearTimeout(abortTimeout);
+			resolveIdle();
+		});
 	}
 
 	/** Serialize turns per session so a second message waits for the first to finish. */
@@ -231,6 +258,7 @@ export class CopilotParticipant {
 	private async _getOrCreateSession(
 		client: CopilotClient,
 		savedSessionId: string | undefined,
+		savedAllowedActions: string[] | undefined,
 		request: vscode.ChatRequest,
 		stream: vscode.ChatResponseStream,
 	): Promise<SessionEntry> {
@@ -243,7 +271,7 @@ export class CopilotParticipant {
 			stream.progress('Resuming Copilot session…');
 			this._log.debug(`resuming session from disk ${JSON.stringify({ sessionId: savedSessionId })}`);
 			try {
-				const entry = this._newEntry();
+				const entry = this._newEntry(savedAllowedActions);
 				const resumeConfig: ResumeSessionConfig = {
 					workingDirectory: resolveWorkspaceCwd(),
 					streaming: true,
@@ -262,7 +290,7 @@ export class CopilotParticipant {
 		stream.progress('Starting Copilot session…');
 		const modelId = request.model.vendor ? `${request.model.vendor}/${request.model.id}` : request.model.id;
 		this._log.debug(`creating new session ${JSON.stringify({ model: modelId })}`);
-		const entry = this._newEntry();
+		const entry = this._newEntry(savedAllowedActions);
 		const createConfig: SessionConfig = {
 			workingDirectory: resolveWorkspaceCwd(),
 			model: modelId,
@@ -276,8 +304,15 @@ export class CopilotParticipant {
 		return this._attachEntry(entry, session);
 	}
 
-	private _newEntry(): SessionEntry {
-		return { sessionId: '', session: null as unknown as CopilotSession, sequencer: Promise.resolve(), current: null, unsubscribe: () => { /* set later */ } };
+	private _newEntry(seedAllowedActions?: string[]): SessionEntry {
+		return {
+			sessionId: '',
+			session: null as unknown as CopilotSession,
+			sequencer: Promise.resolve(),
+			current: null,
+			unsubscribe: () => { /* set later */ },
+			sessionApprovals: parseAllowedActions(seedAllowedActions),
+		};
 	}
 
 	/** Fill in the session, subscribe to its event stream, and register the entry. */
@@ -288,6 +323,12 @@ export class CopilotParticipant {
 			const current = entry.current;
 			if (current) {
 				routeSessionEvent(event, current.stream, current.routerState, current.resolveIdle, this._log);
+				if (!current.loopGuardTripped && current.routerState.apiCallCount >= current.maxApiCallsPerTurn) {
+					current.loopGuardTripped = true;
+					this._log.warn(`turn exceeded maxApiCallsPerTurn (${current.routerState.apiCallCount}/${current.maxApiCallsPerTurn}) on session ${entry.sessionId} — force-aborting`);
+					current.stream.markdown(`\n\n⚠️ *${vscode.l10n.t('Interrupted: this turn made {0} model calls without completing, which usually means it got stuck in a loop.', current.routerState.apiCallCount)}*\n`);
+					this._forceAbort(entry, current.resolveIdle);
+				}
 			}
 		});
 		this._sessions.set(entry.sessionId, entry);
@@ -315,13 +356,16 @@ export class CopilotParticipant {
 				return { approved: false };
 			}
 			this._log.debug(`exit plan mode requested ${JSON.stringify({ sessionId: entry.sessionId, summary: req.summary?.slice(0, 120) })}`);
-			const approved = await requestConfirmation(
+			const outcome = await requestConfirmation(
 				'Copilot CLI — Exit plan mode and start executing?',
 				req.summary || 'The agent has finished planning and wants to begin making changes.',
 				current.toolInvocationToken,
 				current.token,
 			);
-			this._log.debug(`exit plan mode decision ${JSON.stringify({ sessionId: entry.sessionId, approved })}`);
+			// "Allow for the session" doesn't have a meaningful repeat here — a plan
+			// is only exited once — so it's just treated as an ordinary approval.
+			const approved = outcome !== 'denied';
+			this._log.debug(`exit plan mode decision ${JSON.stringify({ sessionId: entry.sessionId, outcome, approved })}`);
 			return { approved };
 		};
 	}
@@ -425,14 +469,18 @@ function parseLeadingSlashCommand(prompt: string): ParsedSlashCommand {
 	return { rest: prompt };
 }
 
-function findSessionIdInHistory(
+function findMetaInHistory(
 	history: ReadonlyArray<vscode.ChatRequestTurn | vscode.ChatResponseTurn>,
-): string | undefined {
+): { sessionId: string; allowedActions?: string[] } | undefined {
 	for (let i = history.length - 1; i >= 0; i--) {
 		const turn = history[i];
 		if ('result' in turn) {
-			const sessionId = (turn as vscode.ChatResponseTurn).result.metadata?.['sessionId'];
-			if (typeof sessionId === 'string') { return sessionId; }
+			const meta = (turn as vscode.ChatResponseTurn).result.metadata;
+			const sessionId = meta?.['sessionId'];
+			if (typeof sessionId === 'string') {
+				const allowedActions = meta?.['allowedActions'];
+				return { sessionId, ...(Array.isArray(allowedActions) ? { allowedActions } : {}) };
+			}
 		}
 	}
 	return undefined;

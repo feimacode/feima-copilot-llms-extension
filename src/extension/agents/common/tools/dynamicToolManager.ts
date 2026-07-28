@@ -66,6 +66,34 @@ const KNOWN_UNSUPPORTED_TOOLS = new Set<string>([
 	'copilot_editFiles',
 ]);
 
+/**
+ * Session-control tools from GitHub's own Copilot agent SDK
+ * (`@github/copilot-sdk`'s `BuiltInTools.Isolated` list). These aren't
+ * workspace-action tools — they're internal signals for Copilot's own agent
+ * loop (e.g. "I'm done", "ask the user a question", "exit plan mode"). They
+ * end up in `vscode.lm.tools` globally once that extension registers them,
+ * so without this filter Codex sees them as ordinary callable tools too.
+ *
+ * Confirmed harmful in practice: the model called `task_complete` as if it
+ * were a normal dynamic tool, codex-rs dispatched and got a response for it,
+ * but never followed up with a `turn/completed` notification — leaving
+ * `handleRequest`'s `await session.turnDone` (codexParticipant.ts) stuck
+ * forever. `task_complete` has nothing to do with Codex's own turn-completion
+ * semantics; Codex ends turns on its own once there are no more tool calls.
+ */
+const FOREIGN_AGENT_CONTROL_TOOLS = new Set<string>([
+	'ask_user',
+	'task_complete',
+	'exit_plan_mode',
+	'task',
+	'read_agent',
+	'write_agent',
+	'list_agents',
+	'send_inbox',
+	'context_board',
+	'skill',
+]);
+
 // ─── Schema validation ────────────────────────────────────────────────────────
 
 /**
@@ -189,6 +217,10 @@ export class DynamicToolManager {
 		for (const t of tools) {
 			if (KNOWN_UNSUPPORTED_TOOLS.has(t.name)) {
 				this._log.debug(`skipping known-unsupported tool "${t.name}" — not invokable by other participants`);
+				continue;
+			}
+			if (FOREIGN_AGENT_CONTROL_TOOLS.has(t.name)) {
+				this._log.debug(`skipping foreign agent-control tool "${t.name}" — belongs to another extension's agent loop, not a workspace action`);
 				continue;
 			}
 			if (this._uninvokable.has(t.name)) {

@@ -116,6 +116,10 @@
 	"settings.agents.copilot.permissionMode.description": "Default permission tier for @copilot-cli: how much it asks before running commands or changing files. Override for a single turn with `/ask`, `/acceptEdits` or `/fullAuto`.",
 	"settings.agents.claude.permissionMode.description": "Default permission tier for @claude: how much it asks before running commands or changing files. Override for a single turn with `/ask`, `/acceptEdits` or `/fullAuto`.",
 
+	"settings.agents.codex.maxApiCallsPerTurn.description": "Maximum number of model API calls Codex may make within a single turn before it's force-interrupted. Guards against a runaway loop (e.g. the model repeatedly calling tools without converging) that would otherwise never reach `turn/completed`.",
+	"settings.agents.copilot.maxApiCallsPerTurn.description": "Maximum number of model API calls the Copilot CLI may make within a single turn before it's force-aborted. Guards against a runaway loop (e.g. the model repeatedly calling tools without converging) that would otherwise never reach `session.idle`.",
+	"settings.agents.claude.maxApiCallsPerTurn.description": "Maximum number of model round-trips the Claude Agent SDK may make within a single turn (its own `maxTurns` option). Guards against a runaway loop (e.g. the model repeatedly calling tools without converging); past this, the SDK ends the turn itself instead of running unbounded.",
+
 	"chatCommand.permission.ask.description": "Ask for approval before every tool action, for this turn only",
 	"chatCommand.permission.acceptEdits.description": "Auto-approve file edits and ask for the rest, for this turn only",
 	"chatCommand.permission.fullAuto.description": "Auto-approve everything and never ask, for this turn only"

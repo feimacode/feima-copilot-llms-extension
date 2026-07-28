@@ -21,6 +21,19 @@ import type { PermissionTier } from '../common/permissionTier';
 import { requestConfirmation } from '../common/confirmationTool';
 import { ILogService } from '../../platform/log/common/logService';
 
+/** Kind-prefixed identifier for a permission request, used as the "allow for
+ *  the session" remember key — see CopilotParticipant's `sessionApprovals`.
+ *  `undefined` for kinds without a stable identifier (never remembered). */
+function keyForPermissionRequest(request: PermissionRequest): string | undefined {
+	switch (request.kind) {
+		case 'shell': return `shell:${request.fullCommandText}`;
+		case 'write': return `write:${request.fileName}`;
+		case 'read': return `read:${request.path}`;
+		case 'custom-tool': return `custom-tool:${request.toolName}`;
+		default: return undefined;
+	}
+}
+
 const APPROVE_ONCE: PermissionRequestResult = { kind: 'approve-once' };
 const REJECT: PermissionRequestResult = { kind: 'reject' };
 
@@ -31,6 +44,10 @@ export class CopilotPermissionHandler {
 	 * @param attachedPaths Absolute paths the user attached to the request; reads of these are auto-approved.
 	 * @param tier Resolved cross-participant permission tier for this turn
 	 *             (configured default, or a /ask, /acceptEdits, /fullAuto override).
+	 * @param sessionApprovals Live, mutable set of request keys (see
+	 *             keyForPermissionRequest) approved "for the session" via the
+	 *             confirmation card's third button — shared with
+	 *             CopilotParticipant so it can persist into `ChatResult.metadata`.
 	 * @param _log Logging service.
 	 */
 	constructor(
@@ -39,6 +56,7 @@ export class CopilotPermissionHandler {
 		private readonly token: vscode.CancellationToken,
 		private readonly attachedPaths: ReadonlySet<string>,
 		private readonly tier: PermissionTier,
+		private readonly sessionApprovals: Set<string>,
 		private readonly _log: ILogService,
 	) {}
 
@@ -74,6 +92,13 @@ export class CopilotPermissionHandler {
 			return APPROVE_ONCE;
 		}
 
+		// Approved "for the session" earlier in this conversation → auto-approve.
+		const sessionKey = keyForPermissionRequest(request);
+		if (sessionKey && this.sessionApprovals.has(sessionKey)) {
+			this._log.debug(`auto-approve (approved for session) ${JSON.stringify({ kind: request.kind })}`);
+			return APPROVE_ONCE;
+		}
+
 		// Otherwise: park a deferred and prompt the user.
 		this._log.debug(`prompting user ${JSON.stringify({ toolCallId: toolCallId.slice(0, 13), kind: request.kind })}`);
 		const approved = await this._pending.registerAndFire(toolCallId, () => {
@@ -95,13 +120,17 @@ export class CopilotPermissionHandler {
 
 	private async _confirm(request: PermissionRequest, toolCallId: string): Promise<void> {
 		this.stream.progress('Waiting for approval…');
-		const approved = await requestConfirmation(
+		const outcome = await requestConfirmation(
 			'Copilot CLI — Allow operation?',
 			describePermission(request),
 			this.toolInvocationToken,
 			this.token,
 		);
-		this._pending.respondOrBuffer(toolCallId, approved);
+		if (outcome === 'approvedForSession') {
+			const key = keyForPermissionRequest(request);
+			if (key) { this.sessionApprovals.add(key); }
+		}
+		this._pending.respondOrBuffer(toolCallId, outcome !== 'denied');
 	}
 }
 

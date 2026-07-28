@@ -46,6 +46,9 @@ export interface RouterState {
 	modelId: string | null;
 	/** Whether the turn reached idle. */
 	completed: boolean;
+	/** Number of `assistant.turn_end` events seen this turn — one per model
+	 *  round-trip, used by the caller as a runaway-loop guard. */
+	apiCallCount: number;
 }
 
 export function createInitialRouterState(stream: vscode.ChatResponseStream): RouterState {
@@ -58,6 +61,7 @@ export function createInitialRouterState(stream: vscode.ChatResponseStream): Rou
 		usage: { inputTokens: 0, outputTokens: 0 },
 		modelId: null,
 		completed: false,
+		apiCallCount: 0,
 	};
 }
 
@@ -97,8 +101,14 @@ export function routeSessionEvent(
 			}
 			return state;
 		}
+		case 'assistant.turn_end': {
+			// One per model round-trip within the turn — the caller uses this
+			// as a runaway-loop guard (a turn that never converges to
+			// `session.idle`).
+			state.apiCallCount++;
+			return state;
+		}
 		case 'assistant.streaming_delta':
-		case 'assistant.turn_end':
 		case 'assistant.turn_start':
 		case 'permission.requested':
 		case 'permission.completed':

@@ -83,9 +83,24 @@ export interface OptionsBuilderInput {
 	 * override — see ClaudeParticipant's `permissionModeBox`.
 	 */
 	getCurrentPermissionMode?: () => PermissionMode;
+	/**
+	 * Returns the live set of tool names the user has approved "for the
+	 * session" via the confirmation card's third button (see
+	 * common/confirmationTool.ts). A live accessor for the same reason as
+	 * `getCurrentPermissionMode` — see ClaudeParticipant's
+	 * `sessionApprovalsBox`. `canUseTool` both reads and mutates the
+	 * returned set.
+	 */
+	getSessionApprovals?: () => Set<string>;
 	/** Logging service — wired into canUseTool so allow/deny/prompt decisions
 	 *  (and which permission mode was actually in effect) are traceable. */
 	log?: ILogService;
+	/** Runaway-loop guard: max model round-trips the SDK's own agent loop may
+	 *  take within a single turn before it stops. Unlike codex/copilot (which
+	 *  need us to count events and force-interrupt), the Claude Agent SDK has
+	 *  this cap built in — past it, the query generator ends cleanly with
+	 *  `SDKResultMessage.subtype === 'error_max_turns'` instead of hanging. */
+	maxTurns?: number;
 }
 
 /** Map the normalized cross-participant permission tier onto Claude's native `PermissionMode`. */
@@ -115,6 +130,7 @@ export function buildClaudeOptions(input: OptionsBuilderInput): Options {
 	// setting and any per-turn /ask, /acceptEdits, /fullAuto override.
 	const permissionMode = input.permissionMode ?? 'default';
 	const getCurrentPermissionMode = input.getCurrentPermissionMode ?? (() => permissionMode);
+	const getSessionApprovals = input.getSessionApprovals ?? (() => new Set<string>());
 
 	// Native routing (vendor === CLAUDE_PROVIDER_ID): the user picked one of their
 	// own subscription's models (listed via the CLI's own `claude login`), so we
@@ -150,6 +166,9 @@ export function buildClaudeOptions(input: OptionsBuilderInput): Options {
 		// ── Enable stream_event processing ──
 		includePartialMessages: true,
 
+		// ── Runaway-loop guard ──
+		...(input.maxTurns !== undefined ? { maxTurns: input.maxTurns } : {}),
+
 		// ── Safety: file checkpointing ──
 		enableFileCheckpointing: true,
 
@@ -169,7 +188,7 @@ export function buildClaudeOptions(input: OptionsBuilderInput): Options {
 		// ensures canUseTool is the sole authority for allow/deny.
 		permissionMode,
 		allowDangerouslySkipPermissions: true,
-		canUseTool: makeCanUseTool(input.request, input.token, getCurrentPermissionMode, input.log),
+		canUseTool: makeCanUseTool(input.request, input.token, getCurrentPermissionMode, getSessionApprovals, input.log),
 
 		// ── MCP elicitation callback ──
 		onElicitation: makeOnElicitation(input.request, input.token),
@@ -194,11 +213,14 @@ export function buildClaudeOptions(input: OptionsBuilderInput): Options {
  * Uses the shared `requestConfirmation` helper (common/confirmationTool.ts)
  * to show a real blocking inline approval card in the chat panel.
  *
- * `getMode` is called on every tool call rather than closing over a single
- * mode — see `OptionsBuilderInput.getCurrentPermissionMode` for why.
+ * `getMode`/`getSessionApprovals` are called on every tool call rather than
+ * closing over a single value — see `OptionsBuilderInput.getCurrentPermissionMode`
+ * for why.
  *
  * Permission mode affects behavior:
  *   'default'           → prompt user via native chat confirmation dialog
+ *                          (unless this exact tool was already approved "for
+ *                          the session" earlier in the conversation)
  *   'bypassPermissions' → auto-allow (no prompt)
  *   'dontAsk'           → auto-deny (no prompt)
  *   'acceptEdits'       → auto-allow file edit tools, prompt for others
@@ -207,6 +229,7 @@ function makeCanUseTool(
 	request: vscode.ChatRequest,
 	token: vscode.CancellationToken,
 	getMode: () => PermissionMode,
+	getSessionApprovals: () => Set<string>,
 	log?: ILogService,
 ): CanUseTool {
 	return async (toolName, _input, _options) => {
@@ -228,16 +251,25 @@ function makeCanUseTool(
 			return { behavior: 'allow' as const };
 		}
 
+		const sessionApprovals = getSessionApprovals();
+		if (sessionApprovals.has(toolName)) {
+			log?.debug(`canUseTool decision: allow (approved for session) ${JSON.stringify({ toolName })}`);
+			return { behavior: 'allow' as const };
+		}
+
 		// Default: prompt via a real blocking confirmation card (inline in chat panel)
 		log?.debug(`canUseTool prompting user ${JSON.stringify({ toolName, mode })}`);
-		const approved = await requestConfirmation(
+		const outcome = await requestConfirmation(
 			'Allow tool execution?',
 			`Claude wants to use: **${toolName}**`,
 			request.toolInvocationToken,
 			token,
 		);
-		log?.debug(`canUseTool decision: ${approved ? 'allow' : 'deny'} (user prompt) ${JSON.stringify({ toolName })}`);
-		return approved
+		if (outcome === 'approvedForSession') {
+			sessionApprovals.add(toolName);
+		}
+		log?.debug(`canUseTool decision: ${outcome} (user prompt) ${JSON.stringify({ toolName })}`);
+		return outcome !== 'denied'
 			? { behavior: 'allow' as const }
 			: { behavior: 'deny' as const, message: 'Denied by user' };
 	};

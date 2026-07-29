@@ -53,7 +53,16 @@
 		"completion",
 		"agent",
 		"programming",
-		"developer-tools"
+		"developer-tools",
+		"Claude Code",
+		"Claude",
+		"Anthropic",
+		"Codex",
+		"OpenAI Codex",
+		"Copilot CLI",
+		"CLI agent",
+		"BYOK",
+		"bring your own key"
 	],
 	"categories": [
 		"AI",

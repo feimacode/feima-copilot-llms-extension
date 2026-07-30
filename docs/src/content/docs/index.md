@@ -39,6 +39,7 @@ Feima Copilot is a VS Code extension that enhances GitHub Copilot Chat with alte
 - 💰 **Pay-Per-Use**: Pay only for requests you make, not monthly subscriptions
 - 🔒 **Secure**: OAuth2 authentication with code that never leaves VS Code
 - 🧠 **Thinking Models**: Support for chain-of-thought reasoning for complex problems
+- 🤖 **Agent Participants**: Drive the real Claude Code, Codex, and Copilot CLI agents right inside VS Code chat with `@claude`, `@codex`, `@copilot-cli`
 
 ## Quick Start
 
@@ -87,6 +88,16 @@ Our servers are located in **Singapore**, and most LLM providers we work with al
 - ✅ No data transfer to China
 - ✅ Compliance with regional data protection requirements
 
+## Agent Participants: bring your own CLI agent
+
+Beyond model access, Feima Copilot lets you drive the *real* Claude Code, Codex, and GitHub Copilot CLI agents from directly inside GitHub Copilot Chat — `@claude`, `@codex`, and `@copilot-cli` — with each CLI's own planning and tool-use loop, rendered in VS Code's native chat UI.
+
+- Already have a Claude Pro/Max or ChatGPT Plus subscription? Use it natively, at no extra cost.
+- Don't have one? Route the same agent workflow through a Feima or Copilot model instead — no separate subscription required.
+- Every action can require approval, auto-approve edits only, or run hands-off, per turn or by default.
+
+👉 [Agent Participants Overview](/guides/agent-participants) — full guide, including a scenario table to help you pick the right participant and mode for your situation.
+
 ## Development Status
 
 **Current Version**: v0.1.0-alpha (In Development)
@@ -102,6 +113,7 @@ We're implementing core features:
 - [Quick Start Guide](/guides/quickstart) - Get up and running in minutes
 - [Installation Guide](/guides/installation) - Detailed installation instructions
 - [Authentication Guide](/guides/authentication) - Set up OAuth2 authentication
+- [Agent Participants](/guides/agent-participants) - Drive Claude Code, Codex, and Copilot CLI from VS Code chat
 - [Development Setup](/dev/setup) - Contribute to the project
 
 ## Get Involved

@@ -32,6 +32,7 @@ head:
 - 💰 **按次计费**：只为使用的请求付费，无需月付订阅
 - 🔒 **安全可靠**：OAuth2 认证，代码不离开 VS Code
 - 🧠 **深度思考**：支持思维链推理，复杂问题迎刃而解
+- 🤖 **智能体参与者**：通过 `@claude`、`@codex`、`@copilot-cli` 在 VS Code 聊天中直接驱动真正的 Claude Code、Codex 和 Copilot CLI 智能体
 
 ## 快速开始
 
@@ -81,6 +82,16 @@ head:
 | 中文理解 | ✅ 良好 | 🔥 **优秀**（中国模型） |
 | 付费方式 | 按月订阅 | 💡 **按次付费** |
 
+## 智能体参与者：带上你自己的 CLI 智能体
+
+除了模型接入之外，飞码扣还能让你在 GitHub Copilot Chat 中直接驱动*真正的* Claude Code、Codex 和 GitHub Copilot CLI 智能体 —— `@claude`、`@codex`、`@copilot-cli` —— 每个都保留了对应 CLI 自身的规划与工具调用循环，并渲染在 VS Code 原生聊天界面中。
+
+- 已经订阅了 Claude Pro/Max 或 ChatGPT Plus？直接原生使用，不产生额外费用。
+- 还没有订阅？把同样的智能体工作流路由到飞码扣或 Copilot 模型上 —— 无需单独订阅。
+- 每一步操作都可以设为需要审批、只自动批准编辑，或完全自动运行，可按次覆盖或设为默认。
+
+👉 [智能体参与者概览](/zh/guides/agent-participants) —— 完整指南，包含帮你选择合适参与者和模式的场景对照表。
+
 ## 开发状态
 
 **当前版本**：v0.1.0-alpha（开发中）
@@ -96,6 +107,7 @@ head:
 - [快速入门指南](/guides/quickstart) - 几分钟内开始使用
 - [安装指南](/guides/installation) - 详细的安装说明
 - [认证指南](/guides/authentication) - 设置 OAuth2 认证
+- [智能体参与者](/zh/guides/agent-participants) - 在 VS Code 聊天中驱动 Claude Code、Codex 和 Copilot CLI
 - [开发设置](/dev/setup) - 参与项目开发
 
 ## 参与贡献

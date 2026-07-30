@@ -93,6 +93,16 @@ head:
 2. 提问："如何使用 Express 在 Node.js 中创建 REST API 端点？"
 3. AI 应该会提供代码和说明
 
+## 可选：试试智能体参与者
+
+如果你已经安装了对应的 CLI，飞码扣还提供三个聊天参与者 —— `@claude`、`@codex`、`@copilot-cli` —— 可以在 VS Code 聊天中运行真正的 Claude Code、Codex 或 GitHub Copilot CLI 智能体：
+
+1. 在聊天输入框中输入 `@claude`（或 `@codex` / `@copilot-cli`），后面跟上你的请求，例如 `@claude 解释一下这个文件的作用`
+2. 系统会提示你选择模型 —— 选择该 CLI 自己的模型以使用你现有的订阅，或选择飞码扣/Copilot 模型将请求路由到它们
+3. 观察智能体规划、读取文件，并内联提出修改建议
+
+完整介绍请见[智能体参与者指南](/zh/guides/agent-participants)，其中包含帮你判断该用哪种模式的场景对照表；如果检测不到 CLI，请参阅[设置与故障排查](/zh/guides/agent-participants-setup)。
+
 ## 故障排除
 
 ### 浏览器没有打开
@@ -120,6 +130,7 @@ head:
 - [安装指南](/guides/installation) - 更多详细的安装选项
 - [认证指南](/guides/authentication) - 了解 OAuth2 流程
 - [配置指南](/guides/configuration) - 自定义您的体验
+- [智能体参与者](/zh/guides/agent-participants) - 在聊天中驱动 Claude Code、Codex 和 Copilot CLI
 - [开发指南](/dev/setup) - 为项目做出贡献
 
 ## 需要帮助？

@@ -59,6 +59,31 @@ If none of that matched, start with [Setup & Troubleshooting](/guides/agent-part
 
 All three are **sticky** — once you start a conversation with one, follow-up messages keep going to the same participant until you explicitly `@`-mention a different one.
 
+## What it looks like
+
+A conversation with an agent participant reads like a normal Copilot Chat exchange, but you can watch the agent read files and stage edits before they land:
+
+```
+You: @claude Refactor parseInvoice() to handle malformed dates and add tests
+
+Claude: I'll take a look at the function first...
+  ⚙ Reading src/billing/parseInvoice.ts
+  ⚙ Reading test/billing/parseInvoice.test.ts
+  ✎ Editing src/billing/parseInvoice.ts
+  ✎ Creating test/billing/parseInvoice.test.ts
+  Done — added guard clauses for 3 malformed date formats and 5 new test cases.
+```
+
+Some other things people commonly ask each participant to do:
+
+| Participant | Example prompts |
+|---|---|
+| `@claude` | `@claude find and fix the race condition in the connection pool`  ·  `@claude add JSDoc comments to every exported function in src/utils/`  ·  `@claude /fullAuto migrate this file from CommonJS to ESM` |
+| `@codex` | `@codex write an integration test for the checkout flow`  ·  `@codex why is this query slow, and fix it`  ·  `@codex /acceptEdits update all callers after renaming this function` |
+| `@copilot-cli` | `@copilot-cli set up a GitHub Actions workflow to run our tests on PRs`  ·  `@copilot-cli find every place we log secrets and redact them` |
+
+Edits appear directly in your open files, same as any other Copilot Chat edit — review them in the diff view, then accept or discard.
+
 ## Permission tiers
 
 Every participant supports three sub-commands that control how much it asks before acting:

@@ -29,7 +29,7 @@
 - 💰 **按次计费**: 请求数付费，成本可控，告别按月订阅
 - 🔒 **安全可靠**: OAuth2 认证，代码不离开 VS Code
 - 🧠 **深度思考**: 支持思维链推理，复杂问题迎刃而解
-- 🤖 **智能体参与者**: 通过 `@claude`、`@codex`、`@copilot-cli` 在原生 VS Code 聊天中驱动 Claude Code、Codex 和 Copilot CLI —— 使用你自己的订阅或飞码扣/Copilot 模型
+- 🤖 **智能体参与者（全新）**: 通过 `@claude`、`@codex`、`@copilot-cli` 驱动真正的 Claude Code、Codex 和 Copilot CLI 智能体 —— 详见下文
 
 ### 为什么选择飞码扣？
 
@@ -61,6 +61,46 @@
 | DeepSeek V4 Pro | DeepSeek | 1M token 上下文，深度思考 |
 | DeepSeek V4 Flash | DeepSeek | 1M token 上下文，快速响应 |
 | GLM 5.1 | 智谱AI | 202K 上下文，强大推理 |
+
+## 🤖 智能体参与者 —— 在 VS Code 中原生使用 Claude Code、Codex 和 Copilot CLI
+
+**飞码扣不只是又一个模型提供商 —— 它还能让你在 GitHub Copilot Chat 中直接驱动*真正的* Claude Code、Codex 和 GitHub Copilot CLI 智能体。**
+
+输入 `@claude`、`@codex` 或 `@copilot-cli`，你得到的是该 CLI 自己的智能体循环 —— 它自己的规划、工具调用和文件编辑审查 —— 并渲染在 VS Code 原生聊天界面中：流式响应、内联 diff，无需打开终端，也不用来回复制粘贴代码。
+
+### 该用哪一个？
+
+| 如果你… | 试试 | 为什么 |
+|---|---|---|
+| 已经订阅了 **Claude Pro/Max** 或 **ChatGPT Plus/Pro** | `@claude` / `@codex`，选择该 CLI 自己的模型 | 直接使用你已有的订阅额度 —— 无额外费用，无需其他配置 |
+| 没有（或不想要）单独的 Anthropic/OpenAI 订阅 | `@claude` / `@codex`，改为选择**飞码扣或 Copilot 模型** | 同样的智能体工作流和工具循环，由你已经拥有的模型驱动 |
+| 只想用 **GitHub Copilot CLI** 的终端自动化能力，又不想离开聊天窗口 | `@copilot-cli` | 运行 Copilot CLI 的智能体，由你的 Copilot/飞码扣模型驱动 |
+| 想先体验 Claude Code 或 Codex 的工作流，再决定是否订阅 | 任一参与者 + 飞码扣/Copilot 模型 | 无需新注册任何账号，先感受一下 |
+| 想在普通终端里使用真正的 `claude`/`codex` CLI，但通过 Copilot/飞码扣计费，而不是单独的 API key | 内置的**智能体代理**（Feima: Show Account → 🔌 Agent Proxy） | 同样的本地路由，在 VS Code 之外也能使用 |
+
+### 实际效果
+
+```
+你: @claude 重构 parseInvoice() 以处理格式错误的日期，并添加测试
+
+Claude: 我先看一下这个函数……
+  ⚙ 正在读取 src/billing/parseInvoice.ts
+  ⚙ 正在读取 test/billing/parseInvoice.test.ts
+  ✎ 正在编辑 src/billing/parseInvoice.ts
+  ✎ 正在创建 test/billing/parseInvoice.test.ts
+  完成 —— 为 3 种格式错误的日期添加了防御性判断，并新增 5 个测试用例。
+```
+
+无需终端、无需 `cd`、无需复制粘贴 —— 修改会像原生 Copilot Chat 编辑一样，直接落在你打开的编辑器中。
+
+### 技术细节
+
+- **三种权限等级**（按次生效）—— `/ask`（逐项确认）、`/acceptEdits`（自动批准文件编辑，命令仍需确认）、`/fullAuto`（完全自动）—— 也可为每个参与者设置持久默认值。
+- **自带模型（BYOK）** —— 通过本地、仅限回环地址的智能体代理，将任意参与者指向 Copilot 或 BYOK 模型，无需单独的 Anthropic/OpenAI API key。
+- **MCP 服务器** —— 通过设置为 `@claude` 和 `@codex` 接入你自己的 MCP 工具。
+- **你的 CLI，你的登录态** —— 原生模式使用该 CLI 自己的订阅和登录态，就像在终端里使用一样；扩展本身不会接触你的 Anthropic/OpenAI 凭据。
+
+📖 深入了解：[智能体参与者概览](https://docs.feimacode.com/zh/guides/agent-participants/) · [设置与故障排查](https://docs.feimacode.com/zh/guides/agent-participants-setup/) · [智能体代理指南](https://docs.feimacode.com/zh/guides/agent-proxy/)
 
 ## 开发状态
 

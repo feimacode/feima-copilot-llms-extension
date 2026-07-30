@@ -24,6 +24,7 @@ import { resolvePermissionTier } from '../common/permissionTier';
 import { requestConfirmation } from '../common/confirmationTool';
 import { parseAllowedActions, serializeAllowedActions } from '../common/sessionApprovals';
 import { resolveWorkspaceCwd } from '../common/workspaceUtils';
+import { ExternalEditTracker } from '../common/externalEditTracker';
 import { ILogService } from '../../platform/log/common/logService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -80,6 +81,9 @@ interface SessionEntry {
 export class CopilotParticipant {
 	private _client: CopilotClient | null = null;
 	private readonly _sessions = new Map<string, SessionEntry>();
+	/** Tracks stream.externalEdit() windows for 'write' permission requests
+	 *  (shared across turns, flushed at the end of each — see common/externalEditTracker.ts). */
+	private readonly _editTracker = new ExternalEditTracker();
 
 	/**
 	 * @param storagePath Extension global storage path, used as the Copilot runtime
@@ -161,7 +165,7 @@ export class CopilotParticipant {
 		this._log.debug(`final permission in use ${JSON.stringify({
 			configuredTier, commandOverride: request.command, tier: permissionTier,
 		})}`);
-		const permission = new CopilotPermissionHandler(stream, request.toolInvocationToken, token, attachedPaths, permissionTier, entry.sessionApprovals, this._log);
+		const permission = new CopilotPermissionHandler(stream, request.toolInvocationToken, token, attachedPaths, permissionTier, entry.sessionApprovals, this._editTracker, this._log);
 
 		// Establish the mutable turn context read by the shared event/permission callbacks.
 		let resolveIdle!: () => void;
@@ -214,6 +218,7 @@ export class CopilotParticipant {
 		} finally {
 			cancelSub.dispose();
 			permission.dispose();
+			this._editTracker.flush();
 			entry.current = null;
 		}
 
@@ -322,7 +327,7 @@ export class CopilotParticipant {
 		entry.unsubscribe = session.on((event) => {
 			const current = entry.current;
 			if (current) {
-				routeSessionEvent(event, current.stream, current.routerState, current.resolveIdle, this._log);
+				routeSessionEvent(event, current.stream, current.routerState, current.resolveIdle, this._editTracker, this._log);
 				if (!current.loopGuardTripped && current.routerState.apiCallCount >= current.maxApiCallsPerTurn) {
 					current.loopGuardTripped = true;
 					this._log.warn(`turn exceeded maxApiCallsPerTurn (${current.routerState.apiCallCount}/${current.maxApiCallsPerTurn}) on session ${entry.sessionId} — force-aborting`);

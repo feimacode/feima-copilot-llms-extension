@@ -1,7 +1,7 @@
 {
 	"name": "copilot-more-llms",
-	"displayName": "%extension.displayName%",
-	"description": "%extension.description%",
+	"displayName": "Feima Copilot Models",
+	"description": "Feima Copilot — add DeepSeek, Qwen, GLM, MiniMax, Kimi, Mimo and more top LLMs to GitHub Copilot Chat in VS Code. Pay-as-you-go, OAuth sign-in, chain-of-thought and vision support.",
 	"version": "0.1.24",
 	"publisher": "feima",
 	"author": {
@@ -87,75 +87,75 @@
 		"languageModelChatProviders": [
 			{
 				"vendor": "feima",
-				"displayName": "%extension.displayName% (Feima)"
+				"displayName": "Feima Copilot Models (Feima)"
 			},
 			{
 				"vendor": "codex",
-				"displayName": "%provider.codex.displayName%"
+				"displayName": "Codex (OpenAI)"
 			},
 			{
 				"vendor": "claude-code",
-				"displayName": "%provider.claude.displayName%"
+				"displayName": "Claude Code"
 			}
 		],
 		"chatParticipants": [
 			{
 				"id": "codex.participant",
 				"name": "codex",
-				"description": "%participant.codex.description%",
+				"description": "Codex AI agent — edits files, runs commands, and explores your codebase",
 				"isSticky": true,
 				"commands": [
 					{
 						"name": "ask",
-						"description": "%chatCommand.permission.ask.description%"
+						"description": "Ask for approval before every tool action, for this turn only"
 					},
 					{
 						"name": "acceptEdits",
-						"description": "%chatCommand.permission.acceptEdits.description%"
+						"description": "Auto-approve file edits and ask for the rest, for this turn only"
 					},
 					{
 						"name": "fullAuto",
-						"description": "%chatCommand.permission.fullAuto.description%"
+						"description": "Auto-approve everything and never ask, for this turn only"
 					}
 				]
 			},
 			{
 				"id": "copilot-cli.participant",
 				"name": "copilot-cli",
-				"description": "%participant.copilot.description%",
+				"description": "GitHub Copilot CLI agent — coding and terminal tasks via Copilot CLI",
 				"isSticky": true,
 				"commands": [
 					{
 						"name": "ask",
-						"description": "%chatCommand.permission.ask.description%"
+						"description": "Ask for approval before every tool action, for this turn only"
 					},
 					{
 						"name": "acceptEdits",
-						"description": "%chatCommand.permission.acceptEdits.description%"
+						"description": "Auto-approve file edits and ask for the rest, for this turn only"
 					},
 					{
 						"name": "fullAuto",
-						"description": "%chatCommand.permission.fullAuto.description%"
+						"description": "Auto-approve everything and never ask, for this turn only"
 					}
 				]
 			},
 			{
 				"id": "claude.participant",
 				"name": "claude",
-				"description": "%participant.claude.description%",
+				"description": "Claude Code agent — edits files, runs commands, and explores your codebase",
 				"isSticky": true,
 				"commands": [
 					{
 						"name": "ask",
-						"description": "%chatCommand.permission.ask.description%"
+						"description": "Ask for approval before every tool action, for this turn only"
 					},
 					{
 						"name": "acceptEdits",
-						"description": "%chatCommand.permission.acceptEdits.description%"
+						"description": "Auto-approve file edits and ask for the rest, for this turn only"
 					},
 					{
 						"name": "fullAuto",
-						"description": "%chatCommand.permission.fullAuto.description%"
+						"description": "Auto-approve everything and never ask, for this turn only"
 					}
 				]
 			}
@@ -163,96 +163,96 @@
 		"commands": [
 			{
 				"command": "feima.signIn",
-				"title": "%command.signIn.title%",
-				"category": "%command.signIn.category%"
+				"title": "Sign In",
+				"category": "Feima"
 			},
 			{
 				"command": "feima.signOut",
-				"title": "%command.signOut.title%",
-				"category": "%command.signOut.category%"
+				"title": "Sign Out",
+				"category": "Feima"
 			},
 			{
 				"command": "feima.showAccount",
-				"title": "%command.showAccount.title%",
-				"category": "%command.showAccount.category%"
+				"title": "View Account",
+				"category": "Feima"
 			},
 			{
 				"command": "feima.agents.clearCodexToolCache",
-				"title": "%command.agents.clearCodexToolCache.title%",
-				"category": "%command.agents.category%"
+				"title": "Clear Codex Dynamic Tool Cache",
+				"category": "Feima Agents"
 			}
 		],
 		"configuration": {
-			"title": "%extension.displayName%",
+			"title": "Feima Copilot Models",
 			"properties": {
 				"feima.auth.baseUrl": {
 					"type": "string",
-					"default": "%default.auth.baseUrl%",
-					"markdownDescription": "%settings.auth.baseUrl.description%",
+					"default": "https://auth.feimacode.com",
+					"markdownDescription": "OAuth2 authentication server base URL (overrides region default)",
 					"scope": "machine-overridable"
 				},
 				"feima.api.baseUrl": {
 					"type": "string",
-					"default": "%default.api.baseUrl%",
-					"markdownDescription": "%settings.api.baseUrl.description%",
+					"default": "https://api.feimacode.com/v1",
+					"markdownDescription": "Model inference API server base URL (overrides region default)",
 					"scope": "machine-overridable"
 				},
 				"feima.auth.clientId": {
 					"type": "string",
 					"default": "vscode-feima-client",
-					"markdownDescription": "%settings.auth.clientId.description%",
+					"markdownDescription": "OAuth2 client ID for authentication (overrides region default)",
 					"scope": "machine-overridable"
 				},
 				"feima.auth.issuer": {
 					"type": "string",
-					"default": "%default.auth.issuer%",
-					"markdownDescription": "%settings.auth.issuer.description%",
+					"default": "https://auth.feimacode.com",
+					"markdownDescription": "OAuth2 issuer URL (overrides region default)",
 					"scope": "machine-overridable"
 				},
 				"feima.promotionUrl": {
 					"type": "string",
-					"default": "%default.promotionUrl%",
-					"markdownDescription": "%settings.promotionUrl.description%",
+					"default": "https://feimacode.com/promotion",
+					"markdownDescription": "URL for the credits promotion page (shown when balance runs out)",
 					"scope": "machine-overridable"
 				},
 				"feima.website.baseUrl": {
 					"type": "string",
-					"default": "%default.website.baseUrl%",
-					"markdownDescription": "%settings.website.baseUrl.description%",
+					"default": "https://feimacode.com",
+					"markdownDescription": "Base URL for the Feima website (used for profile and activity log links)",
 					"scope": "machine-overridable"
 				},
 				"feima.showQuotaInStatusBar": {
 					"type": "boolean",
 					"default": true,
-					"description": "%settings.showQuotaInStatusBar.description%"
+					"description": "Show remaining request quota in status bar"
 				},
 				"feima.warnWhenQuotaLow": {
 					"type": "number",
 					"default": 50,
-					"description": "%settings.warnWhenQuotaLow.description%"
+					"description": "Show warning when remaining requests drop below this number"
 				},
 				"feima.agents.codex.binaryPath": {
 					"type": "string",
 					"default": "",
-					"markdownDescription": "%settings.agents.codex.binaryPath.description%",
+					"markdownDescription": "Absolute path to the `codex` binary. Leave empty to auto-discover via PATH.",
 					"scope": "machine-overridable"
 				},
 				"feima.agents.copilot.binaryPath": {
 					"type": "string",
 					"default": "",
-					"markdownDescription": "%settings.agents.copilot.binaryPath.description%",
+					"markdownDescription": "Absolute path to the GitHub Copilot CLI binary. Leave empty to auto-discover via PATH.",
 					"scope": "machine-overridable"
 				},
 				"feima.agents.claude.binaryPath": {
 					"type": "string",
 					"default": "",
-					"markdownDescription": "%settings.agents.claude.binaryPath.description%",
+					"markdownDescription": "Absolute path to the `claude` binary. Leave empty to auto-discover via PATH.",
 					"scope": "machine-overridable"
 				},
 				"feima.agents.codex.mcpServers": {
 					"type": "object",
 					"default": {},
-					"markdownDescription": "%settings.agents.codex.mcpServers.description%",
+					"markdownDescription": "MCP server configuration passed to Codex. Each key is a server name; value is `{ command, args?, env?, url? }`.",
 					"additionalProperties": {
 						"type": "object",
 						"properties": {
@@ -282,7 +282,7 @@
 				"feima.agents.claude.mcpServers": {
 					"type": "object",
 					"default": {},
-					"markdownDescription": "%settings.agents.claude.mcpServers.description%",
+					"markdownDescription": "MCP server configuration passed to Claude Code. Each key is a server name; value is `{ command, args?, env?, url? }`.",
 					"additionalProperties": {
 						"type": "object",
 						"properties": {
@@ -313,7 +313,7 @@
 					"type": "number",
 					"default": 50,
 					"minimum": 1,
-					"markdownDescription": "%settings.agents.codex.maxApiCallsPerTurn.description%"
+					"markdownDescription": "Maximum number of model API calls Codex may make within a single turn before it's force-interrupted. Guards against a runaway loop (e.g. the model repeatedly calling tools without converging) that would otherwise never reach `turn/completed`."
 				},
 				"feima.agents.codex.permissionMode": {
 					"type": "string",
@@ -328,13 +328,13 @@
 						"Auto-approve everything; never ask. Use with caution."
 					],
 					"default": "ask",
-					"markdownDescription": "%settings.agents.codex.permissionMode.description%"
+					"markdownDescription": "Default permission tier for @codex: how much it asks before running commands or changing files. Override for a single turn with `/ask`, `/acceptEdits` or `/fullAuto`."
 				},
 				"feima.agents.copilot.maxApiCallsPerTurn": {
 					"type": "number",
 					"default": 50,
 					"minimum": 1,
-					"markdownDescription": "%settings.agents.copilot.maxApiCallsPerTurn.description%"
+					"markdownDescription": "Maximum number of model API calls the Copilot CLI may make within a single turn before it's force-aborted. Guards against a runaway loop (e.g. the model repeatedly calling tools without converging) that would otherwise never reach `session.idle`."
 				},
 				"feima.agents.copilot.permissionMode": {
 					"type": "string",
@@ -349,13 +349,13 @@
 						"Auto-approve everything; never ask. Use with caution."
 					],
 					"default": "ask",
-					"markdownDescription": "%settings.agents.copilot.permissionMode.description%"
+					"markdownDescription": "Default permission tier for @copilot-cli: how much it asks before running commands or changing files. Override for a single turn with `/ask`, `/acceptEdits` or `/fullAuto`."
 				},
 				"feima.agents.claude.maxApiCallsPerTurn": {
 					"type": "number",
 					"default": 50,
 					"minimum": 1,
-					"markdownDescription": "%settings.agents.claude.maxApiCallsPerTurn.description%"
+					"markdownDescription": "Maximum number of model round-trips the Claude Agent SDK may make within a single turn (its own `maxTurns` option). Guards against a runaway loop (e.g. the model repeatedly calling tools without converging); past this, the SDK ends the turn itself instead of running unbounded."
 				},
 				"feima.agents.claude.permissionMode": {
 					"type": "string",
@@ -370,7 +370,7 @@
 						"Auto-approve everything; never ask. Use with caution."
 					],
 					"default": "ask",
-					"markdownDescription": "%settings.agents.claude.permissionMode.description%"
+					"markdownDescription": "Default permission tier for @claude: how much it asks before running commands or changing files. Override for a single turn with `/ask`, `/acceptEdits` or `/fullAuto`."
 				}
 			}
 		},

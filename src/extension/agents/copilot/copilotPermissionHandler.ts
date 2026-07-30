@@ -19,6 +19,7 @@ import type { PermissionRequest, PermissionRequestResult } from '@github/copilot
 import { PendingRequestRegistry } from '../common/util/pendingRequestRegistry';
 import type { PermissionTier } from '../common/permissionTier';
 import { requestConfirmation } from '../common/confirmationTool';
+import { ExternalEditTracker } from '../common/externalEditTracker';
 import { ILogService } from '../../platform/log/common/logService';
 
 /** Kind-prefixed identifier for a permission request, used as the "allow for
@@ -48,6 +49,13 @@ export class CopilotPermissionHandler {
 	 *             keyForPermissionRequest) approved "for the session" via the
 	 *             confirmation card's third button — shared with
 	 *             CopilotParticipant so it can persist into `ChatResult.metadata`.
+	 * @param editTracker Shared `stream.externalEdit()` bracket (see
+	 *             common/externalEditTracker.ts) — opened here on every approved
+	 *             'write' permission request, closed by the session event router
+	 *             on the matching `tool.execution_complete`. Without this, a
+	 *             write the CLI performs directly to disk shows up only as a
+	 *             bare "N file(s) changed" summary, not a real diffable,
+	 *             git/Working-Set-tracked change.
 	 * @param _log Logging service.
 	 */
 	constructor(
@@ -57,8 +65,22 @@ export class CopilotPermissionHandler {
 		private readonly attachedPaths: ReadonlySet<string>,
 		private readonly tier: PermissionTier,
 		private readonly sessionApprovals: Set<string>,
+		private readonly editTracker: ExternalEditTracker,
 		private readonly _log: ILogService,
 	) {}
+
+	/**
+	 * Open the `externalEdit` tracking window for an approved 'write' request.
+	 * Must be called before the decision is returned to the SDK — the actual
+	 * on-disk write happens only after our RPC response reaches the runtime,
+	 * so this still lines up before the write despite being 'after' the local
+	 * approval logic.
+	 */
+	private _beginEditTrackingIfWrite(request: PermissionRequest, toolCallId: string): void {
+		if (request.kind === 'write') {
+			void this.editTracker.trackEdit(toolCallId, [vscode.Uri.file(request.fileName)], this.stream);
+		}
+	}
 
 	/** SDK `onPermissionRequest` callback. */
 	handle = async (request: PermissionRequest): Promise<PermissionRequestResult> => {
@@ -73,11 +95,13 @@ export class CopilotPermissionHandler {
 		// Tier: fullAuto → auto-approve everything.
 		if (this.tier === 'fullAuto') {
 			this._log.debug(`auto-approve (fullAuto tier) ${JSON.stringify({ kind: request.kind })}`);
+			this._beginEditTrackingIfWrite(request, toolCallId);
 			return APPROVE_ONCE;
 		}
 		// Tier: acceptEdits → auto-approve file writes; shell/custom-tool/other reads still prompt.
 		if (this.tier === 'acceptEdits' && request.kind === 'write') {
 			this._log.debug(`auto-approve (acceptEdits tier) ${JSON.stringify({ path: request.fileName })}`);
+			this._beginEditTrackingIfWrite(request, toolCallId);
 			return APPROVE_ONCE;
 		}
 
@@ -96,6 +120,7 @@ export class CopilotPermissionHandler {
 		const sessionKey = keyForPermissionRequest(request);
 		if (sessionKey && this.sessionApprovals.has(sessionKey)) {
 			this._log.debug(`auto-approve (approved for session) ${JSON.stringify({ kind: request.kind })}`);
+			this._beginEditTrackingIfWrite(request, toolCallId);
 			return APPROVE_ONCE;
 		}
 
@@ -105,6 +130,9 @@ export class CopilotPermissionHandler {
 			void this._confirm(request, toolCallId);
 		});
 		this._log.debug(`permission decision ${JSON.stringify({ toolCallId: toolCallId.slice(0, 13), approved })}`);
+		if (approved) {
+			this._beginEditTrackingIfWrite(request, toolCallId);
+		}
 		return approved ? APPROVE_ONCE : REJECT;
 	};
 

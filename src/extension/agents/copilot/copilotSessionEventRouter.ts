@@ -17,6 +17,7 @@ import * as vscode from 'vscode';
 import type { SessionEvent } from '@github/copilot-sdk';
 import { ILogService } from '../../platform/log/common/logService';
 import { ThinkingPanelHelper } from '../common/thinkingPanelHelper';
+import type { ExternalEditTracker } from '../common/externalEditTracker';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -76,6 +77,7 @@ export function routeSessionEvent(
 	stream: vscode.ChatResponseStream,
 	state: RouterState,
 	onIdle: () => void,
+	editTracker: ExternalEditTracker,
 	log: ILogService,
 ): RouterState {
 	// Log every event so we can see exactly what the Copilot runtime emits.
@@ -157,6 +159,10 @@ export function routeSessionEvent(
 		case 'tool.execution_complete': {
 			const toolName = state.activeToolCalls.get(event.data.toolCallId);
 			state.activeToolCalls.delete(event.data.toolCallId);
+			// Close the `externalEdit` window opened (for 'write' permission
+			// requests) in copilotPermissionHandler.ts — a no-op if this
+			// toolCallId never had one (reads, shell commands, etc.).
+			void editTracker.completeEdit(event.data.toolCallId);
 			if (event.data.success === false && event.data.error) {
 				const message = typeof event.data.error === 'string'
 					? event.data.error

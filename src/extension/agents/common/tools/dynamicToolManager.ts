@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 import type { DynamicToolSpec } from '../protocol/types';
 import { ILogService } from '../../../platform/log/common/logService';
+import { getConfiguredExcludePatterns, isToolNameExcluded } from './toolFilters';
 
 // ─── Schema & description overrides ───────────────────────────────────────
 
@@ -47,52 +48,13 @@ const TOOL_DESCRIPTION_OVERRIDES: Record<string, string> = {
 	'vscode_editFile': 'Apply an edit to a file. Prefer this over shell commands for modifying files.',
 };
 
-/**
- * GitHub Copilot Chat contributes some `copilot_*` tools to `vscode.lm.tools`
- * as manifest-only entries for its own in-process agent mode — it never
- * calls `vscode.lm.registerTool()` for them, so `vscode.lm.invokeTool` throws
- * "does not have an implementation registered" when another participant
- * calls one (confirmed at runtime, not a guess). Codex already has its own
- * native file-editing flow (apply_patch via the app-server's approval
- * mechanism), so there's nothing to gain from advertising these — filter out
- * the ones we've confirmed are unsupported up front instead of paying for a
- * failed round trip (and the `_uninvokable` runtime fallback below) every
- * time. Add to this set as more are confirmed; don't blanket-match on the
- * `copilot_` prefix — other tools under that name may be genuinely invokable.
- */
-const KNOWN_UNSUPPORTED_TOOLS = new Set<string>([
-	'copilot_createFile',
-	'copilot_applyPatch',
-	'copilot_editFiles',
-]);
-
-/**
- * Session-control tools from GitHub's own Copilot agent SDK
- * (`@github/copilot-sdk`'s `BuiltInTools.Isolated` list). These aren't
- * workspace-action tools — they're internal signals for Copilot's own agent
- * loop (e.g. "I'm done", "ask the user a question", "exit plan mode"). They
- * end up in `vscode.lm.tools` globally once that extension registers them,
- * so without this filter Codex sees them as ordinary callable tools too.
- *
- * Confirmed harmful in practice: the model called `task_complete` as if it
- * were a normal dynamic tool, codex-rs dispatched and got a response for it,
- * but never followed up with a `turn/completed` notification — leaving
- * `handleRequest`'s `await session.turnDone` (codexParticipant.ts) stuck
- * forever. `task_complete` has nothing to do with Codex's own turn-completion
- * semantics; Codex ends turns on its own once there are no more tool calls.
- */
-const FOREIGN_AGENT_CONTROL_TOOLS = new Set<string>([
-	'ask_user',
-	'task_complete',
-	'exit_plan_mode',
-	'task',
-	'read_agent',
-	'write_agent',
-	'list_agents',
-	'send_inbox',
-	'context_board',
-	'skill',
-]);
+// Tool-name exclusion (unsupported manifest-only tools, foreign agent-loop
+// control signals, MCP-backed tools now handled natively by the CLI's own
+// MCP client — see ../mcp/vscodeMcpConfig.ts) is driven entirely by the
+// user-configurable `feima.agents.tools.excludePatterns` setting (see
+// ./toolFilters.ts for the shipped default pattern list and rationale for
+// each default entry) instead of hardcoded sets, so it's a single,
+// consistently-applied source of truth across all participants.
 
 // ─── Schema validation ────────────────────────────────────────────────────────
 
@@ -213,14 +175,11 @@ export class DynamicToolManager {
 	): DynamicToolSpec[] {
 		const seen = new Set<string>();
 		const result: DynamicToolSpec[] = [];
+		const excludePatterns = getConfiguredExcludePatterns();
 
 		for (const t of tools) {
-			if (KNOWN_UNSUPPORTED_TOOLS.has(t.name)) {
-				this._log.debug(`skipping known-unsupported tool "${t.name}" — not invokable by other participants`);
-				continue;
-			}
-			if (FOREIGN_AGENT_CONTROL_TOOLS.has(t.name)) {
-				this._log.debug(`skipping foreign agent-control tool "${t.name}" — belongs to another extension's agent loop, not a workspace action`);
+			if (isToolNameExcluded(t.name, excludePatterns)) {
+				this._log.debug(`skipping excluded tool "${t.name}" — matches feima.agents.tools.excludePatterns`);
 				continue;
 			}
 			if (this._uninvokable.has(t.name)) {

@@ -48,7 +48,9 @@ export function registerAgents(context: vscode.ExtensionContext, logService: ILo
 	// and nonces for configuring external CLIs (Claude Code, Codex, Copilot).
 	setProxyManager(proxyManager);
 
-	// ── Dynamic tool discovery (vscode.lm.tools → Codex dynamicTools) ─────
+	// ── Dynamic tool discovery (vscode.lm.tools → @codex dynamicTools / @copilot-cli tools) ─
+	// Shared across @codex and @copilot-cli so both participants expose the same
+	// set of VS Code built-in tools with identical exclude-pattern filtering.
 	const toolManager = new DynamicToolManager(log);
 	context.subscriptions.push(
 		vscode.commands.registerCommand('feima.agents.clearCodexToolCache', () => {
@@ -64,7 +66,7 @@ export function registerAgents(context: vscode.ExtensionContext, logService: ILo
 	// selection internally via the GitHub Copilot API.
 
 	// ── @codex participant ────────────────────────────────────────────────
-	const codexParticipant = new CodexParticipant(proxyManager, toolManager, log.createSubLogger('Codex'));
+	const codexParticipant = new CodexParticipant(proxyManager, toolManager, context.globalStorageUri, log.createSubLogger('Codex'));
 	const codexChat = vscode.chat.createChatParticipant(
 		'codex.participant',
 		codexParticipant.handleRequest.bind(codexParticipant)
@@ -82,6 +84,7 @@ export function registerAgents(context: vscode.ExtensionContext, logService: ILo
 	const copilotParticipant = new CopilotParticipant(
 		context.globalStorageUri.fsPath,
 		proxyManager,
+		toolManager,
 		log.createSubLogger('Copilot'),
 	);
 	const copilotChat = vscode.chat.createChatParticipant(

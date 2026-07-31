@@ -11,6 +11,7 @@ import { routeSDKMessage, createInitialState, type RouterState } from './claudeM
 import { buildClaudeOptions, mapTierToPermissionMode, type OptionsBuilderInput } from './claudeOptionsBuilder';
 import { CLAUDE_PROVIDER_ID } from './claudeModelProvider';
 import { ExternalEditTracker } from '../common/externalEditTracker';
+import { getEffectiveMcpServers } from '../common/mcp/vscodeMcpConfig';
 import { startClientToolMcpServer, stopClientToolMcpServer, type ClientToolMcpServer } from './clientToolMcpServer';
 import { resolveBinary } from '../common/appServer/client';
 import { resolveWorkspaceCwd } from '../common/workspaceUtils';
@@ -272,14 +273,18 @@ export class ClaudeParticipant {
 		const options = buildClaudeOptions(optionsInput);
 		options.abortController = ac;
 
-		// ── 2b. Merge user-configured MCP servers from settings ─────────────
-		const userMcpServers = vscode.workspace.getConfiguration('feima.agents.claude')
-			.get<Record<string, unknown>>('mcpServers');
-		if (userMcpServers && typeof userMcpServers === 'object') {
-			for (const [name, config] of Object.entries(userMcpServers)) {
-				(options.mcpServers ??= {})[name] = config as never;
-			}
-			this._log.debug(`merged ${Object.keys(userMcpServers).length} user MCP server(s) into options`);
+		// ── 2b. Merge MCP servers from VS Code's own native mcp.json config ──
+		// (user profile + every workspace folder's `.vscode/mcp.json`) — no
+		// extension-specific setting involved. `strictMcpConfig` is never set
+		// on `options`, so this merge is additive on top of whatever the
+		// `claude` CLI already discovers natively (project `.mcp.json`, its
+		// own user-level `claude mcp add` servers, plugins, etc).
+		const vsCodeMcpServers = await getEffectiveMcpServers(vscode.Uri.file(this.storagePath), this._log);
+		for (const [name, config] of Object.entries(vsCodeMcpServers)) {
+			(options.mcpServers ??= {})[name] = config as never;
+		}
+		if (Object.keys(vsCodeMcpServers).length > 0) {
+			this._log.debug(`merged ${Object.keys(vsCodeMcpServers).length} MCP server(s) from VS Code's native mcp.json config into options`);
 		}
 
 		// ── 3. Start client-tool MCP server (Priority 3a) ────────────────────

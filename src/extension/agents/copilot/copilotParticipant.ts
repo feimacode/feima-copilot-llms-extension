@@ -14,6 +14,8 @@ import {
 	type ExitPlanModeResult,
 	type ProviderConfig,
 	type CopilotClientOptions,
+	type MCPServerConfig,
+	type Tool,
 } from '@github/copilot-sdk';
 import { createInitialRouterState, routeSessionEvent, type RouterState } from './copilotSessionEventRouter';
 import { CopilotPermissionHandler } from './copilotPermissionHandler';
@@ -25,11 +27,42 @@ import { requestConfirmation } from '../common/confirmationTool';
 import { parseAllowedActions, serializeAllowedActions } from '../common/sessionApprovals';
 import { resolveWorkspaceCwd } from '../common/workspaceUtils';
 import { ExternalEditTracker } from '../common/externalEditTracker';
+import { getEffectiveMcpServers, type VsCodeMcpServerDefinition } from '../common/mcp/vscodeMcpConfig';
+import { DynamicToolManager } from '../common/tools/dynamicToolManager';
+import type { DynamicToolSpec } from '../common/protocol/types';
 import { ILogService } from '../../platform/log/common/logService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type CopilotSession = Awaited<ReturnType<CopilotClient['createSession']>>;
+
+/**
+ * Converts one of our VS-Code-native MCP server entries (read from user
+ * profile / workspace-folder `mcp.json` — see ../common/mcp/vscodeMcpConfig.ts)
+ * into the shape the Copilot SDK's `SessionConfigBase.mcpServers` expects.
+ * Discriminated the same way Claude/Codex's converters are: `url` present ⇒
+ * remote (http/sse), `command` present ⇒ local stdio server. Entries with
+ * neither are dropped (nothing to launch).
+ */
+function toCopilotMcpServerConfig(def: VsCodeMcpServerDefinition): MCPServerConfig | undefined {
+	if (def.url) {
+		return {
+			type: def.type === 'sse' ? 'sse' : 'http',
+			url: def.url,
+			...(def.headers ? { headers: def.headers } : {}),
+		};
+	}
+	if (def.command) {
+		return {
+			type: 'stdio',
+			command: def.command,
+			...(def.args ? { args: def.args } : {}),
+			...(def.env ? { env: def.env } : {}),
+			...(def.cwd ? { workingDirectory: def.cwd } : {}),
+		};
+	}
+	return undefined;
+}
 
 interface TurnMetadata {
 	sessionId: string;
@@ -90,11 +123,14 @@ export class CopilotParticipant {
 	 *                    baseDirectory so sessions are isolated from ~/.copilot.
 	 * @param proxyManager Shared LM proxy; the runtime's model calls are always
 	 *                    routed through it to VS Code LM.
+	 * @param toolManager Shared `vscode.lm.tools` discovery/cache, also used by
+	 *                    `@codex` — see ../common/tools/dynamicToolManager.ts.
 	 * @param _log Logging service.
 	 */
 	constructor(
 		private readonly storagePath: string,
 		private readonly proxyManager: ProxyManager,
+		private readonly toolManager: DynamicToolManager,
 		private readonly _log: ILogService,
 	) {}
 
@@ -260,6 +296,86 @@ export class CopilotParticipant {
 
 	// ── Session management ────────────────────────────────────────────────────
 
+	/**
+	 * Resolves MCP servers from VS Code's own native mcp.json config (user
+	 * profile + every workspace folder's `.vscode/mcp.json`) into the shape
+	 * the SDK's session config expects — giving @copilot the same MCP-config
+	 * source as @claude/@codex (see ../common/mcp/vscodeMcpConfig.ts), no
+	 * extension-specific setting involved.
+	 */
+	private async _resolveMcpServers(): Promise<Record<string, MCPServerConfig>> {
+		const effective = await getEffectiveMcpServers(vscode.Uri.file(this.storagePath), this._log);
+		const result: Record<string, MCPServerConfig> = {};
+		for (const [name, def] of Object.entries(effective)) {
+			const config = toCopilotMcpServerConfig(def);
+			if (config) {
+				result[name] = config;
+			}
+		}
+		if (Object.keys(result).length > 0) {
+			this._log.debug(`resolved ${Object.keys(result).length} MCP server(s) from VS Code's native mcp.json config for Copilot session: ${Object.keys(result).join(', ')}`);
+		}
+		return result;
+	}
+
+	/**
+	 * Converts VS Code's discovered `vscode.lm.tools` (via the shared
+	 * `DynamicToolManager` — see ../common/tools/dynamicToolManager.ts, also
+	 * used by @codex) into the Copilot SDK's `Tool<any>[]` shape for
+	 * `SessionConfigBase.tools`, giving @copilot the same "call VS Code's own
+	 * built-in tools" UX as @codex's dynamicTools bridge.
+	 */
+	private async _buildDynamicTools(entry: SessionEntry): Promise<Tool<unknown>[]> {
+		const specs = await this.toolManager.buildDynamicTools();
+		const tools = specs.map(spec => this._toCopilotTool(entry, spec));
+		if (tools.length > 0) {
+			this._log.debug(`resolved ${tools.length} dynamic tool(s) from vscode.lm.tools for Copilot session: ${tools.map(t => t.name).join(', ')}`);
+		}
+		return tools;
+	}
+
+	private _toCopilotTool(entry: SessionEntry, spec: DynamicToolSpec): Tool<unknown> {
+		return {
+			name: spec.name,
+			description: spec.description,
+			parameters: spec.inputSchema as Record<string, unknown>,
+			handler: async (args) => this._invokeDynamicTool(entry, spec.name, args as Record<string, unknown>),
+		};
+	}
+
+	/**
+	 * Invoke a VS Code tool discovered via `vscode.lm.tools`, mirroring
+	 * @codex's `_invokeTool` (see codexParticipant.ts) so both participants
+	 * share the same uninvokable-tool bookkeeping via
+	 * `DynamicToolManager.markUninvokable`.
+	 */
+	private async _invokeDynamicTool(entry: SessionEntry, toolName: string, args: Record<string, unknown>): Promise<string> {
+		const current = entry.current;
+		try {
+			const result = await vscode.lm.invokeTool(toolName, {
+				input: args,
+				toolInvocationToken: current?.toolInvocationToken,
+			}, current?.token);
+			const text = result.content
+				.map(part => (typeof part === 'object' && part !== null && 'value' in part ? String(part.value) : JSON.stringify(part)))
+				.join('\n');
+			this._log.debug(`vscode.lm.invokeTool("${toolName}") succeeded: contentParts=${result.content.length} textLength=${text.length}`);
+			return text;
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			this._log.warn(`vscode.lm.invokeTool("${toolName}") failed: ${message}`);
+			// VS Code throws this specific message when a tool is registered
+			// declaratively (so it shows up in vscode.lm.tools) but its owning
+			// extension never called vscode.lm.registerTool() for it — e.g.
+			// GitHub Copilot Chat's own copilot_* tools. Remember it so we stop
+			// advertising it on future turns/sessions (shared with @codex).
+			if (message.includes('does not have an implementation registered')) {
+				this.toolManager.markUninvokable(toolName);
+			}
+			throw err instanceof Error ? err : new Error(message);
+		}
+	}
+
 	private async _getOrCreateSession(
 		client: CopilotClient,
 		savedSessionId: string | undefined,
@@ -267,6 +383,8 @@ export class CopilotParticipant {
 		request: vscode.ChatRequest,
 		stream: vscode.ChatResponseStream,
 	): Promise<SessionEntry> {
+		const mcpServers = await this._resolveMcpServers();
+
 		if (savedSessionId) {
 			const existing = this._sessions.get(savedSessionId);
 			if (existing) {
@@ -277,6 +395,7 @@ export class CopilotParticipant {
 			this._log.debug(`resuming session from disk ${JSON.stringify({ sessionId: savedSessionId })}`);
 			try {
 				const entry = this._newEntry(savedAllowedActions);
+				const tools = await this._buildDynamicTools(entry);
 				const resumeConfig: ResumeSessionConfig = {
 					workingDirectory: resolveWorkspaceCwd(),
 					streaming: true,
@@ -284,6 +403,8 @@ export class CopilotParticipant {
 					provider: await this._proxyProvider(),
 					onPermissionRequest: this._permissionCallback(entry),
 					onExitPlanModeRequest: this._exitPlanModeCallback(entry),
+					...(Object.keys(mcpServers).length > 0 ? { mcpServers } : {}),
+					...(tools.length > 0 ? { tools } : {}),
 				};
 				const session = await client.resumeSession(savedSessionId, resumeConfig);
 				return this._attachEntry(entry, session);
@@ -296,6 +417,7 @@ export class CopilotParticipant {
 		const modelId = request.model.vendor ? `${request.model.vendor}/${request.model.id}` : request.model.id;
 		this._log.debug(`creating new session ${JSON.stringify({ model: modelId })}`);
 		const entry = this._newEntry(savedAllowedActions);
+		const tools = await this._buildDynamicTools(entry);
 		const createConfig: SessionConfig = {
 			workingDirectory: resolveWorkspaceCwd(),
 			model: modelId,
@@ -304,6 +426,8 @@ export class CopilotParticipant {
 			provider: await this._proxyProvider(),
 			onPermissionRequest: this._permissionCallback(entry),
 			onExitPlanModeRequest: this._exitPlanModeCallback(entry),
+			...(Object.keys(mcpServers).length > 0 ? { mcpServers } : {}),
+			...(tools.length > 0 ? { tools } : {}),
 		};
 		const session = await client.createSession(createConfig);
 		return this._attachEntry(entry, session);

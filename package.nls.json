@@ -109,8 +109,6 @@
 	"settings.agents.codex.binaryPath.description": "Absolute path to the `codex` binary. Leave empty to auto-discover via PATH.",
 	"settings.agents.copilot.binaryPath.description": "Absolute path to the GitHub Copilot CLI binary. Leave empty to auto-discover via PATH.",
 	"settings.agents.claude.binaryPath.description": "Absolute path to the `claude` binary. Leave empty to auto-discover via PATH.",
-	"settings.agents.codex.mcpServers.description": "MCP server configuration passed to Codex. Each key is a server name; value is `{ command, args?, env?, url? }`.",
-	"settings.agents.claude.mcpServers.description": "MCP server configuration passed to Claude Code. Each key is a server name; value is `{ command, args?, env?, url? }`.",
 
 	"settings.agents.codex.permissionMode.description": "Default permission tier for @codex: how much it asks before running commands or changing files. Override for a single turn with `/ask`, `/acceptEdits` or `/fullAuto`.",
 	"settings.agents.copilot.permissionMode.description": "Default permission tier for @copilot-cli: how much it asks before running commands or changing files. Override for a single turn with `/ask`, `/acceptEdits` or `/fullAuto`.",
@@ -119,6 +117,8 @@
 	"settings.agents.codex.maxApiCallsPerTurn.description": "Maximum number of model API calls Codex may make within a single turn before it's force-interrupted. Guards against a runaway loop (e.g. the model repeatedly calling tools without converging) that would otherwise never reach `turn/completed`.",
 	"settings.agents.copilot.maxApiCallsPerTurn.description": "Maximum number of model API calls the Copilot CLI may make within a single turn before it's force-aborted. Guards against a runaway loop (e.g. the model repeatedly calling tools without converging) that would otherwise never reach `session.idle`.",
 	"settings.agents.claude.maxApiCallsPerTurn.description": "Maximum number of model round-trips the Claude Agent SDK may make within a single turn (its own `maxTurns` option). Guards against a runaway loop (e.g. the model repeatedly calling tools without converging); past this, the SDK ends the turn itself instead of running unbounded.",
+
+	"settings.agents.tools.excludePatterns.description": "Tool names (from `vscode.lm.tools`) to hide from the dynamic-tool bridge shared by agent participants. Supports a single `*` wildcard per pattern. The default excludes MCP-backed tools (`mcp_*` — MCP servers are handled natively by each CLI's own MCP client, see `.vscode/mcp.json`), a few Copilot Chat manifest-only tools with no runtime implementation, and internal agent-loop control signals from other agent SDKs.",
 
 	"chatCommand.permission.ask.description": "Ask for approval before every tool action, for this turn only",
 	"chatCommand.permission.acceptEdits.description": "Auto-approve file edits and ask for the rest, for this turn only",

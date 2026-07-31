@@ -379,40 +379,33 @@ Absolute path to the GitHub Copilot CLI binary.
 
 ---
 
-### `feima.agents.claude.mcpServers`
+### `feima.agents.tools.excludePatterns`
 
-MCP server configuration passed to Claude Code.
+Tool names (from `vscode.lm.tools`) to hide from the dynamic-tool bridge shared by agent participants.
 
-**Type**: `object`
-**Default**: `{}`
-**Scope**: Machine-overridable
-
-**Description**: Each key is a server name; the value is `{ command, args?, env?, url? }`.
-
-**Example**:
+**Type**: `string[]`
+**Default**:
 ```json
-{
-  "feima.agents.claude.mcpServers": {
-    "my-server": {
-      "command": "npx",
-      "args": ["-y", "@my-org/my-mcp-server"],
-      "env": { "MY_TOKEN": "..." }
-    }
-  }
-}
+[
+  "mcp_*",
+  "copilot_createFile",
+  "copilot_applyPatch",
+  "copilot_editFiles",
+  "ask_user",
+  "task_complete",
+  "exit_plan_mode",
+  "task",
+  "read_agent",
+  "write_agent",
+  "list_agents",
+  "send_inbox",
+  "context_board",
+  "skill"
+]
 ```
-
----
-
-### `feima.agents.codex.mcpServers`
-
-MCP server configuration passed to Codex.
-
-**Type**: `object`
-**Default**: `{}`
 **Scope**: Machine-overridable
 
-**Description**: Each key is a server name; the value is `{ command, args?, env?, url? }`.
+**Description**: Each entry may contain a single `*` wildcard, matched against the full tool name. The default excludes MCP-backed tools (`mcp_*` — MCP servers are handled natively by each CLI's own MCP client; see `.vscode/mcp.json` / VS Code's user-profile `mcp.json`), a few Copilot Chat manifest-only tools with no runtime implementation, and internal agent-loop control signals from other agent SDKs.
 
 ---
 

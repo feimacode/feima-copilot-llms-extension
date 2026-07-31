@@ -9,6 +9,7 @@ import { resolveBinary } from '../common/appServer/client';
 import { CODEX_PROVIDER_ID } from './codexModelProvider';
 import { ProxyManager } from '../common/proxy/proxyManager';
 import { DynamicToolManager } from '../common/tools/dynamicToolManager';
+import { getEffectiveMcpServers } from '../common/mcp/vscodeMcpConfig';
 import { VS_CODE_TOOL_INSTRUCTIONS } from '../common/constants/toolInstructions';
 import { ThinkingPanelHelper } from '../common/thinkingPanelHelper';
 import { ExternalEditTracker } from '../common/externalEditTracker';
@@ -133,26 +134,25 @@ function hashTools(tools: DynamicToolSpec[]): string {
 	return String(Math.abs(hash));
 }
 
-/** Build MCP server CLI args from VS Code configuration.
+/** Build MCP server CLI args from VS Code's own native mcp.json config
+ *  (user profile + every workspace folder's `.vscode/mcp.json`) — no
+ *  extension-specific MCP setting involved, so codex's own native MCP
+ *  client manages these servers directly and there's nothing left for our
+ *  code to do at tool-call time (see common/mcp/vscodeMcpConfig.ts).
  *  Follows agent-host pattern: -c mcp_servers.<name>.<field>=<value>
  */
-function buildMcpConfigArgs(): string[] {
-	const mcpServers = vscode.workspace.getConfiguration('feima.agents.codex').get<Record<string, unknown>>('mcpServers');
-	if (!mcpServers || typeof mcpServers !== 'object') {
-		return [];
-	}
+async function buildMcpConfigArgs(globalStorageUri: vscode.Uri, log: ILogService): Promise<string[]> {
+	const mcpServers = await getEffectiveMcpServers(globalStorageUri, log);
 	const args: string[] = [];
-	for (const [name, config] of Object.entries(mcpServers)) {
-		if (!config || typeof config !== 'object') { continue; }
-		const cfg = config as Record<string, unknown>;
+	for (const [name, cfg] of Object.entries(mcpServers)) {
 		if (typeof cfg.command === 'string') {
 			args.push('-c', `mcp_servers.${name}.command=${cfg.command}`);
 		}
 		if (Array.isArray(cfg.args) && cfg.args.length > 0) {
 			args.push('-c', `mcp_servers.${name}.args=${JSON.stringify(cfg.args)}`);
 		}
-		if (cfg.env && typeof cfg.env === 'object') {
-			for (const [k, v] of Object.entries(cfg.env as Record<string, unknown>)) {
+		if (cfg.env) {
+			for (const [k, v] of Object.entries(cfg.env)) {
 				args.push('-c', `mcp_servers.${name}.env.${k}=${String(v)}`);
 			}
 		}
@@ -201,6 +201,7 @@ export class CodexParticipant {
 	constructor(
 		private readonly proxyManager: ProxyManager,
 		private readonly _toolManager: DynamicToolManager,
+		private readonly _globalStorageUri: vscode.Uri,
 		private readonly _log: ILogService,
 	) {
 		this._onConnectionExit = this._onConnectionExit.bind(this);
@@ -220,7 +221,7 @@ export class CodexParticipant {
 		}
 	}
 
-	private _ensureConnection(routing: 'native' | 'proxy', binaryPath: string, cwd: string | undefined): AppServerConnection {
+	private async _ensureConnection(routing: 'native' | 'proxy', binaryPath: string, cwd: string | undefined): Promise<AppServerConnection> {
 		if (routing === 'native') {
 			if (this.nativeConn && this.nativeConnCwd !== cwd) {
 				this._log.debug(`cwd changed; respawning native codex app-server ${JSON.stringify({ from: this.nativeConnCwd, to: cwd })}`);
@@ -228,7 +229,7 @@ export class CodexParticipant {
 				this.nativeConn = null;
 			}
 			if (!this.nativeConn) {
-				const mcpArgs = buildMcpConfigArgs();
+				const mcpArgs = await buildMcpConfigArgs(this._globalStorageUri, this._log);
 				this.nativeConn = new AppServerConnection({ binaryPath, cwd, extraArgs: mcpArgs }, this._log);
 				this.nativeConn.on('exit', this._onConnectionExit);
 				this._setupMcpHandlers(this.nativeConn);
@@ -243,7 +244,7 @@ export class CodexParticipant {
 		}
 		if (!this.proxyConn) {
 			const info = this.proxyManager.info;
-			const mcpArgs = buildMcpConfigArgs();
+			const mcpArgs = await buildMcpConfigArgs(this._globalStorageUri, this._log);
 			this.proxyConn = new AppServerConnection({ binaryPath, cwd, proxyBaseUrl: info.responsesUrl, proxyApiKey: info.responsesNonce, extraArgs: mcpArgs }, this._log);
 			this.proxyConn.on('exit', this._onConnectionExit);
 			this._setupMcpHandlers(this.proxyConn);
@@ -373,7 +374,7 @@ export class CodexParticipant {
 
 		const binaryPath = resolveBinary(vscode.workspace.getConfiguration('feima.agents.codex').get<string>('binaryPath') ?? '');
 		const cwd = resolveWorkspaceCwd();
-		const conn = this._ensureConnection(routing, binaryPath, cwd);
+		const conn = await this._ensureConnection(routing, binaryPath, cwd);
 
 		if (!conn.isConnected()) {
 			stream.progress('Connecting to Codex...');

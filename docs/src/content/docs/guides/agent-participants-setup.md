@@ -62,16 +62,16 @@ All three default to `""` (auto-discover via `PATH`). If the binary can't be fou
 
 ## Configuring MCP servers
 
-`@claude` and `@codex` can be given MCP servers via settings, passed straight through to the CLI's own MCP configuration:
+`@claude`, `@codex`, and `@copilot-cli` all pick up MCP servers directly from VS Code's own native MCP config — the same `mcp.json` files VS Code's built-in MCP support already reads. No extension-specific setting is needed:
 
-- `feima.agents.claude.mcpServers`
-- `feima.agents.codex.mcpServers`
+- **User profile** — VS Code's own per-profile `mcp.json` (edit it via the **MCP: Open User Configuration** command).
+- **Per-workspace** — `.vscode/mcp.json` in each workspace folder.
 
-Each is an object keyed by server name, with a value shaped like:
+Each uses VS Code's own schema, keyed by server name under `servers`:
 
 ```json
 {
-  "feima.agents.claude.mcpServers": {
+  "servers": {
     "my-server": {
       "command": "npx",
       "args": ["-y", "@my-org/my-mcp-server"],
@@ -81,7 +81,15 @@ Each is an object keyed by server name, with a value shaped like:
 }
 ```
 
-`command`/`args`/`env` start a local server over stdio; use `url` instead for a remote/HTTP MCP server.
+`command`/`args`/`env` start a local server over stdio; use `url` instead for a remote/HTTP MCP server. Workspace-folder servers take precedence over user-profile servers with the same name.
+
+## Excluding tools from the dynamic-tool bridge
+
+`@codex` builds its dynamic-tool bridge from every tool registered in `vscode.lm.tools`. Some of those shouldn't be exposed — MCP-backed tools (already handled natively per above), a few Copilot Chat manifest-only tools with no runtime implementation, and internal agent-loop control signals from other agent SDKs. Control this via:
+
+- `feima.agents.tools.excludePatterns`
+
+An array of tool-name patterns (each may contain one `*` wildcard); the shipped default already covers the cases above.
 
 ## Changing the default permission tier
 

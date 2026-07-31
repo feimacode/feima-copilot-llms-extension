@@ -4,6 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { parse as parseJsonc } from 'jsonc-parser';
 import { ILogService } from '../../../platform/log/common/logService';
 
@@ -96,22 +99,96 @@ async function readMcpJsonFile(uri: vscode.Uri, log: ILogService): Promise<Recor
 	}
 }
 
+let _isWsl: boolean | undefined;
+
 /**
- * Resolves the user-profile `mcp.json` URI without guessing product name,
- * platform-specific env vars, or profile IDs. VS Code defines both
- * `globalStorageHome` and `mcpResource` as direct children of the same
- * profile-root URI (confirmed against VS Code source,
- * src/vs/platform/userDataProfile/common/userDataProfile.ts lines 196/203:
- * `globalStorageHome: joinPath(location, 'globalStorage')`,
- * `mcpResource: joinPath(location, 'mcp.json')`), and an extension's own
- * `globalStorageUri` is `<profileRoot>/globalStorage/<extensionId>` (per
- * extensionStorageMigration.ts). So walking up two segments from our own
- * `globalStorageUri` reaches the exact profile root — correctly, for the
- * default profile *and* custom profiles, and correctly across local/remote
- * extension hosts (since it's computed fresh from the live API rather than
- * a hardcoded path).
+ * Detects whether the extension host is running inside WSL (as opposed to a
+ * "real" remote like SSH/containers). WSL shares the Windows host's
+ * filesystem via `/mnt/c`, so — unlike other remotes — the real,
+ * user-edited `mcp.json` on the Windows side is directly reachable from the
+ * Linux-side extension host; it's just not where `globalStorageUri` points.
  */
-function resolveUserMcpJsonUri(globalStorageUri: vscode.Uri): vscode.Uri {
+function isWsl(): boolean {
+	if (_isWsl !== undefined) { return _isWsl; }
+	try {
+		const version = fs.readFileSync('/proc/version', 'utf8').toLowerCase();
+		_isWsl = version.includes('microsoft') || version.includes('wsl');
+	} catch {
+		_isWsl = false;
+	}
+	return _isWsl;
+}
+
+function detectWindowsAppDataFolderName(): string {
+	const appName = vscode.env.appName;
+	if (appName.includes('Insiders')) { return 'Code - Insiders'; }
+	if (appName.includes('OSS')) { return 'Code - OSS'; }
+	return 'Code';
+}
+
+/**
+ * In WSL, locates the Windows-side user profile's `mcp.json` under
+ * `/mnt/c/Users/<user>/AppData/Roaming/<appName>/User/mcp.json`. Tries the
+ * WSL username as a hint for the Windows username first, then falls back to
+ * scanning `/mnt/c/Users/*` for whichever profile actually has the file.
+ */
+function resolveWslUserMcpJsonPath(): string | undefined {
+	const usersDir = '/mnt/c/Users';
+	const appDataFolder = detectWindowsAppDataFolderName();
+	const wslUser = os.userInfo().username;
+
+	const userGuesses = [...new Set([wslUser, wslUser.toLowerCase(), wslUser.toUpperCase()])];
+	for (const user of userGuesses) {
+		const candidate = path.join(usersDir, user, 'AppData', 'Roaming', appDataFolder, 'User', 'mcp.json');
+		if (fs.existsSync(candidate)) {
+			return candidate;
+		}
+	}
+
+	// WSL username didn't match the Windows one — scan all profiles for the file.
+	try {
+		for (const entry of fs.readdirSync(usersDir)) {
+			const candidate = path.join(usersDir, entry, 'AppData', 'Roaming', appDataFolder, 'User', 'mcp.json');
+			if (fs.existsSync(candidate)) {
+				return candidate;
+			}
+		}
+	} catch {
+		// /mnt/c not mounted/accessible — give up.
+	}
+	return undefined;
+}
+
+/**
+ * Resolves the user-profile `mcp.json` URI.
+ *
+ * For local installs, VS Code defines both `globalStorageHome` and
+ * `mcpResource` as direct children of the same profile-root URI (confirmed
+ * against VS Code source, src/vs/platform/userDataProfile/common/userDataProfile.ts
+ * lines 196/203), and an extension's own `globalStorageUri` is
+ * `<profileRoot>/globalStorage/<extensionId>` — so walking up two segments
+ * reaches the exact profile root.
+ *
+ * This does NOT hold for remote extension hosts: per VS Code's server
+ * source (src/vs/server/node/remoteAgentEnvironmentImpl.ts), a remote
+ * extension host's `globalStorageHome` comes from a *separate*
+ * `IUserDataProfilesService` instance running on the remote machine itself —
+ * an independent profile, not a mirror of the client's. For a true remote
+ * (SSH/containers) there is no extension-facing API that reaches back to the
+ * client's real `mcp.json`. WSL is the one exception: since it shares the
+ * Windows host's filesystem via `/mnt/c`, we can read the real, user-edited
+ * `mcp.json` directly off the Windows side instead of the WSL-local profile
+ * mirror that `globalStorageUri` would otherwise point to.
+ */
+function resolveUserMcpJsonUri(globalStorageUri: vscode.Uri, log: ILogService): vscode.Uri {
+	if (isWsl()) {
+		const wslPath = resolveWslUserMcpJsonPath();
+		if (wslPath) {
+			log.debug(`WSL detected — using Windows-side user mcp.json at ${wslPath}`);
+			return vscode.Uri.file(wslPath);
+		}
+		log.debug('WSL detected but no Windows-side user mcp.json found under /mnt/c/Users/*; falling back to the WSL-local profile path');
+	}
 	return vscode.Uri.joinPath(globalStorageUri, '..', '..', 'mcp.json');
 }
 
@@ -148,7 +225,7 @@ export async function getEffectiveMcpServers(
 	globalStorageUri: vscode.Uri,
 	log: ILogService,
 ): Promise<Record<string, VsCodeMcpServerDefinition>> {
-	const userUri = resolveUserMcpJsonUri(globalStorageUri);
+	const userUri = resolveUserMcpJsonUri(globalStorageUri, log);
 	log.debug(`resolving user-profile MCP config from ${userUri.fsPath}`);
 	const userServers = await readMcpJsonFile(userUri, log);
 

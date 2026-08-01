@@ -16,6 +16,7 @@ import {
 	type CopilotClientOptions,
 	type MCPServerConfig,
 	type Tool,
+	type SystemMessageConfig,
 } from '@github/copilot-sdk';
 import { createInitialRouterState, routeSessionEvent, type RouterState } from './copilotSessionEventRouter';
 import { CopilotPermissionHandler } from './copilotPermissionHandler';
@@ -30,6 +31,8 @@ import { ExternalEditTracker } from '../common/externalEditTracker';
 import { getEffectiveMcpServers, type VsCodeMcpServerDefinition } from '../common/mcp/vscodeMcpConfig';
 import { DynamicToolManager } from '../common/tools/dynamicToolManager';
 import type { DynamicToolSpec } from '../common/protocol/types';
+import { resolveSystemPrompt } from '../common/systemPrompt';
+import { COPILOT_DEFAULT_SYSTEM_PROMPT } from '../common/constants/systemPromptDefaults';
 import { ILogService } from '../../platform/log/common/logService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -319,6 +322,28 @@ export class CopilotParticipant {
 	}
 
 	/**
+	 * Resolves `feima.agents.copilot.systemPrompt`(+`Mode`) into the SDK's
+	 * `SystemMessageConfig` shape. 'append' (default) layers our merged
+	 * default + user text after the Copilot CLI's own system message;
+	 * 'replace' hands the SDK the user's text as the *entire* system message,
+	 * which per the SDK's own docs "removes all SDK guardrails including
+	 * security restrictions" — advanced use only.
+	 *
+	 * `undefined` when there's nothing to say (no built-in default, no user
+	 * text) — an unconfigured setup sends no `systemMessage` field at all,
+	 * same as before this setting existed.
+	 */
+	private _resolveSystemMessage(): SystemMessageConfig | undefined {
+		const resolved = resolveSystemPrompt('copilot', COPILOT_DEFAULT_SYSTEM_PROMPT, this._log);
+		if (resolved.content.length === 0) {
+			return undefined;
+		}
+		return resolved.mode === 'replace'
+			? { mode: 'replace', content: resolved.content }
+			: { mode: 'append', content: resolved.content };
+	}
+
+	/**
 	 * Converts VS Code's discovered `vscode.lm.tools` (via the shared
 	 * `DynamicToolManager` — see ../common/tools/dynamicToolManager.ts, also
 	 * used by @codex) into the Copilot SDK's `Tool<any>[]` shape for
@@ -384,6 +409,7 @@ export class CopilotParticipant {
 		stream: vscode.ChatResponseStream,
 	): Promise<SessionEntry> {
 		const mcpServers = await this._resolveMcpServers();
+		const systemMessage = this._resolveSystemMessage();
 
 		if (savedSessionId) {
 			const existing = this._sessions.get(savedSessionId);
@@ -403,6 +429,7 @@ export class CopilotParticipant {
 					provider: await this._proxyProvider(),
 					onPermissionRequest: this._permissionCallback(entry),
 					onExitPlanModeRequest: this._exitPlanModeCallback(entry),
+					...(systemMessage ? { systemMessage } : {}),
 					...(Object.keys(mcpServers).length > 0 ? { mcpServers } : {}),
 					...(tools.length > 0 ? { tools } : {}),
 				};
@@ -426,6 +453,7 @@ export class CopilotParticipant {
 			provider: await this._proxyProvider(),
 			onPermissionRequest: this._permissionCallback(entry),
 			onExitPlanModeRequest: this._exitPlanModeCallback(entry),
+			...(systemMessage ? { systemMessage } : {}),
 			...(Object.keys(mcpServers).length > 0 ? { mcpServers } : {}),
 			...(tools.length > 0 ? { tools } : {}),
 		};

@@ -303,6 +303,25 @@
 					"default": "ask",
 					"markdownDescription": "%settings.agents.codex.permissionMode.description%"
 				},
+				"feima.agents.codex.systemPrompt": {
+					"type": "string",
+					"default": "",
+					"editPresentation": "multilineText",
+					"markdownDescription": "%settings.agents.codex.systemPrompt.description%"
+				},
+				"feima.agents.codex.systemPromptMode": {
+					"type": "string",
+					"enum": [
+						"append",
+						"replace"
+					],
+					"enumDescriptions": [
+						"Send your text as-is (safe default; there's nothing Feima-provided to append it to). Codex's own built-in agent instructions always apply regardless of this setting — there is no way to fully override those.",
+						"Same as append — with no Feima-provided default, 'replace' has no additional effect for @codex today. Kept for consistency with @claude/@copilot-cli's `systemPromptMode` setting."
+					],
+					"default": "append",
+					"markdownDescription": "%settings.agents.codex.systemPromptMode.description%"
+				},
 				"feima.agents.copilot.maxApiCallsPerTurn": {
 					"type": "number",
 					"default": 50,
@@ -324,6 +343,25 @@
 					"default": "ask",
 					"markdownDescription": "%settings.agents.copilot.permissionMode.description%"
 				},
+				"feima.agents.copilot.systemPrompt": {
+					"type": "string",
+					"default": "",
+					"editPresentation": "multilineText",
+					"markdownDescription": "%settings.agents.copilot.systemPrompt.description%"
+				},
+				"feima.agents.copilot.systemPromptMode": {
+					"type": "string",
+					"enum": [
+						"append",
+						"replace"
+					],
+					"enumDescriptions": [
+						"Append your text after the Copilot CLI's own default system message (safe default).",
+						"Use only your text in `#feima.agents.copilot.systemPrompt#` as the entire system message — this discards the Copilot CLI's own default system message, including its safety guardrails. Advanced use only."
+					],
+					"default": "append",
+					"markdownDescription": "%settings.agents.copilot.systemPromptMode.description%"
+				},
 				"feima.agents.claude.maxApiCallsPerTurn": {
 					"type": "number",
 					"default": 50,
@@ -344,6 +382,25 @@
 					],
 					"default": "ask",
 					"markdownDescription": "%settings.agents.claude.permissionMode.description%"
+				},
+				"feima.agents.claude.systemPrompt": {
+					"type": "string",
+					"default": "",
+					"editPresentation": "multilineText",
+					"markdownDescription": "%settings.agents.claude.systemPrompt.description%"
+				},
+				"feima.agents.claude.systemPromptMode": {
+					"type": "string",
+					"enum": [
+						"append",
+						"replace"
+					],
+					"enumDescriptions": [
+						"Keep Claude Code's own default persona/instructions plus Feima's built-in VS Code context notes, and append your text after them (safe default).",
+						"Use only your text in `#feima.agents.claude.systemPrompt#` as the entire system prompt — this discards both Claude Code's own default persona/instructions and Feima's built-in notes. Advanced use only."
+					],
+					"default": "append",
+					"markdownDescription": "%settings.agents.claude.systemPromptMode.description%"
 				}
 			}
 		},

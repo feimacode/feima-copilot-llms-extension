@@ -17,6 +17,8 @@ import { resolveBinary } from '../common/appServer/client';
 import { resolveWorkspaceCwd } from '../common/workspaceUtils';
 import { resolvePermissionTier } from '../common/permissionTier';
 import { parseAllowedActions, serializeAllowedActions } from '../common/sessionApprovals';
+import { resolveSystemPrompt } from '../common/systemPrompt';
+import { CLAUDE_DEFAULT_SYSTEM_PROMPT } from '../common/constants/systemPromptDefaults';
 import { ILogService } from '../../platform/log/common/logService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -269,6 +271,7 @@ export class ClaudeParticipant {
 			getSessionApprovals: () => sessionApprovalsBox.current,
 			log: this._log,
 			maxTurns: vscode.workspace.getConfiguration('feima.agents.claude').get<number>('maxApiCallsPerTurn') ?? 50,
+			systemPrompt: resolveSystemPrompt('claude', CLAUDE_DEFAULT_SYSTEM_PROMPT, this._log),
 		};
 		const options = buildClaudeOptions(optionsInput);
 		options.abortController = ac;

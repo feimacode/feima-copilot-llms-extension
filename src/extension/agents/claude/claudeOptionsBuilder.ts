@@ -24,6 +24,7 @@ import { CLAUDE_EDIT_TOOLS, isClaudeEditTool, getAffectedUrisForEditTool } from 
 import type { ExternalEditTracker } from '../common/externalEditTracker';
 import type { PermissionTier } from '../common/permissionTier';
 import { requestConfirmation } from '../common/confirmationTool';
+import type { ResolvedSystemPrompt } from '../common/systemPrompt';
 import type { ILogService } from '../../platform/log/common/logService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -101,6 +102,11 @@ export interface OptionsBuilderInput {
 	 *  this cap built in — past it, the query generator ends cleanly with
 	 *  `SDKResultMessage.subtype === 'error_max_turns'` instead of hanging. */
 	maxTurns?: number;
+	/** Merged result of `resolveSystemPrompt('claude', ...)` — see that
+	 *  function and constants/systemPromptDefaults.ts's `CLAUDE_DEFAULT_SYSTEM_PROMPT`.
+	 *  Omitted only by callers that don't care (e.g. unit tests); real turns
+	 *  always supply one via ClaudeParticipant. */
+	systemPrompt?: ResolvedSystemPrompt;
 }
 
 /** Map the normalized cross-participant permission tier onto Claude's native `PermissionMode`. */
@@ -179,6 +185,19 @@ export function buildClaudeOptions(input: OptionsBuilderInput): Options {
 
 		// ── MCP servers (from caller, not config) ──
 		...(input.mcpServers ? { mcpServers: input.mcpServers as Options['mcpServers'] } : {}),
+
+		// ── System prompt ──
+		// 'append': keep Claude Code's own default persona/instructions (the
+		// 'claude_code' preset) and append our merged VS Code context + the
+		// user's own text on top.
+		// 'replace': use the user's text as the *entire* system prompt,
+		// verbatim — this drops the 'claude_code' preset (and, with it,
+		// Claude Code's own tuned behavior) entirely.
+		...(input.systemPrompt ? {
+			systemPrompt: input.systemPrompt.mode === 'replace'
+				? input.systemPrompt.content
+				: { type: 'preset' as const, preset: 'claude_code' as const, append: input.systemPrompt.content },
+		} : {}),
 
 		// ── Permissions ──
 		// permissionMode configures the SDK's internal permission infrastructure

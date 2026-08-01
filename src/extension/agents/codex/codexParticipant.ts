@@ -10,7 +10,8 @@ import { CODEX_PROVIDER_ID } from './codexModelProvider';
 import { ProxyManager } from '../common/proxy/proxyManager';
 import { DynamicToolManager } from '../common/tools/dynamicToolManager';
 import { getEffectiveMcpServers } from '../common/mcp/vscodeMcpConfig';
-import { VS_CODE_TOOL_INSTRUCTIONS } from '../common/constants/toolInstructions';
+import { CODEX_DEFAULT_SYSTEM_PROMPT } from '../common/constants/systemPromptDefaults';
+import { resolveSystemPrompt } from '../common/systemPrompt';
 import { ThinkingPanelHelper } from '../common/thinkingPanelHelper';
 import { ExternalEditTracker } from '../common/externalEditTracker';
 import { PendingRequestRegistry } from '../common/util/pendingRequestRegistry';
@@ -413,6 +414,13 @@ export class CodexParticipant {
 		this._log.debug(`dynamic tools built ${JSON.stringify({ count: dynamicTools.length, names: dynamicTools.map(t => t.name).slice(0, 20) })}`);
 		const newToolsHash = hashTools(dynamicTools);
 
+		// Same developerInstructions for both startThread call sites below —
+		// resolved once per turn from feima.agents.codex.systemPrompt(+Mode).
+		// Undefined (not '') when there's nothing to say, so an unconfigured
+		// setup sends no developerInstructions field at all.
+		const resolvedCodexPrompt = resolveSystemPrompt('codex', CODEX_DEFAULT_SYSTEM_PROMPT, this._log).content;
+		const developerInstructions = resolvedCodexPrompt.length > 0 ? resolvedCodexPrompt : undefined;
+
 		let codexThread: Thread;
 		let session = savedThreadId ? this._sessions.get(savedThreadId) : undefined;
 		const toolsChanged = session?.lastToolsHash !== null && session?.lastToolsHash !== newToolsHash;
@@ -435,7 +443,7 @@ export class CodexParticipant {
 					codexThread = await conn.startThread({
 						model: fallbackModelId, cwd,
 						approvalPolicy, sandbox: 'workspace-write',
-						dynamicTools, developerInstructions: VS_CODE_TOOL_INSTRUCTIONS,
+						dynamicTools, developerInstructions,
 					});
 				}
 			}
@@ -445,7 +453,7 @@ export class CodexParticipant {
 			codexThread = await conn.startThread({
 				model: modelId, cwd,
 				approvalPolicy, sandbox: 'workspace-write',
-				dynamicTools, developerInstructions: VS_CODE_TOOL_INSTRUCTIONS,
+				dynamicTools, developerInstructions,
 			});
 		}
 

@@ -7,7 +7,7 @@
 ## ✨ Key Features
 
 - 🌍 **Global Access** - Works worldwide, no regional restrictions
-- 🤖 **Multi-Model Support** - Qwen, DeepSeek, GLM, MiniMax, Kimi, and more
+- 🤖 **Multi-Model Support** - Qwen, DeepSeek, GLM, MiniMax, Kimi, Hunyuan, and more
 - 🔐 **Secure Login** - GitHub OAuth for quick authentication
 - 💰 **Pay-As-You-Go** - No subscription required, pay only for what you use
 - 🚀 **Fast & Reliable** - Optimized for low latency responses
@@ -41,6 +41,8 @@ Before you begin, make sure you have:
 | **DeepSeek V4 Pro** | DeepSeek | 1M token context, deep thinking |
 | **DeepSeek V4 Flash** | DeepSeek | 1M token context, fastest DeepSeek |
 | **GLM 5.1** | Zhipu AI | 202K context, powerful reasoning |
+| **Kimi K3** | Moonshot | 1M context, vision, deep thinking (premium) |
+| **HY3** | Tencent | 256K context, thinking support (free tier) |
 
 ## 📦 Installation
 

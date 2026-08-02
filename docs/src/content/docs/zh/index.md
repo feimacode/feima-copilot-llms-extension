@@ -27,7 +27,7 @@ head:
 
 **飞码扣 (Feima Copilot)** 是一个 VS Code 扩展，提供以下功能：
 
-- 🇨🇳 **中国顶级 AI 模型**：直接访问通义千问 Qwen3、DeepSeek V3.2、智谱GLM-5、MiniMax M2.5、Kimi K2.5 等国产大模型
+- 🇨🇳 **中国顶级 AI 模型**：直接访问通义千问 Qwen3、DeepSeek V3.2、智谱GLM-5、MiniMax M2.5、Kimi K2.5、Kimi K3、HY3 等国产大模型
 - 💬 **无缝集成**：直接在 GitHub Copilot Chat 中使用，无需切换界面
 - 💰 **按次计费**：只为使用的请求付费，无需月付订阅
 - 🔒 **安全可靠**：OAuth2 认证，代码不离开 VS Code
@@ -71,6 +71,8 @@ head:
 | **GLM-4.7** | 智谱AI | 200K | ✅ | 1.0x | 高级推理，128K 输出 |
 | **MiniMax M2.5** | MiniMax | 200K | ✅ 32K | 1.0x | 思维链推理，中文优化 |
 | **Kimi K2.5** | Moonshot | 256K | ✅ 16K | 1.0x | 文档分析，长上下文 |
+| **Kimi K3** | Moonshot | 100万 | ✅ | 6.0x | 超长上下文，视觉，深度思考 |
+| **HY3** | 腾讯混元 | 256K | ✅ | 0.5x | 思维链，免费额度 |
 
 **详细模型信息**：请参阅[使用模型](/guides/using-models)了解完整的模型规格、计费倍率和使用建议。
 

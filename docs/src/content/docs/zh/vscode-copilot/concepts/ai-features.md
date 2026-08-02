@@ -53,7 +53,7 @@ VS Code Copilot 支持多种语言模型(Language Model)提供商：
 - **GitHub Copilot**：通过 Copilot 订阅访问多种模型
 
 > **💡 使用飞码国内模型**
-> **[飞码扣插件](https://marketplace.visualstudio.com/items?itemName=feima.copilot-cn-models)** 为 GitHub Copilot Chat 扩展了国内 AI 模型支持，包括通义千问(Qwen3 Max/Flash/Coder)、DeepSeek V3.2、GLM-5、MiniMax M2.5 和 Kimi K2.5。在模型选择器中即可看到这些模型。查看[完整模型列表](/guides/using-models)。 [打开飞码扣](vscode:extension/feima.copilot-cn-models)
+> **[飞码扣插件](https://marketplace.visualstudio.com/items?itemName=feima.copilot-cn-models)** 为 GitHub Copilot Chat 扩展了国内 AI 模型支持，包括通义千问(Qwen3 Max/Flash/Coder)、DeepSeek V3.2、GLM-5、MiniMax M2.5、Kimi K2.5、Kimi K3 和 HY3。在模型选择器中即可看到这些模型。查看[完整模型列表](/guides/using-models)。 [打开飞码扣](vscode:extension/feima.copilot-cn-models)
 
 - **BYOK（携带自己的密钥）**：使用自己的 API 密钥访问 OpenAI、Anthropic、Azure OpenAI 等
 - **第三方智能体(Third-party Agent)**：Anthropic Claude 和 OpenAI Codex 智能体(Agent)

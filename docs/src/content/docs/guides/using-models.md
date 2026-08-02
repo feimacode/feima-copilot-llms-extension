@@ -193,6 +193,28 @@ Feima Copilot provides access to multiple AI models from diverse providers to su
   - Vision and deep thinking support
   - Premium tier required
 
+### Tencent Models
+
+#### HY3
+- **Model ID**: `hy3`
+- **Provider**: Tencent Hunyuan
+- **Best For**: Everyday coding, thinking support
+- **Strengths**:
+  - 256K context window with thinking support
+  - Tool calls and parallel tool calls
+  - Free tier included
+
+### Moonshot New Models
+
+#### Kimi K3
+- **Model ID**: `kimi-k3`
+- **Provider**: Moonshot
+- **Best For**: Large context analysis, vision tasks, deep thinking
+- **Strengths**:
+  - 1M context window with vision support
+  - Deep thinking capabilities
+  - Premium tier required
+
 ## Selecting a Model
 
 ### Via Copilot Chat
@@ -265,7 +287,7 @@ Explain how the authentication flow works in this codebase.
 | **Code Review** | Qwen3.6 Flash | Qwen3.7 Max, GLM 5.2 |
 | **Documentation** | Qwen3.6 Flash | GLM-4.7, Qwen3.6 Plus |
 | **Architecture** | Qwen3.7 Max | DeepSeek V4 Pro, GLM 5.2 |
-| **Large Context** | Qwen3.6 Flash | Qwen3.6 Plus, Kimi K2.6, DeepSeek V4 Flash |
+| **Large Context** | Qwen3.6 Flash | Qwen3.6 Plus, Kimi K2.6, Kimi K3, DeepSeek V4 Flash |
 
 ## Best Practices
 
@@ -275,7 +297,7 @@ Explain how the authentication flow works in this codebase.
 2. **Code generation** - Use Qwen3.6 Plus or DeepSeek V4 Pro
 3. **Documentation** - Use GLM-4.7 or Qwen3.6 Plus
 4. **Complex reasoning** - Use Qwen3.7 Max or DeepSeek V4 Pro
-5. **Large context** - Use Qwen3.6 Plus, Kimi K2.6, or DeepSeek V4 Flash
+5. **Large context** - Use Qwen3.6 Plus, Kimi K2.6, Kimi K3, or DeepSeek V4 Flash
 
 ### Provide Clear Context
 

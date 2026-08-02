@@ -7,7 +7,7 @@ source: https://code.visualstudio.com/docs/copilot/concepts/language-models
 Visual Studio Code 使用大型语言模型（LLM）为其 AI 功能提供支持。你可以通过 GitHub Copilot 计划选择多个模型，或携带自己的模型。本文解释了语言模型(Language Model)的工作原理、主要特性以及如何进行模型选择。
 
 > **💡 使用飞码国内模型**
-> **[飞码扣插件](https://marketplace.visualstudio.com/items?itemName=feima.copilot-cn-models)** 为 GitHub Copilot Chat 扩展了国内 AI 模型支持，包括通义千问(Qwen3 Max/Flash/Coder)、DeepSeek V3.2、GLM-5、MiniMax M2.5 和 Kimi K2.5。在模型选择器中即可看到这些模型。查看[完整模型列表](/guides/using-models)。 [打开飞码扣](vscode:extension/feima.copilot-cn-models)
+> **[飞码扣插件](https://marketplace.visualstudio.com/items?itemName=feima.copilot-cn-models)** 为 GitHub Copilot Chat 扩展了国内 AI 模型支持，包括通义千问(Qwen3 Max/Flash/Coder)、DeepSeek V3.2、GLM-5、MiniMax M2.5、Kimi K2.5、Kimi K3 和 HY3。在模型选择器中即可看到这些模型。查看[完整模型列表](/guides/using-models)。 [打开飞码扣](vscode:extension/feima.copilot-cn-models)
 
 
 ## 语言模型(Language Model)的工作原理

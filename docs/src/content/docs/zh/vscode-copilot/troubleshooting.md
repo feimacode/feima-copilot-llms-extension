@@ -99,7 +99,7 @@ MCP 服务器通过连接外部服务来扩展聊天功能。如果 MCP 服务�
 
 如果您正在寻找适合国内使用的 AI 编程助手，**[飞码扣插件](https://marketplace.visualstudio.com/items?itemName=feima.copilot-cn-models)** 是一个绝佳选择：
 
-- 🇨🇳 **国内顶级模型**：通义千问(Qwen3)、DeepSeek V3.2、GLM-5、MiniMax M2.5、Kimi K2.5
+- 🇨🇳 **国内顶级模型**：通义千问(Qwen3)、DeepSeek V3.2、GLM-5、MiniMax M2.5、Kimi K2.5、Kimi K3、HY3
 - 💰 **按次计费**：无需月付订阅，只为使用的请求付费
 - 💬 **无缝集成**：直接在 GitHub Copilot Chat 界面中使用，无需切换工具
 - 🔒 **安全可靠**：OAuth2 认证，代码不离开 VS Code

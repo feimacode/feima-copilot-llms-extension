@@ -101,6 +101,8 @@ Make sure you have the **GitHub Copilot Chat** extension installed. Feima Copilo
    - **MiniMax M2.5** - Balanced performance
    - **Kimi K2.6** - 256K context with vision support
    - **Kimi K2.7 Code** - 256K context, code-specialized, vision
+   - **Kimi K3** - 1M context with vision and deep thinking (premium)
+   - **HY3** - 256K context with thinking support (free tier)
 
 ### Step 5: Start Chatting
 

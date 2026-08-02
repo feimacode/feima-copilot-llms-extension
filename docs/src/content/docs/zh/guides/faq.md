@@ -151,6 +151,8 @@ VS Code Insiders 版本与稳定版功能相同，飞码扣在两个版本中都
 - GLM-4.7
 - MiniMax M2.5（32K 思维 tokens）
 - Kimi K2.6（16K 思维 tokens）
+- Kimi K3（100万 思维 tokens）
+- HY3（思维链支持）
 
 思维链功能可提高复杂问题的解决质量。
 
@@ -250,6 +252,8 @@ VS Code Insiders 版本与稳定版功能相同，飞码扣在两个版本中都
 | GLM-4.7 | 1.0x | 标准，长文本输出 |
 | MiniMax M2.5 | 1.0x | 标准，中文优化 |
 | Kimi K2.5 | 1.0x | 标准，文档分析 |
+| Kimi K3 | 6.0x | 专业，100万上下文，视觉 |
+| HY3 | 0.5x | 标准，免费额度 |
 | Qwen3 Coder Plus | 2.0x | 高级，100万上下文 |
 | GLM-5 | 2.0x | 高级，中文最佳 |
 

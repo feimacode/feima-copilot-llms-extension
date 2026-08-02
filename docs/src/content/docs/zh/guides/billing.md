@@ -50,7 +50,7 @@ description: 了解飞码如何对 AI 请求计费并优化您的使用
 
 ### 标准模型 (1.0x)
 
-**示例**: Qwen3.7 Max、DeepSeek V3.2、Kimi K2.6
+**示例**: Qwen3.7 Max、DeepSeek V3.2、Kimi K2.6、Kimi K3、HY3
 
 - **适用场景**: 通用问答、代码理解
 - **特点**: 性能与成本平衡

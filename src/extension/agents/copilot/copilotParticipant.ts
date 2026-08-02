@@ -3,6 +3,7 @@
  *  Licensed under the MIT License.
  *--------------------------------------------------------------------------------------------*/
 
+import * as path from 'path';
 import * as vscode from 'vscode';
 import {
 	CopilotClient,
@@ -322,6 +323,21 @@ export class CopilotParticipant {
 	}
 
 	/**
+	 * Points the SDK at the workspace's `.github/skills` directory — the same
+	 * location native Copilot Chat's own Agent Skills feature reads from (see
+	 * `docs/.../agent-skills.md`). `SessionConfigBase.skillDirectories` is an
+	 * explicit opt-in independent of `enableConfigDiscovery` (which defaults
+	 * to `false` and, if flipped instead, would also auto-discover MCP
+	 * configs from cwd — redundant with `_resolveMcpServers`'s own VS Code
+	 * `mcp.json` merge). Without this, @copilot-cli never looks at
+	 * `.github/skills` despite the SDK fully supporting it.
+	 */
+	private _resolveSkillDirectories(): string[] | undefined {
+		const cwd = resolveWorkspaceCwd();
+		return cwd ? [path.join(cwd, '.github', 'skills')] : undefined;
+	}
+
+	/**
 	 * Resolves `feima.agents.copilot.systemPrompt`(+`Mode`) into the SDK's
 	 * `SystemMessageConfig` shape. 'append' (default) layers our merged
 	 * default + user text after the Copilot CLI's own system message;
@@ -410,6 +426,7 @@ export class CopilotParticipant {
 	): Promise<SessionEntry> {
 		const mcpServers = await this._resolveMcpServers();
 		const systemMessage = this._resolveSystemMessage();
+		const skillDirectories = this._resolveSkillDirectories();
 
 		if (savedSessionId) {
 			const existing = this._sessions.get(savedSessionId);
@@ -430,6 +447,7 @@ export class CopilotParticipant {
 					onPermissionRequest: this._permissionCallback(entry),
 					onExitPlanModeRequest: this._exitPlanModeCallback(entry),
 					...(systemMessage ? { systemMessage } : {}),
+					...(skillDirectories ? { skillDirectories } : {}),
 					...(Object.keys(mcpServers).length > 0 ? { mcpServers } : {}),
 					...(tools.length > 0 ? { tools } : {}),
 				};
@@ -454,6 +472,7 @@ export class CopilotParticipant {
 			onPermissionRequest: this._permissionCallback(entry),
 			onExitPlanModeRequest: this._exitPlanModeCallback(entry),
 			...(systemMessage ? { systemMessage } : {}),
+			...(skillDirectories ? { skillDirectories } : {}),
 			...(Object.keys(mcpServers).length > 0 ? { mcpServers } : {}),
 			...(tools.length > 0 ? { tools } : {}),
 		};

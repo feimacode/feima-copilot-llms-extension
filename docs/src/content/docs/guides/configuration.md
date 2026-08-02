@@ -71,6 +71,8 @@ The default model to use when starting a new conversation.
 - `"minimax-m2.5"` - MiniMax M2.5
 - `"kimi-k2.6"` - Kimi K2.6 (256K context + vision)
 - `"kimi-k2.7-code"` - Kimi K2.7 Code (256K context, code-specialized)
+- `"kimi-k3"` - Kimi K3 (1M context, vision, deep thinking, premium)
+- `"hy3"` - HY3 (256K context, thinking support, free tier)
 
 **Example**:
 ```json

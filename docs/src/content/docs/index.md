@@ -34,7 +34,7 @@ Feima Copilot is a VS Code extension that enhances GitHub Copilot Chat with alte
 
 **Feima Copilot** is a VS Code extension that provides:
 
-- � **Diverse Model Selection**: Direct access to Qwen3, DeepSeek V3.2, GLM-5, MiniMax M2.5, Kimi K2.5 and more
+- � **Diverse Model Selection**: Direct access to Qwen3, DeepSeek V3.2, GLM-5, MiniMax M2.5, Kimi K2.5, Kimi K3, HY3 and more
 - 💬 **Seamless Integration**: Works directly within GitHub Copilot Chat without switching interfaces
 - 💰 **Pay-Per-Use**: Pay only for requests you make, not monthly subscriptions
 - 🔒 **Secure**: OAuth2 authentication with code that never leaves VS Code
@@ -69,6 +69,8 @@ Feima Copilot is a VS Code extension that enhances GitHub Copilot Chat with alte
 | GLM-4.7 | Zhipu AI | 200K | Advanced reasoning |
 | MiniMax M2.5 | MiniMax | 200K | Thinking chain |
 | Kimi K2.5 | Moonshot | 256K | Thinking chain |
+| Kimi K3 | Moonshot | 1M | Vision, deep thinking |
+| HY3 | Tencent | 256K | Thinking support |
 
 ## Why Feima Copilot?
 

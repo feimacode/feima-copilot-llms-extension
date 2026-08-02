@@ -79,7 +79,7 @@ Different AI models have different costs based on their capabilities and resourc
 
 ### Standard Models (1.0x)
 
-**Examples**: Qwen3.7 Max, DeepSeek V3.2, Kimi K2.6
+**Examples**: Qwen3.7 Max, DeepSeek V3.2, Kimi K2.6, Kimi K3, HY3
 
 - **Best For**: General Q&A, code understanding
 - **Characteristics**: Balanced performance and cost

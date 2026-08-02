@@ -50,7 +50,7 @@ head:
             "name": "Which models are supported?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Feima supports 10+ top open-weight LLMs including Qwen 3.7, DeepSeek V4, GLM-5, Kimi K2.7, MiniMax M3, and Mimo V2.5 from leading providers like Alibaba, DeepSeek, Zhipu AI, Moonshot, MiniMax, and Xiaomi."
+              "text": "Feima supports 10+ top open-weight LLMs including Qwen 3.7, DeepSeek V4, GLM-5, Kimi K2.7, MiniMax M3, Mimo V2.5, Kimi K3, and HY3 from leading providers like Alibaba, DeepSeek, Zhipu AI, Moonshot, MiniMax, Xiaomi, and Tencent."
             }
           }
         ]
@@ -202,6 +202,8 @@ Models that support thinking:
 - GLM-4.7
 - MiniMax M2.5 (32K thinking tokens)
 - Kimi K2.6 (16K thinking tokens)
+- Kimi K3 (1M thinking tokens)
+- HY3 (thinking support)
 
 Thinking improves the quality of solutions for complex problems.
 
@@ -301,6 +303,8 @@ See the [Billing Guide](/guides/billing) for detailed billing information.
 | GLM-4.7 | 1.0x | Standard, long text output |
 | MiniMax M2.5 | 1.0x | Standard, Chinese optimized |
 | Kimi K2.5 | 1.0x | Standard, document analysis |
+| Kimi K3 | 6.0x | Premium, 1M context, vision |
+| HY3 | 0.5x | Standard, free tier included |
 | Qwen3 Coder Plus | 2.0x | Premium, 1M context |
 | GLM-5 | 2.0x | Premium, best for Chinese |
 

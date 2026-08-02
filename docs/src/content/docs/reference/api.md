@@ -579,7 +579,9 @@ export const MODEL_IDS = {
   GLM_5_2: 'glm-5.2',
   MINIMAX_M2_5: 'minimax-m2.5',
   KIMI_K2_6: 'kimi-k2.6',
-  KIMI_K2_7_CODE: 'kimi-k2.7-code'
+  KIMI_K2_7_CODE: 'kimi-k2.7-code',
+  KIMI_K3: 'kimi-k3',
+  HY3: 'hy3'
 } as const;
 ```
 

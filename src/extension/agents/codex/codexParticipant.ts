@@ -4,12 +4,13 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import { spawn } from 'child_process';
 import { AppServerConnection } from '../common/appServer/connection';
 import { resolveBinary } from '../common/appServer/client';
 import { CODEX_PROVIDER_ID } from './codexModelProvider';
 import { ProxyManager } from '../common/proxy/proxyManager';
 import { DynamicToolManager } from '../common/tools/dynamicToolManager';
-import { getEffectiveMcpServers } from '../common/mcp/vscodeMcpConfig';
+import { getEffectiveMcpServers, type VsCodeMcpServerDefinition } from '../common/mcp/vscodeMcpConfig';
 import { CODEX_DEFAULT_SYSTEM_PROMPT } from '../common/constants/systemPromptDefaults';
 import { resolveSystemPrompt } from '../common/systemPrompt';
 import { ThinkingPanelHelper } from '../common/thinkingPanelHelper';
@@ -135,31 +136,45 @@ function hashTools(tools: DynamicToolSpec[]): string {
 	return String(Math.abs(hash));
 }
 
+/** Builds the `-c mcp_servers.<name>.<field>=<value>` overrides for one
+ *  server — shared by `buildMcpConfigArgs` (all servers, app-server startup)
+ *  and `_attemptMcpLogin` (one server, `codex mcp login`), so a login
+ *  attempt resolves the same transport config the app-server itself uses. */
+function buildMcpServerConfigArgs(name: string, cfg: VsCodeMcpServerDefinition): string[] {
+	const args: string[] = [];
+	if (typeof cfg.command === 'string') {
+		args.push('-c', `mcp_servers.${name}.command=${cfg.command}`);
+	}
+	if (Array.isArray(cfg.args) && cfg.args.length > 0) {
+		args.push('-c', `mcp_servers.${name}.args=${JSON.stringify(cfg.args)}`);
+	}
+	if (cfg.env) {
+		for (const [k, v] of Object.entries(cfg.env)) {
+			args.push('-c', `mcp_servers.${name}.env.${k}=${String(v)}`);
+		}
+	}
+	if (typeof cfg.url === 'string') {
+		args.push('-c', `mcp_servers.${name}.url=${cfg.url}`);
+	}
+	return args;
+}
+
 /** Build MCP server CLI args from VS Code's own native mcp.json config
  *  (user profile + every workspace folder's `.vscode/mcp.json`) — no
  *  extension-specific MCP setting involved, so codex's own native MCP
  *  client manages these servers directly and there's nothing left for our
  *  code to do at tool-call time (see common/mcp/vscodeMcpConfig.ts).
  *  Follows agent-host pattern: -c mcp_servers.<name>.<field>=<value>
+ *  Gated by `feima.agents.codex.shareMcpServers` (default: on).
  */
 async function buildMcpConfigArgs(globalStorageUri: vscode.Uri, log: ILogService): Promise<string[]> {
+	if (!vscode.workspace.getConfiguration('feima.agents.codex').get<boolean>('shareMcpServers', true)) {
+		return [];
+	}
 	const mcpServers = await getEffectiveMcpServers(globalStorageUri, log);
 	const args: string[] = [];
 	for (const [name, cfg] of Object.entries(mcpServers)) {
-		if (typeof cfg.command === 'string') {
-			args.push('-c', `mcp_servers.${name}.command=${cfg.command}`);
-		}
-		if (Array.isArray(cfg.args) && cfg.args.length > 0) {
-			args.push('-c', `mcp_servers.${name}.args=${JSON.stringify(cfg.args)}`);
-		}
-		if (cfg.env) {
-			for (const [k, v] of Object.entries(cfg.env)) {
-				args.push('-c', `mcp_servers.${name}.env.${k}=${String(v)}`);
-			}
-		}
-		if (typeof cfg.url === 'string') {
-			args.push('-c', `mcp_servers.${name}.url=${cfg.url}`);
-		}
+		args.push(...buildMcpServerConfigArgs(name, cfg));
 	}
 	return args;
 }
@@ -192,6 +207,20 @@ export class CodexParticipant {
 	private readonly _sessions = new Map<string, SessionState>();
 	/** MCP server inventory — mirrors agent-host's _mcpInventory. */
 	private _mcpInventory: Map<string, McpInventoryEntry> = new Map();
+	/** Server names currently mid-`codex mcp login`, so a burst of repeated
+	 *  `failed` notifications for the same server doesn't spawn duplicate
+	 *  login attempts. */
+	private readonly _mcpLoginInFlight = new Set<string>();
+	/** Last error text reported to the user per MCP server, so an unresolved
+	 *  failure isn't re-printed on every subsequent turn — only when it's new
+	 *  or has changed. Cleared once the server reports 'ready'. */
+	private readonly _mcpLastReportedError = new Map<string, string>();
+	/** Warnings/notices queued by async MCP status notifications, flushed into
+	 *  the next turn's stream (see _flushMcpNotices) — notifications can (and
+	 *  for slow-to-fail servers like a 30s connection timeout, often do)
+	 *  arrive outside of any handleRequest call, so there's no live stream to
+	 *  write into at the moment they happen. */
+	private _pendingMcpNotices: string[] = [];
 	/** Tracks stream.externalEdit() windows for fileChange items (shared across
 	 *  sessions — keyed internally by item id, which codex already guarantees
 	 *  unique per thread). Without this, codex's file edits only ever show up
@@ -264,21 +293,100 @@ export class CodexParticipant {
 		// Handle MCP server startup status updates
 		conn.onMcpNotification('mcpServer/startupStatus/updated', (...args) => {
 			const params = args[0] as McpServerStatusUpdatedNotification;
-			const existing = this._mcpInventory.get(params.serverName);
+			const existing = this._mcpInventory.get(params.name);
 			const entry: McpInventoryEntry = {
-				name: params.serverName,
+				name: params.name,
 				status: params.status,
 				error: params.error,
 				tools: existing?.tools,
 			};
-			this._mcpInventory.set(params.serverName, entry);
-			this._log.debug(`mcp server status ${JSON.stringify({ server: params.serverName, status: params.status, error: params.error })}`);
+			this._mcpInventory.set(params.name, entry);
+			this._log.debug(`mcp server status ${JSON.stringify({ server: params.name, status: params.status, error: params.error })}`);
 
 			if (params.status === 'ready') {
+				this._mcpLastReportedError.delete(params.name);
 				// Refresh inventory to get tools when a server becomes ready
 				void this._refreshMcpInventory(conn);
+			} else if (params.status === 'failed') {
+				this._handleMcpServerFailure(params.name, params.error ?? 'unknown error');
 			}
 		});
+	}
+
+	/**
+	 * Classify a failed MCP server startup: if codex's own error message
+	 * points at `codex mcp login`, that's OAuth-recoverable — trigger it
+	 * automatically. Otherwise (missing PAT, timeout, etc.) there's nothing
+	 * we can do on the user's behalf, so queue a non-blocking warning for the
+	 * next turn instead of failing the current one.
+	 */
+	private _handleMcpServerFailure(name: string, error: string): void {
+		if (/codex mcp login/i.test(error)) {
+			void this._attemptMcpLogin(name);
+			return;
+		}
+		if (this._mcpLastReportedError.get(name) === error) {
+			return; // already warned about this exact failure; don't repeat every turn
+		}
+		this._mcpLastReportedError.set(name, error);
+		this._pendingMcpNotices.push(`⚠️ **${vscode.l10n.t('MCP server "{0}" failed to start', name)}:** ${error}`);
+	}
+
+	/**
+	 * Auto-remediate an OAuth-recoverable MCP failure by shelling out to
+	 * `codex mcp login <name>` (opens a browser for the user to complete the
+	 * OAuth handshake). Uses the same `-c mcp_servers.<name>.*` overrides the
+	 * app-server itself was started with, since the server was never
+	 * persisted into `~/.codex/config.toml`.
+	 */
+	private async _attemptMcpLogin(name: string): Promise<void> {
+		if (this._mcpLoginInFlight.has(name)) {
+			return;
+		}
+		this._mcpLoginInFlight.add(name);
+		try {
+			const mcpServers = await getEffectiveMcpServers(this._globalStorageUri, this._log);
+			const cfg = mcpServers[name];
+			if (!cfg) {
+				this._log.warn(`mcp auto-login skipped for "${name}": no matching server config found`);
+				return;
+			}
+			const binaryPath = resolveBinary(vscode.workspace.getConfiguration('feima.agents.codex').get<string>('binaryPath') ?? '', 'codex', this._log);
+			const cwd = resolveWorkspaceCwd();
+			const args = ['mcp', 'login', name, ...buildMcpServerConfigArgs(name, cfg)];
+			this._log.debug(`mcp auto-login: spawning "${binaryPath} ${args.join(' ')}"`);
+			await new Promise<void>((resolve, reject) => {
+				const child = spawn(binaryPath, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+				let stderr = '';
+				child.stdout?.on('data', (d: Buffer) => this._log.debug(`[mcp login ${name}] ${d.toString().trim()}`));
+				child.stderr?.on('data', (d: Buffer) => { const s = d.toString(); stderr += s; this._log.debug(`[mcp login ${name}] ${s.trim()}`); });
+				child.on('error', reject);
+				child.on('exit', code => {
+					if (code === 0) { resolve(); } else { reject(new Error(`exit code ${code}${stderr.trim() ? `: ${stderr.trim()}` : ''}`)); }
+				});
+			});
+			this._log.debug(`mcp auto-login succeeded for "${name}"`);
+			this._mcpLastReportedError.delete(name);
+			this._pendingMcpNotices.push(`✅ ${vscode.l10n.t('Logged in to MCP server "{0}". Start a new chat session if its tools still aren\'t available.', name)}`);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			this._log.warn(`mcp auto-login failed for "${name}": ${message}`);
+			this._pendingMcpNotices.push(`⚠️ **${vscode.l10n.t('Login to MCP server "{0}" failed', name)}:** ${message}`);
+		} finally {
+			this._mcpLoginInFlight.delete(name);
+		}
+	}
+
+	/** Flush any warnings/notices queued by async MCP status notifications
+	 *  into the current turn's stream — see _pendingMcpNotices. */
+	private _flushMcpNotices(stream: vscode.ChatResponseStream): void {
+		if (this._pendingMcpNotices.length === 0) {
+			return;
+		}
+		for (const notice of this._pendingMcpNotices) {
+			stream.markdown(`\n\n${notice}\n`);
+		}
+		this._pendingMcpNotices = [];
 	}
 
 	/**
@@ -384,6 +492,10 @@ export class CodexParticipant {
 			await this._initMcpInventory(conn);
 		}
 
+		// Surface any MCP server warnings/notices (failed-to-start, auto-login
+		// results, etc.) queued since the last turn — see _pendingMcpNotices.
+		this._flushMcpNotices(stream);
+
 		const savedMeta = findMetaInHistory(context.history);
 		const savedThreadId = savedMeta?.threadId;
 		this._log.debug(`session lookup ${JSON.stringify({ savedThreadId, routing })}`);
@@ -410,7 +522,7 @@ export class CodexParticipant {
 		let loopGuardTripped = false;
 
 		// ── Dynamic tool discovery ──
-		const dynamicTools = await this._toolManager.buildDynamicTools();
+		const dynamicTools = await this._toolManager.buildDynamicTools('codex');
 		this._log.debug(`dynamic tools built ${JSON.stringify({ count: dynamicTools.length, names: dynamicTools.map(t => t.name).slice(0, 20) })}`);
 		const newToolsHash = hashTools(dynamicTools);
 

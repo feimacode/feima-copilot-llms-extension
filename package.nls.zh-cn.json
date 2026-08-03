@@ -108,5 +108,11 @@
 	"settings.agents.copilot.binaryPath.description": "GitHub Copilot CLI 二进制文件的绝对路径。留空则通过 PATH 自动发现。",
 	"settings.agents.claude.binaryPath.description": "`claude` 二进制文件的绝对路径。留空则通过 PATH 自动发现。",
 
-	"settings.agents.tools.excludePatterns.description": "要从各智能体共享的动态工具桥接中隐藏的工具名称（来自 `vscode.lm.tools`）。每个模式最多支持一个 `*` 通配符。默认排除 MCP 支持的工具（`mcp_*` —— MCP 服务器由各 CLI 自身的 MCP 客户端原生处理，参见 `.vscode/mcp.json`）、少数没有运行时实现的 Copilot Chat 清单专用工具，以及来自其他智能体 SDK 的内部智能体循环控制信号。"
+	"settings.agents.tools.excludePatterns.description": "要从各智能体共享的动态工具桥接中隐藏的工具名称（来自 `vscode.lm.tools`）。每个模式最多支持一个 `*` 通配符。默认排除 MCP 支持的工具（`mcp_*` —— MCP 服务器由各 CLI 自身的 MCP 客户端原生处理，参见 `.vscode/mcp.json`）、少数没有运行时实现的 Copilot Chat 清单专用工具，以及来自其他智能体 SDK 的内部智能体循环控制信号。",
+	"settings.agents.codex.tools.excludePatterns.description": "仅针对 @codex 覆盖 `#feima.agents.tools.excludePatterns#`。保持未设置（`null`）则使用共享列表；设置为数组（包括 `[]`）则仅为 @codex 替换该列表。",
+	"settings.agents.copilot.tools.excludePatterns.description": "仅针对 @copilot-cli 覆盖 `#feima.agents.tools.excludePatterns#`。保持未设置（`null`）则使用共享列表；设置为数组（包括 `[]`）则仅为 @copilot-cli 替换该列表。",
+
+	"settings.agents.codex.shareMcpServers.description": "将 VS Code 原生 mcp.json 配置（用户级 + 各工作区文件夹的 `.vscode/mcp.json`）中的 MCP 服务器传递给 @codex。如果只想使用 @codex 自身单独配置的 MCP 服务器（例如通过 `codex mcp add`），可关闭此项。",
+	"settings.agents.copilot.shareMcpServers.description": "将 VS Code 原生 mcp.json 配置（用户级 + 各工作区文件夹的 `.vscode/mcp.json`）中的 MCP 服务器传递给 @copilot-cli。如果只想使用 Copilot CLI 自身单独配置的 MCP 服务器，可关闭此项。",
+	"settings.agents.claude.shareMcpServers.description": "将 VS Code 原生 mcp.json 配置（用户级 + 各工作区文件夹的 `.vscode/mcp.json`）中的 MCP 服务器传递给 @claude。如果只想使用 Claude Code 自身单独配置的 MCP 服务器（例如通过 `claude mcp add`），可关闭此项。"
 }

@@ -53,6 +53,9 @@ function toCopilotMcpServerConfig(def: VsCodeMcpServerDefinition): MCPServerConf
 		return {
 			type: def.type === 'sse' ? 'sse' : 'http',
 			url: def.url,
+			// Explicit wildcard, not just omitted — an omitted `tools` was observed
+			// to leave the server's tools deferred/invisible to the model in practice.
+			tools: ['*'],
 			...(def.headers ? { headers: def.headers } : {}),
 		};
 	}
@@ -60,12 +63,31 @@ function toCopilotMcpServerConfig(def: VsCodeMcpServerDefinition): MCPServerConf
 		return {
 			type: 'stdio',
 			command: def.command,
+			tools: ['*'],
 			...(def.args ? { args: def.args } : {}),
 			...(def.env ? { env: def.env } : {}),
 			...(def.cwd ? { workingDirectory: def.cwd } : {}),
 		};
 	}
 	return undefined;
+}
+
+/**
+ * Summarizes a create/resume session config into one debug log line —
+ * secrets (`provider.bearerToken`) and handler functions are omitted, tool
+ * defs are reduced to names. Replaces the per-field resolver logs that used
+ * to scatter this same information across several log lines.
+ */
+function summarizeSessionConfig(config: SessionConfig | ResumeSessionConfig): Record<string, unknown> {
+	return {
+		workingDirectory: config.workingDirectory,
+		...('model' in config ? { model: config.model } : {}),
+		mcpServers: config.mcpServers ? Object.keys(config.mcpServers) : undefined,
+		tools: config.tools?.map(t => t.name),
+		toolSearch: config.toolSearch,
+		systemMessage: config.systemMessage ? { mode: config.systemMessage.mode, contentLength: config.systemMessage.content?.length } : undefined,
+		skillDirectories: config.skillDirectories,
+	};
 }
 
 interface TurnMetadata {
@@ -107,6 +129,20 @@ interface SessionEntry {
 
 // ─── Participant ──────────────────────────────────────────────────────────────
 
+/** Minimum time between repeated oauth.login() attempts for the same server —
+ *  short enough that a missed/abandoned browser sign-in gets a real second
+ *  chance within the same session, long enough not to spam re-attempts while
+ *  the SDK re-fires 'needs-auth' in bursts. */
+const MCP_OAUTH_RETRY_AFTER_MS = 2 * 60_000;
+/** How long _waitForPendingMcpAuth holds a new turn open for an in-flight
+ *  sign-in before giving up and letting the turn proceed regardless. */
+const MCP_OAUTH_WAIT_MS = 20_000;
+/** Matches oauth.login() failures caused by the auth server rejecting dynamic
+ *  client registration (RFC 7591) — the definitive signal that a server (e.g.
+ *  GitHub's MCP endpoint) is PAT/static-credential-only and can never
+ *  complete browser OAuth, as opposed to a transient/retryable failure. */
+const MCP_OAUTH_UNSUPPORTED_PATTERN = /dynamic client registration/i;
+
 /**
  * Chat participant that bridges VS Code Chat to the GitHub Copilot CLI SDK.
  *
@@ -121,6 +157,26 @@ export class CopilotParticipant {
 	/** Tracks stream.externalEdit() windows for 'write' permission requests
 	 *  (shared across turns, flushed at the end of each — see common/externalEditTracker.ts). */
 	private readonly _editTracker = new ExternalEditTracker();
+	/** `${sessionId}:${serverName}` → when a login attempt was started, so a
+	 *  burst of repeated 'needs-auth' notifications doesn't spawn duplicate
+	 *  logins, but a stalled/missed one (browser opened, never completed)
+	 *  still gets a fresh attempt after MCP_OAUTH_RETRY_AFTER_MS — see
+	 *  _attemptMcpOauthLogin. */
+	private readonly _mcpOauthInFlight = new Map<string, number>();
+	/** Per-`${sessionId}:${serverName}` waiters for that server to reach a
+	 *  terminal status ('connected'/'failed'), resolved by _handleMcpStatus —
+	 *  lets _runTurn hold a fresh turn open briefly for a fast sign-in. */
+	private readonly _mcpOauthWaiters = new Map<string, Array<() => void>>();
+	/** Serializes oauth.login() *starts* per session so two servers going
+	 *  needs-auth together don't race to open the SDK's local OAuth callback
+	 *  listener at the same time — doesn't wait for the human to finish either
+	 *  browser flow, only for the next login() call to be dispatched. */
+	private _mcpOauthQueue = new Map<string, Promise<void>>();
+	/** `${sessionId}:${serverName}` confirmed (by a failed oauth.login() call)
+	 *  to not support OAuth at all — e.g. GitHub's MCP server, which is
+	 *  PAT-only. Skipped permanently for the rest of the session instead of
+	 *  retrying a call that can never succeed — see _attemptMcpOauthLogin. */
+	private readonly _mcpOauthUnsupported = new Set<string>();
 
 	/**
 	 * @param storagePath Extension global storage path, used as the Copilot runtime
@@ -239,6 +295,10 @@ export class CopilotParticipant {
 			attachments: attachments.length,
 		})}`);
 		try {
+			// If a sign-in kicked off moments ago (e.g. right after this session's
+			// tools loaded) is still in flight, give it a bounded chance to land
+			// before the turn's tool list is fixed — see _waitForPendingMcpAuth.
+			await this._waitForPendingMcpAuth(entry, stream);
 			await entry.session.send({
 				prompt,
 				attachments: attachments.length ? attachments : undefined,
@@ -306,8 +366,12 @@ export class CopilotParticipant {
 	 * the SDK's session config expects — giving @copilot the same MCP-config
 	 * source as @claude/@codex (see ../common/mcp/vscodeMcpConfig.ts), no
 	 * extension-specific setting involved.
+	 * Gated by `feima.agents.copilot.shareMcpServers` (default: on).
 	 */
 	private async _resolveMcpServers(): Promise<Record<string, MCPServerConfig>> {
+		if (!vscode.workspace.getConfiguration('feima.agents.copilot').get<boolean>('shareMcpServers', true)) {
+			return {};
+		}
 		const effective = await getEffectiveMcpServers(vscode.Uri.file(this.storagePath), this._log);
 		const result: Record<string, MCPServerConfig> = {};
 		for (const [name, def] of Object.entries(effective)) {
@@ -315,9 +379,6 @@ export class CopilotParticipant {
 			if (config) {
 				result[name] = config;
 			}
-		}
-		if (Object.keys(result).length > 0) {
-			this._log.debug(`resolved ${Object.keys(result).length} MCP server(s) from VS Code's native mcp.json config for Copilot session: ${Object.keys(result).join(', ')}`);
 		}
 		return result;
 	}
@@ -367,12 +428,8 @@ export class CopilotParticipant {
 	 * built-in tools" UX as @codex's dynamicTools bridge.
 	 */
 	private async _buildDynamicTools(entry: SessionEntry): Promise<Tool<unknown>[]> {
-		const specs = await this.toolManager.buildDynamicTools();
-		const tools = specs.map(spec => this._toCopilotTool(entry, spec));
-		if (tools.length > 0) {
-			this._log.debug(`resolved ${tools.length} dynamic tool(s) from vscode.lm.tools for Copilot session: ${tools.map(t => t.name).join(', ')}`);
-		}
-		return tools;
+		const specs = await this.toolManager.buildDynamicTools('copilot');
+		return specs.map(spec => this._toCopilotTool(entry, spec));
 	}
 
 	private _toCopilotTool(entry: SessionEntry, spec: DynamicToolSpec): Tool<unknown> {
@@ -446,11 +503,22 @@ export class CopilotParticipant {
 					provider: await this._proxyProvider(),
 					onPermissionRequest: this._permissionCallback(entry),
 					onExitPlanModeRequest: this._exitPlanModeCallback(entry),
+					// Deliberately no onMcpAuthRequest: registering one switches the runtime
+					// into delegating interactive OAuth to us synchronously per connection
+					// attempt (we'd have to already hold a token). Leaving it unregistered
+					// keeps the runtime's own cached-token reconnect behavior, while we
+					// drive first-time sign-in ourselves via session.rpc.mcp.oauth.login()
+					// once we observe a 'needs-auth' status (see _attachEntry).
+					// Otherwise MCP/dynamic tools get silently deferred behind
+					// tool_search_tool once the total tool count exceeds the SDK's
+					// built-in threshold (30) — the model then never discovers them.
+					toolSearch: { enabled: false },
 					...(systemMessage ? { systemMessage } : {}),
 					...(skillDirectories ? { skillDirectories } : {}),
 					...(Object.keys(mcpServers).length > 0 ? { mcpServers } : {}),
 					...(tools.length > 0 ? { tools } : {}),
 				};
+				this._log.debug(`resume session config ${JSON.stringify(summarizeSessionConfig(resumeConfig))}`);
 				const session = await client.resumeSession(savedSessionId, resumeConfig);
 				return this._attachEntry(entry, session);
 			} catch (err) {
@@ -471,11 +539,22 @@ export class CopilotParticipant {
 			provider: await this._proxyProvider(),
 			onPermissionRequest: this._permissionCallback(entry),
 			onExitPlanModeRequest: this._exitPlanModeCallback(entry),
+			// Deliberately no onMcpAuthRequest: registering one switches the runtime
+			// into delegating interactive OAuth to us synchronously per connection
+			// attempt (we'd have to already hold a token). Leaving it unregistered
+			// keeps the runtime's own cached-token reconnect behavior, while we
+			// drive first-time sign-in ourselves via session.rpc.mcp.oauth.login()
+			// once we observe a 'needs-auth' status (see _attachEntry).
+			// Otherwise MCP/dynamic tools get silently deferred behind
+			// tool_search_tool once the total tool count exceeds the SDK's
+			// built-in threshold (30) — the model then never discovers them.
+			toolSearch: { enabled: false },
 			...(systemMessage ? { systemMessage } : {}),
 			...(skillDirectories ? { skillDirectories } : {}),
 			...(Object.keys(mcpServers).length > 0 ? { mcpServers } : {}),
 			...(tools.length > 0 ? { tools } : {}),
 		};
+		this._log.debug(`create session config ${JSON.stringify(summarizeSessionConfig(createConfig))}`);
 		const session = await client.createSession(createConfig);
 		return this._attachEntry(entry, session);
 	}
@@ -496,6 +575,13 @@ export class CopilotParticipant {
 		entry.session = session;
 		entry.sessionId = session.sessionId;
 		entry.unsubscribe = session.on((event) => {
+			if (event.type === 'session.mcp_server_status_changed') {
+				this._handleMcpStatus(entry, event.data.serverName, event.data.status);
+			} else if (event.type === 'session.mcp_servers_loaded') {
+				for (const server of event.data.servers) {
+					this._handleMcpStatus(entry, server.name, server.status);
+				}
+			}
 			const current = entry.current;
 			if (current) {
 				routeSessionEvent(event, current.stream, current.routerState, current.resolveIdle, this._editTracker, this._log);
@@ -522,6 +608,115 @@ export class CopilotParticipant {
 			}
 			return current.permission.handle(req);
 		};
+	}
+
+	/**
+	 * Reacts to a server's latest status: kicks off (or re-tries) an OAuth login
+	 * while 'needs-auth', and resolves any turn-side waiters once the server
+	 * reaches a terminal status. The one place both `session.mcp_server_status_changed`
+	 * and the `session.mcp_servers_loaded` snapshot funnel through.
+	 */
+	private _handleMcpStatus(entry: SessionEntry, serverName: string, status: string): void {
+		const key = `${entry.sessionId}:${serverName}`;
+		if (status === 'needs-auth') {
+			this._queueMcpOauthLogin(entry, serverName);
+			return;
+		}
+		if (status === 'connected' || status === 'failed') {
+			this._mcpOauthInFlight.delete(key);
+			const waiters = this._mcpOauthWaiters.get(key);
+			if (waiters) {
+				this._mcpOauthWaiters.delete(key);
+				for (const resolve of waiters) {
+					resolve();
+				}
+			}
+		}
+	}
+
+	/** Chains this session's login *starts* onto its previous one so two
+	 *  servers going needs-auth together don't dispatch oauth.login() at the
+	 *  exact same instant — see _mcpOauthQueue. */
+	private _queueMcpOauthLogin(entry: SessionEntry, serverName: string): void {
+		const previous = this._mcpOauthQueue.get(entry.sessionId) ?? Promise.resolve();
+		const next = previous.then(() => this._attemptMcpOauthLogin(entry, serverName)).catch(() => { /* logged inside _attemptMcpOauthLogin */ });
+		this._mcpOauthQueue.set(entry.sessionId, next);
+	}
+
+	/**
+	 * Starts the SDK's own OAuth flow for a remote MCP server that needs sign-in
+	 * (same RPC the CLI's `/mcp auth <name>` slash command uses) and opens the
+	 * returned authorization URL in the user's browser. The runtime runs its own
+	 * callback listener and completes the token exchange itself; success is
+	 * signaled by a later `session.mcp_server_status_changed` → `'connected'`.
+	 *
+	 * `needs-auth` re-fires repeatedly while unresolved, so a login already
+	 * started within MCP_OAUTH_RETRY_AFTER_MS is skipped — but *not* forever:
+	 * if the browser flow is abandoned or missed, the next `needs-auth` after
+	 * that window gets a genuine second chance instead of being silently
+	 * dropped for the rest of the session.
+	 */
+	private async _attemptMcpOauthLogin(entry: SessionEntry, serverName: string): Promise<void> {
+		const key = `${entry.sessionId}:${serverName}`;
+		if (this._mcpOauthUnsupported.has(key)) {
+			return;
+		}
+		const startedAt = this._mcpOauthInFlight.get(key);
+		if (startedAt !== undefined && Date.now() - startedAt < MCP_OAUTH_RETRY_AFTER_MS) {
+			return;
+		}
+		this._mcpOauthInFlight.set(key, Date.now());
+		try {
+			const result = await entry.session.rpc.mcp.oauth.login({ serverName, clientName: 'Feima Copilot for VS Code' });
+			if (result.authorizationUrl) {
+				this._log.info(`opening browser for mcp oauth login ${JSON.stringify({ sessionId: entry.sessionId, serverName })}`);
+				await vscode.env.openExternal(vscode.Uri.parse(result.authorizationUrl));
+				entry.current?.stream.markdown(`\n\n> 🔑 ${vscode.l10n.t('Opening your browser to sign in to MCP server "{0}"…', serverName)}\n`);
+			} else {
+				// Cached token reconnected without browser interaction — no event
+				// to wait for beyond the status change this call likely already triggered.
+				this._mcpOauthInFlight.delete(key);
+			}
+		} catch (err) {
+			this._mcpOauthInFlight.delete(key);
+			const message = err instanceof Error ? err.message : String(err);
+			// The auth server rejected dynamic client registration (RFC 7591) —
+			// this server was never going to support browser OAuth at all (e.g.
+			// GitHub's MCP endpoint, which is PAT-only). Stop retrying and say so.
+			if (MCP_OAUTH_UNSUPPORTED_PATTERN.test(message)) {
+				this._mcpOauthUnsupported.add(key);
+				this._log.warn(`mcp server does not support oauth (no dynamic client registration) ${JSON.stringify({ sessionId: entry.sessionId, serverName })}`);
+				entry.current?.stream.markdown(`\n\n> ⚠️ ${vscode.l10n.t('MCP server "{0}" doesn\'t support browser sign-in — it likely needs a personal access token or API key configured directly in its mcp.json entry instead.', serverName)}\n`);
+				return;
+			}
+			this._log.warn(`mcp oauth login failed ${JSON.stringify({ sessionId: entry.sessionId, serverName, error: message })}`);
+			entry.current?.stream.markdown(`\n\n> ⚠️ ${vscode.l10n.t('Failed to start sign-in for MCP server "{0}": {1}', serverName, message)}\n`);
+		}
+	}
+
+	/**
+	 * If this session has one or more MCP servers mid-OAuth-login (browser
+	 * opened, outcome not yet known), holds the turn open — with a progress
+	 * message — until they settle ('connected'/'failed') or MCP_OAUTH_WAIT_MS
+	 * elapses. Lets a sign-in completed quickly right as a turn starts still
+	 * land in that same turn's tool list, instead of only taking effect on a
+	 * later message.
+	 */
+	private async _waitForPendingMcpAuth(entry: SessionEntry, stream: vscode.ChatResponseStream): Promise<void> {
+		const prefix = `${entry.sessionId}:`;
+		const pendingKeys = [...this._mcpOauthInFlight.keys()].filter(key => key.startsWith(prefix));
+		if (pendingKeys.length === 0) {
+			return;
+		}
+		stream.progress(vscode.l10n.t('Waiting for MCP sign-in to complete…'));
+		await Promise.race([
+			Promise.all(pendingKeys.map(key => new Promise<void>(resolve => {
+				const waiters = this._mcpOauthWaiters.get(key) ?? [];
+				waiters.push(resolve);
+				this._mcpOauthWaiters.set(key, waiters);
+			}))),
+			new Promise<void>(resolve => setTimeout(resolve, MCP_OAUTH_WAIT_MS)),
+		]);
 	}
 
 	/** Stable exit-plan-mode callback: asks the user to approve leaving plan mode. */

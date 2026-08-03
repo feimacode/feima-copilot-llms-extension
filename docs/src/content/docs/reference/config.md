@@ -411,6 +411,18 @@ Tool names (from `vscode.lm.tools`) to hide from the dynamic-tool bridge shared 
 
 ---
 
+### `feima.agents.codex.tools.excludePatterns` / `feima.agents.copilot.tools.excludePatterns`
+
+Per-participant override of `feima.agents.tools.excludePatterns` for @codex / @copilot-cli only.
+
+**Type**: `string[] | null`
+**Default**: `null`
+**Scope**: Machine-overridable
+
+**Description**: Leave unset (`null`) to use the shared list above. Set to an array — including `[]` to disable exclusions entirely — to replace the shared list just for that participant. Not applicable to @claude, which doesn't use the shared dynamic-tool bridge.
+
+---
+
 ### `feima.agents.claude.permissionMode`
 
 Default permission tier for `@claude`.

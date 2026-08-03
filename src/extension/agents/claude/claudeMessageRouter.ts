@@ -67,6 +67,38 @@ export interface FileChangeEntry {
 	description: string;
 }
 
+/**
+ * De-dupes the MCP-unavailable warning below across the process's lifetime —
+ * `system`/`init` fires on every turn (and again after WarmQuery promotion),
+ * and we don't want to repeat the same warning every turn of a conversation.
+ * Keyed by `${serverName}:${status}`.
+ */
+const warnedMcpServerStatuses = new Set<string>();
+
+/**
+ * Surfaces a one-line chat warning the first time an MCP server is observed
+ * as 'failed' or 'needs-auth'. The Claude Agent SDK's `query()`/`WarmQuery`
+ * never perform interactive OAuth for MCP servers (documented at
+ * https://code.claude.com/docs/en/agent-sdk/mcp) — there's no in-extension
+ * remediation for 'needs-auth', so we just point the user at the two ways to
+ * unblock it themselves: a static access token in the server's mcp.json
+ * `headers`, or completing `claude mcp login <name>` in their own terminal.
+ */
+function warnIfMcpServerUnavailable(stream: vscode.ChatResponseStream, serverName: string, status: string): void {
+	if (status !== 'failed' && status !== 'needs-auth') {
+		return;
+	}
+	const key = `${serverName}:${status}`;
+	if (warnedMcpServerStatuses.has(key)) {
+		return;
+	}
+	warnedMcpServerStatuses.add(key);
+	const reason = status === 'needs-auth'
+		? vscode.l10n.t('it needs OAuth sign-in, which isn\'t supported here — run "claude mcp login {0}" in a terminal yourself, or add a valid access token to its "headers" in mcp.json', serverName)
+		: vscode.l10n.t('failed to connect — check its command/URL and credentials');
+	stream.markdown(`\n\n> ⚠️ ${vscode.l10n.t('MCP server "{0}" is unavailable: {1}', serverName, reason)}\n`);
+}
+
 export function createInitialState(stream: vscode.ChatResponseStream): RouterState {
 	return {
 		thinking: new ThinkingPanelHelper(stream, 'claude-reasoning'),
@@ -384,9 +416,15 @@ function handleSystemMessage(
 		state.sessionId = msg.session_id;
 	}
 
-	const sys = msg as SDKMessage & { type: 'system'; subtype?: string };
+	const sys = msg as SDKMessage & { type: 'system'; subtype?: string; mcp_servers?: { name: string; status: string }[] };
 	if (sys.subtype === 'init') {
 		log.debug('session initialized: ' + JSON.stringify({ sessionId: state.sessionId }));
+		// Connections are non-blocking, so a healthy server may still show
+		// 'pending' here — only 'failed'/'needs-auth' are conclusive at this point.
+		for (const server of sys.mcp_servers ?? []) {
+			log.debug(`mcp server status at init ${JSON.stringify(server)}`);
+			warnIfMcpServerUnavailable(stream, server.name, server.status);
+		}
 	}
 
 	return state;

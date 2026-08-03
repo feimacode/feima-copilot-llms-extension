@@ -118,6 +118,10 @@
 	"settings.agents.copilot.maxApiCallsPerTurn.description": "Maximum number of model API calls the Copilot CLI may make within a single turn before it's force-aborted. Guards against a runaway loop (e.g. the model repeatedly calling tools without converging) that would otherwise never reach `session.idle`.",
 	"settings.agents.claude.maxApiCallsPerTurn.description": "Maximum number of model round-trips the Claude Agent SDK may make within a single turn (its own `maxTurns` option). Guards against a runaway loop (e.g. the model repeatedly calling tools without converging); past this, the SDK ends the turn itself instead of running unbounded.",
 
+	"settings.agents.codex.shareMcpServers.description": "Pass MCP servers from VS Code's own native mcp.json config (user profile + every workspace folder's `.vscode/mcp.json`) down to @codex. Disable if you only want @codex's own separately configured MCP servers (e.g. via `codex mcp add`).",
+	"settings.agents.copilot.shareMcpServers.description": "Pass MCP servers from VS Code's own native mcp.json config (user profile + every workspace folder's `.vscode/mcp.json`) down to @copilot-cli. Disable if you only want the Copilot CLI's own separately configured MCP servers.",
+	"settings.agents.claude.shareMcpServers.description": "Pass MCP servers from VS Code's own native mcp.json config (user profile + every workspace folder's `.vscode/mcp.json`) down to @claude. Disable if you only want Claude Code's own separately configured MCP servers (e.g. via `claude mcp add`).",
+
 	"settings.agents.codex.systemPrompt.description": "Extra instructions for @codex, layered on top of Codex's own built-in agent instructions as `developerInstructions`. There is no additional Feima-provided default — this setting is purely for your own customization. See `#feima.agents.codex.systemPromptMode#`.",
 	"settings.agents.copilot.systemPrompt.description": "Extra instructions for @copilot-cli. There is no additional Feima-provided default — this setting is purely for your own customization. See `#feima.agents.copilot.systemPromptMode#` for how it's applied.",
 	"settings.agents.claude.systemPrompt.description": "Extra instructions for @claude, on top of Claude Code's own default persona/instructions and Feima's built-in VS Code context notes. See `#feima.agents.claude.systemPromptMode#` for how this combines with those defaults.",
@@ -127,6 +131,8 @@
 	"settings.agents.claude.systemPromptMode.description": "How `#feima.agents.claude.systemPrompt#` combines with the built-in defaults for @claude.",
 
 	"settings.agents.tools.excludePatterns.description": "Tool names (from `vscode.lm.tools`) to hide from the dynamic-tool bridge shared by agent participants. Supports a single `*` wildcard per pattern. The default excludes MCP-backed tools (`mcp_*` — MCP servers are handled natively by each CLI's own MCP client, see `.vscode/mcp.json`), a few Copilot Chat manifest-only tools with no runtime implementation, and internal agent-loop control signals from other agent SDKs.",
+	"settings.agents.codex.tools.excludePatterns.description": "Overrides `#feima.agents.tools.excludePatterns#` for @codex only. Leave unset (`null`) to use the shared list; set to an array (including `[]`) to replace it just for @codex.",
+	"settings.agents.copilot.tools.excludePatterns.description": "Overrides `#feima.agents.tools.excludePatterns#` for @copilot-cli only. Leave unset (`null`) to use the shared list; set to an array (including `[]`) to replace it just for @copilot-cli.",
 
 	"chatCommand.permission.ask.description": "Ask for approval before every tool action, for this turn only",
 	"chatCommand.permission.acceptEdits.description": "Auto-approve file edits and ask for the rest, for this turn only",

@@ -282,12 +282,15 @@ export class ClaudeParticipant {
 		// on `options`, so this merge is additive on top of whatever the
 		// `claude` CLI already discovers natively (project `.mcp.json`, its
 		// own user-level `claude mcp add` servers, plugins, etc).
-		const vsCodeMcpServers = await getEffectiveMcpServers(vscode.Uri.file(this.storagePath), this._log);
-		for (const [name, config] of Object.entries(vsCodeMcpServers)) {
-			(options.mcpServers ??= {})[name] = config as never;
-		}
-		if (Object.keys(vsCodeMcpServers).length > 0) {
-			this._log.debug(`merged ${Object.keys(vsCodeMcpServers).length} MCP server(s) from VS Code's native mcp.json config into options`);
+		// Gated by `feima.agents.claude.shareMcpServers` (default: on).
+		if (vscode.workspace.getConfiguration('feima.agents.claude').get<boolean>('shareMcpServers', true)) {
+			const vsCodeMcpServers = await getEffectiveMcpServers(vscode.Uri.file(this.storagePath), this._log);
+			for (const [name, config] of Object.entries(vsCodeMcpServers)) {
+				(options.mcpServers ??= {})[name] = config as never;
+			}
+			if (Object.keys(vsCodeMcpServers).length > 0) {
+				this._log.debug(`merged ${Object.keys(vsCodeMcpServers).length} MCP server(s) from VS Code's native mcp.json config into options`);
+			}
 		}
 
 		// ── 3. Start client-tool MCP server (Priority 3a) ────────────────────

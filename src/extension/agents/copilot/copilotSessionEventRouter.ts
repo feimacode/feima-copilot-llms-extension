@@ -69,6 +69,33 @@ export function createInitialRouterState(stream: vscode.ChatResponseStream): Rou
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 /**
+ * De-dupes the chat warning below across the process's lifetime (not just one
+ * turn) — `session.mcp_server_status_changed` can re-fire the same terminal
+ * status on session resume, and we don't want to repeat the same warning on
+ * every turn of a long conversation. Keyed by `${serverName}:${status}`.
+ */
+const warnedMcpServerStatuses = new Set<string>();
+
+/**
+ * Surfaces a one-line chat warning the first time an MCP server is observed
+ * as genuinely 'failed'. 'needs-auth' is handled separately — CopilotParticipant
+ * auto-triggers a browser sign-in for it (see _attemptMcpOauthLogin), which
+ * posts its own "opening your browser…" message. 'disabled' and
+ * 'not_configured' are expected/intentional, not warned about.
+ */
+function warnIfMcpServerUnavailable(stream: vscode.ChatResponseStream, serverName: string, status: string, error?: string): void {
+	if (status !== 'failed') {
+		return;
+	}
+	const key = `${serverName}:${status}`;
+	if (warnedMcpServerStatuses.has(key)) {
+		return;
+	}
+	warnedMcpServerStatuses.add(key);
+	stream.markdown(`\n\n> ⚠️ ${vscode.l10n.t('MCP server "{0}" is unavailable: {1}', serverName, error || vscode.l10n.t('failed to start'))}\n`);
+}
+
+/**
  * Route a single SDK session event to the chat stream, mutating and returning
  * the router state. `onIdle` is invoked once when the session becomes idle.
  */
@@ -201,6 +228,32 @@ export function routeSessionEvent(
 		case 'session.usage_info': {
 			state.usage.contextTokens = event.data.currentTokens;
 			state.usage.contextLimit = event.data.tokenLimit;
+			return state;
+		}
+		case 'session.mcp_servers_loaded': {
+			// Full per-server status (name/status/error/transport) at load time —
+			// the generic log line above only shows key names, not these values.
+			log.info(`mcp servers loaded ${JSON.stringify(event.data.servers.map(s => ({ name: s.name, status: s.status, transport: s.transport, error: s.error })))}`);
+			for (const server of event.data.servers) {
+				warnIfMcpServerUnavailable(stream, server.name, server.status, server.error);
+			}
+			return state;
+		}
+		case 'session.mcp_server_status_changed': {
+			const { serverName, status, error } = event.data;
+			log.info(`mcp server status changed ${JSON.stringify({ serverName, status, error })}`);
+			warnIfMcpServerUnavailable(stream, serverName, status, error);
+			return state;
+		}
+		case 'mcp.oauth_required': {
+			// Only delivered when onMcpAuthRequest is registered on the session
+			// config, which we deliberately don't do (see copilotParticipant.ts) —
+			// kept here so it's visible if that ever changes.
+			log.warn(`mcp oauth required ${JSON.stringify({ serverName: event.data.serverName, serverUrl: event.data.serverUrl, reason: event.data.reason })}`);
+			return state;
+		}
+		case 'mcp.oauth_completed': {
+			log.info(`mcp oauth completed ${JSON.stringify(event.data)}`);
 			return state;
 		}
 		case 'session.error': {

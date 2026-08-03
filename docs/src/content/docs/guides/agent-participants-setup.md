@@ -85,11 +85,10 @@ Each uses VS Code's own schema, keyed by server name under `servers`:
 
 ## Excluding tools from the dynamic-tool bridge
 
-`@codex` builds its dynamic-tool bridge from every tool registered in `vscode.lm.tools`. Some of those shouldn't be exposed — MCP-backed tools (already handled natively per above), a few Copilot Chat manifest-only tools with no runtime implementation, and internal agent-loop control signals from other agent SDKs. Control this via:
+`@codex` and `@copilot-cli` build their dynamic-tool bridge from every tool registered in `vscode.lm.tools` (`@claude` doesn't use this bridge). Some of those shouldn't be exposed — MCP-backed tools (already handled natively per above), a few Copilot Chat manifest-only tools with no runtime implementation, and internal agent-loop control signals from other agent SDKs. Control this via:
 
-- `feima.agents.tools.excludePatterns`
-
-An array of tool-name patterns (each may contain one `*` wildcard); the shipped default already covers the cases above.
+- `feima.agents.tools.excludePatterns` — shared default for both participants; an array of tool-name patterns (each may contain one `*` wildcard), the shipped default already covers the cases above.
+- `feima.agents.codex.tools.excludePatterns` / `feima.agents.copilot.tools.excludePatterns` — per-participant override. Leave unset to use the shared list; set to an array (including `[]`) to replace it for just that participant.
 
 ## Changing the default permission tier
 

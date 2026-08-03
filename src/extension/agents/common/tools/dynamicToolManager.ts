@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import type { DynamicToolSpec } from '../protocol/types';
 import { ILogService } from '../../../platform/log/common/logService';
-import { getConfiguredExcludePatterns, isToolNameExcluded } from './toolFilters';
+import { getConfiguredExcludePatterns, isToolNameExcluded, type ParticipantId } from './toolFilters';
 
 // ─── Schema & description overrides ───────────────────────────────────────
 
@@ -101,8 +101,12 @@ function isValidToolSchema(schema: unknown): boolean {
  */
 export class DynamicToolManager {
 
-	private _cache: DynamicToolSpec[] | null = null;
-	private _pending: Promise<DynamicToolSpec[]> | null = null;
+	/** Keyed by participant id (falling back to 'default' when omitted) since
+	 *  a participant-specific `excludePatterns` override (see toolFilters.ts)
+	 *  can now make the discovered tool list differ per participant even
+	 *  though they all read from the same underlying `vscode.lm.tools`. */
+	private readonly _cache = new Map<string, DynamicToolSpec[]>();
+	private readonly _pending = new Map<string, Promise<DynamicToolSpec[]>>();
 	/** Tool names confirmed at runtime to be uninvokable — populated by
 	 *  `markUninvokable` when `vscode.lm.invokeTool` reports "does not have an
 	 *  implementation registered" (VS Code's error for tools whose owning
@@ -115,29 +119,35 @@ export class DynamicToolManager {
 	constructor(private readonly _log: ILogService) { }
 
 	/**
-	 * Build (or return cached) dynamic tools for the current VS Code session.
-	 * Safe to call concurrently — in-flight calls share the same promise.
+	 * Build (or return cached) dynamic tools for `participant` (or the shared,
+	 * all-participants exclude list when omitted). Safe to call concurrently —
+	 * in-flight calls for the same participant share the same promise.
 	 */
-	async buildDynamicTools(): Promise<DynamicToolSpec[]> {
-		if (this._cache) {
-			return this._cache;
+	async buildDynamicTools(participant?: ParticipantId): Promise<DynamicToolSpec[]> {
+		const key = participant ?? 'default';
+		const cached = this._cache.get(key);
+		if (cached) {
+			return cached;
 		}
-		if (this._pending) {
-			return this._pending;
+		const pending = this._pending.get(key);
+		if (pending) {
+			return pending;
 		}
-		this._pending = this._discover();
+		const promise = this._discover(participant);
+		this._pending.set(key, promise);
 		try {
-			this._cache = await this._pending;
-			return this._cache;
+			const result = await promise;
+			this._cache.set(key, result);
+			return result;
 		} finally {
-			this._pending = null;
+			this._pending.delete(key);
 		}
 	}
 
-	/** Discard the cache so the next call re-discovers tools. */
+	/** Discard the cache so the next call re-discovers tools (for every participant). */
 	clearCache(): void {
-		this._cache = null;
-		this._pending = null;
+		this._cache.clear();
+		this._pending.clear();
 	}
 
 	/**
@@ -157,12 +167,12 @@ export class DynamicToolManager {
 
 	// ── Discovery ──────────────────────────────────────────────────────────
 
-	private async _discover(): Promise<DynamicToolSpec[]> {
+	private async _discover(participant?: ParticipantId): Promise<DynamicToolSpec[]> {
 		// Primary path: vscode.lm.tools (proposed API, may not be enabled)
 		const lm = vscode.lm as { tools?: readonly { name: string; description?: string; inputSchema?: unknown }[] };
 		if (lm.tools?.length) {
 			this._log.debug(`discovered ${lm.tools.length} tools via vscode.lm.tools`);
-			return this._fromLmTools(lm.tools);
+			return this._fromLmTools(lm.tools, participant);
 		}
 
 		// Fallback: hardcoded VS Code built-in tools
@@ -172,14 +182,15 @@ export class DynamicToolManager {
 
 	private _fromLmTools(
 		tools: readonly { name: string; description?: string; inputSchema?: unknown }[],
+		participant?: ParticipantId,
 	): DynamicToolSpec[] {
 		const seen = new Set<string>();
 		const result: DynamicToolSpec[] = [];
-		const excludePatterns = getConfiguredExcludePatterns();
+		const excludePatterns = getConfiguredExcludePatterns(participant);
 
 		for (const t of tools) {
 			if (isToolNameExcluded(t.name, excludePatterns)) {
-				this._log.debug(`skipping excluded tool "${t.name}" — matches feima.agents.tools.excludePatterns`);
+				this._log.debug(`skipping excluded tool "${t.name}" — matches ${participant ? `feima.agents.${participant}.tools.excludePatterns` : 'feima.agents.tools.excludePatterns'}`);
 				continue;
 			}
 			if (this._uninvokable.has(t.name)) {

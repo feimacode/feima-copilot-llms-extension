@@ -359,7 +359,8 @@ export interface ServerRequestResolvedNotification {
 
 // ─── MCP Server Protocol ─────────────────────────────────────────────────────
 
-export type McpServerState = 'ready' | 'starting' | 'cancelled' | 'error' | 'running';
+/** Includes 'failed', confirmed present on real `mcpServer/startupStatus/updated` wire payloads even though not otherwise documented. */
+export type McpServerState = 'ready' | 'starting' | 'cancelled' | 'error' | 'running' | 'failed';
 
 export interface McpServerStatus {
 	serverName: string;
@@ -379,7 +380,9 @@ export interface McpServerStatusListResponse {
 }
 
 export interface McpServerStatusUpdatedNotification {
-	serverName: string;
+	threadId: string;
+	/** Wire field is `name`, not `serverName` like `McpServerStatus`/`McpServerToolCallParams` — confirmed against a raw app-server notification. */
+	name: string;
 	status: McpServerState;
 	error?: string;
 }

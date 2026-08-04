@@ -99,6 +99,7 @@ export function registerAgents(context: vscode.ExtensionContext, logService: ILo
 	// ── @claude participant ───────────────────────────────────────────────
 	const claudeParticipant = new ClaudeParticipant(
 		proxyManager,
+		toolManager,
 		context.globalStorageUri.fsPath,
 		log.createSubLogger('Claude'),
 	);

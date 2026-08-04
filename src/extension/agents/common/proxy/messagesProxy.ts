@@ -7,6 +7,7 @@ import * as http from 'http';
 import * as vscode from 'vscode';
 import { ILogService } from '../../../platform/log/common/logService';
 import { makeId, startSSE, writeJSON, writeNamedSSEEvent, RouteHandler } from './proxyServer';
+import { HARD_TOOL_LIMIT, extractQueryText, filterTools } from './toolLimiting';
 
 // ---------------------------------------------------------------------------
 // Minimal type shapes for Anthropic Messages API (no SDK dependency)
@@ -324,9 +325,18 @@ async function streamMessagesSSE(
 		blockIndex++;
 	};
 
+	let partCount = 0;
 	try {
 		for await (const part of vsResponse.stream) {
 			if (token.isCancellationRequested) { break; }
+			if (partCount < 5) {
+				const partType = (part as { constructor?: { name?: string } }).constructor?.name ?? typeof part;
+				const isText = part instanceof vscode.LanguageModelTextPart;
+				const isToolCall = part instanceof vscode.LanguageModelToolCallPart;
+				const isData = part instanceof vscode.LanguageModelDataPart;
+				log.debug(`stream part[${partCount}] type=${partType} isText=${isText} isTool=${isToolCall} isData=${isData}${isText ? ' ' + (part as vscode.LanguageModelTextPart).value.slice(0, 60) : ''}`);
+			}
+			partCount++;
 
 			if (part instanceof vscode.LanguageModelTextPart) {
 				openTextBlock();
@@ -421,6 +431,7 @@ async function streamMessagesSSE(
 			// Expected cancellation — clean up silently
 		} else {
 			log.error(err instanceof Error ? err : String(err), 'stream error');
+			log.debug(`stream failed — error: ${err instanceof Error ? err.message : String(err)}`);
 			// Surface the error as visible text so the user sees it in the chat.
 			openTextBlock();
 			writeNamedSSEEvent(res, 'content_block_delta', {
@@ -430,6 +441,7 @@ async function streamMessagesSSE(
 			});
 		}
 	}
+	log.debug(`stream iteration done, total parts=${partCount}, outputTokens=${outputTokens}, stopReason=${stopReason}`);
 
 	// Close any open text block
 	closeTextBlock();
@@ -484,6 +496,7 @@ async function collectMessagesResponse(
 			log.error(err instanceof Error ? err : String(err), 'collect error');
 		}
 	}
+	log.debug(`collect done — text=${text.length} chars, toolCalls=${toolCalls.length}, outputTokens=${outputTokens}`);
 
 	const content: unknown[] = [];
 	if (text) { content.push({ type: 'text', text }); }
@@ -510,6 +523,7 @@ async function collectMessagesResponse(
 export function createMessagesHandler(log: ILogService): RouteHandler {
 	return async (_req: http.IncomingMessage, res: http.ServerResponse, body: unknown) => {
 		const req = body as MessagesRequest;
+		log.debug(`→ POST /v1/messages model=${req.model} stream=${req.stream !== false} tools=${Array.isArray(req.tools) ? req.tools.length : 0} messages=${Array.isArray(req.messages) ? req.messages.length : '?'}`);
 
 		if (!req.model) {
 			writeJSON(res, 400, { type: 'error', error: { type: 'invalid_request_error', message: '`model` field is required' } });
@@ -533,6 +547,7 @@ export function createMessagesHandler(log: ILogService): RouteHandler {
 				models = await vscode.lm.selectChatModels({ id: parsedModel.modelId });
 			}
 		}
+		log.debug(`model lookup '${req.model}' → ${models.length} match(es)${models.length ? ': ' + models.map(m => `${m.vendor}/${m.id}`).join(', ') : ''}`);
 		if (models.length === 0) {
 			writeJSON(res, 404, { type: 'error', error: { type: 'not_found_error', message: `Model '${req.model}' not found` } });
 			return;
@@ -540,6 +555,19 @@ export function createMessagesHandler(log: ILogService): RouteHandler {
 		const model = models[0];
 
 		const vsMessages = convertAnthropicMessagesToVSCode(req.messages, req.system);
+		log.debug(`converted messages (${vsMessages.length}): ${vsMessages.map((m, idx) => {
+			let roleName = 'unknown';
+			if (m.role === 1) { roleName = 'User'; }
+			if (m.role === 2) { roleName = 'Assistant'; }
+			if (typeof m.content === 'string') { return `${idx}:${roleName}[text]`; }
+			const partsDesc = m.content.map((p: unknown) => {
+				if (p instanceof vscode.LanguageModelTextPart) { return `text("${p.value.slice(0, 40)}")`; }
+				if (p instanceof vscode.LanguageModelToolCallPart) { return `toolCall(${p.callId}, ${p.name})`; }
+				if (p instanceof vscode.LanguageModelToolResultPart) { return `toolResult(${p.callId})`; }
+				return typeof p;
+			}).join(', ');
+			return `${idx}:${roleName}[${partsDesc}]`;
+		}).join(', ')}`);
 		if (vsMessages.length === 0) {
 			writeJSON(res, 400, { type: 'error', error: { type: 'invalid_request_error', message: 'No messages could be converted' } });
 			return;
@@ -551,9 +579,20 @@ export function createMessagesHandler(log: ILogService): RouteHandler {
 		const omitTools = req.tool_choice?.type === 'none';
 
 		if (!omitTools && Array.isArray(req.tools) && req.tools.length > 0) {
-			options.tools = convertAnthropicTools(req.tools);
+			log.debug(`tools inbound: ${req.tools.length}`);
+			const converted = convertAnthropicTools(req.tools);
+			log.debug(`tools after convert: ${converted.length}`);
+			if (converted.length > HARD_TOOL_LIMIT) {
+				options.tools = filterTools(converted, extractQueryText(vsMessages), log, HARD_TOOL_LIMIT);
+				log.debug(`filtered tools down to ${options.tools.length}`);
+			} else {
+				options.tools = converted;
+			}
 			const mode = convertAnthropicToolChoice(req.tool_choice);
 			if (mode !== undefined) { options.toolMode = mode; }
+			if (options.tools.length > 0) {
+				log.debug(`tools list: ${options.tools.map(t => t.name).join(', ')}`);
+			}
 		}
 
 		// Rough input token estimate for usage reporting
@@ -571,10 +610,12 @@ export function createMessagesHandler(log: ILogService): RouteHandler {
 
 		let vsResponse: vscode.LanguageModelChatResponse;
 		try {
+			log.debug(`sendRequest model=${model.id} messages=${vsMessages.length} firstRole=${vsMessages[0]?.role}`);
 			vsResponse = await model.sendRequest(vsMessages, options, cts.token);
 		} catch (err) {
+			log.error(err instanceof Error ? err : String(err), 'sendRequest error');
 			cts.dispose();
-			writeJSON(res, 500, { type: 'error', error: { type: 'api_error', message: String(err) } });
+			writeJSON(res, 500, { type: 'error', error: { type: 'api_error', message: err instanceof Error ? err.message : String(err) } });
 			return;
 		}
 

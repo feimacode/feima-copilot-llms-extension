@@ -7,6 +7,7 @@ import * as http from 'http';
 import * as vscode from 'vscode';
 import { ILogService } from '../../../platform/log/common/logService';
 import { makeId, startSSE, writeJSON, writeSSEEvent, RouteHandler } from './proxyServer';
+import { HARD_TOOL_LIMIT, extractQueryText, filterTools } from './toolLimiting';
 
 // ---------------------------------------------------------------------------
 // Minimal type shapes for OpenAI Responses API (no SDK dependency)
@@ -235,97 +236,10 @@ export function convertInputToMessages(input: ResponsesInputItem[]): vscode.Lang
  * must be re-split when serializing function calls in the SSE output so
  * Codex matches the original `ToolName { namespace, name }` registration.
  */
-const HARD_TOOL_LIMIT = 128;
-const HIGH_PRIORITY_TOOL_NAMES = new Set([
-	'readFile',
-	'writeFile',
-	'replaceInFile',
-	'listDirectory',
-	'fileSearch',
-	'searchContent',
-	'vscode_editFile_internal',
-	'vscode_editFile',
-	'copilot_editFiles',
-	'runInTerminal',
-	'exec_command',
-	'create_directory',
-	'get_terminal_output',
-	'manage_todo_list',
-]);
-
 interface ConvertedTools {
 	tools: vscode.LanguageModelChatTool[];
 	/** Maps flat name → `{ namespace, name }`, or `null` for top-level tools. */
 	nameToNs: Map<string, { namespace: string; name: string } | null>;
-}
-
-function extractQueryText(messages: vscode.LanguageModelChatMessage[]): string {
-	return messages
-		.filter(m => m.role === 1)
-		.map(m => {
-			if (typeof m.content === 'string') {
-				return m.content;
-			}
-			return m.content
-				.map(part => part instanceof vscode.LanguageModelTextPart ? part.value : '')
-				.join(' ');
-		})
-		.join(' ');
-}
-
-function scoreToolRelevance(tool: vscode.LanguageModelChatTool, query: string): number {
-	const queryLower = query.toLowerCase();
-	const nameLower = tool.name.toLowerCase();
-	const descLower = (tool.description ?? '').toLowerCase();
-	let score = 0;
-
-	if (HIGH_PRIORITY_TOOL_NAMES.has(tool.name)) {
-		score += 50;
-	}
-
-	if (queryLower.includes(nameLower)) {
-		score += 10;
-	}
-
-	const keywordGroups: Array<{ keywords: string[]; nameKeywords: string[]; bonus: number }> = [
-		{ keywords: ['create', 'write', 'save', 'new', 'make'], nameKeywords: ['create', 'write', 'save'], bonus: 10 },
-		{ keywords: ['read', 'show', 'display', 'get', 'open'], nameKeywords: ['read', 'get', 'list', 'show', 'open'], bonus: 8 },
-		{ keywords: ['edit', 'modify', 'change', 'update', 'replace'], nameKeywords: ['edit', 'replace', 'apply', 'insert'], bonus: 10 },
-		{ keywords: ['search', 'find', 'lookup', 'grep'], nameKeywords: ['search', 'find', 'grep'], bonus: 8 },
-		{ keywords: ['terminal', 'command', 'run', 'execute', 'shell'], nameKeywords: ['terminal', 'run', 'execute', 'shell'], bonus: 8 },
-	];
-
-	for (const group of keywordGroups) {
-		if (group.keywords.some(keyword => queryLower.includes(keyword))) {
-			if (group.nameKeywords.some(keyword => nameLower.includes(keyword))) {
-				score += group.bonus;
-			}
-		}
-	}
-
-	if (descLower) {
-		for (const word of queryLower.split(/\s+/)) {
-			if (word.length > 3 && descLower.includes(word)) {
-				score += 1;
-			}
-		}
-	}
-
-	return score;
-}
-
-function filterTools(tools: vscode.LanguageModelChatTool[], query: string, log: ILogService, maxTools: number = HARD_TOOL_LIMIT): vscode.LanguageModelChatTool[] {
-	if (tools.length <= maxTools) {
-		return tools;
-	}
-
-	const scored = tools.map(tool => ({ tool, score: scoreToolRelevance(tool, query) }));
-	scored.sort((a, b) => b.score - a.score || a.tool.name.localeCompare(b.tool.name));
-
-	const selected = scored.slice(0, maxTools).map(entry => entry.tool);
-	const dropped = scored.slice(maxTools).map(entry => entry.tool.name);
-	log.warn(`filtered ${tools.length} tools down to ${maxTools}; dropped ${dropped.length} tools: ${dropped.slice(0, 20).join(', ')}${dropped.length > 20 ? ', ...' : ''}`);
-	return selected;
 }
 
 /**

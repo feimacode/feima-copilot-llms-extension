@@ -12,7 +12,8 @@ import { buildClaudeOptions, mapTierToPermissionMode, type OptionsBuilderInput }
 import { CLAUDE_PROVIDER_ID } from './claudeModelProvider';
 import { ExternalEditTracker } from '../common/externalEditTracker';
 import { getEffectiveMcpServers } from '../common/mcp/vscodeMcpConfig';
-import { startClientToolMcpServer, stopClientToolMcpServer, type ClientToolMcpServer } from './clientToolMcpServer';
+import { buildClientToolMcpServer, CLAUDE_TOOL_SERVER_NAME, type ClaudeTurnContext } from './clientToolMcpServer';
+import type { DynamicToolManager } from '../common/tools/dynamicToolManager';
 import { resolveBinary } from '../common/appServer/client';
 import { resolveWorkspaceCwd } from '../common/workspaceUtils';
 import { resolvePermissionTier } from '../common/permissionTier';
@@ -51,7 +52,11 @@ interface TurnMetadata {
 /** Per-session state for WarmQuery sessions (Priority 3c). */
 interface SessionEntry {
 	warmQuery: WarmQuery;
-	mcpServer: ClientToolMcpServer | null;
+	/** Dynamic tool names baked into this session's client-tool MCP server —
+	 *  compared against each turn's freshly-discovered tools so a WarmQuery
+	 *  session whose tool snapshot has gone stale gets restarted instead of
+	 *  silently reused with outdated tools (see handleRequest step 4). */
+	toolNames: readonly string[];
 	lastUsed: number; // timestamp
 	idleTimer?: NodeJS.Timeout;
 	/**
@@ -123,12 +128,16 @@ export class ClaudeParticipant {
 	private readonly _sessions = new Map<string, AbortController>();
 	/** sessionId → WarmQuery session for sessions using startup()+WarmQuery */
 	private readonly _warmSessions = new Map<string, SessionEntry>();
-	/** Client-tool MCP server for dynamic tools (shared across sessions) */
-	private _clientToolServer: ClientToolMcpServer | null = null;
 	/** Tracks stream.externalEdit() windows for file-editing tool calls (shared
 	 *  across sessions — keyed internally by tool_use id, which Claude already
 	 *  guarantees unique). */
 	private readonly _editTracker = new ExternalEditTracker();
+	/** Current turn's request/token, read by the client-tool MCP server's
+	 *  handlers (see clientToolMcpServer.ts) via a closure so the same server
+	 *  instance can be rebuilt/reused across turns without capturing a single
+	 *  request/token pair by value. Set right before dispatching a turn's
+	 *  query, cleared in that turn's `finally` block. */
+	private _turnContext: ClaudeTurnContext | undefined;
 
 	/**
 	 * @param storagePath  Extension's global storage path (from context.globalStorageUri.fsPath).
@@ -137,6 +146,7 @@ export class ClaudeParticipant {
 	 */
 	constructor(
 		private readonly proxyManager: ProxyManager,
+		private readonly _toolManager: DynamicToolManager,
 		private readonly storagePath: string,
 		private readonly _log: ILogService,
 	) {}
@@ -282,8 +292,11 @@ export class ClaudeParticipant {
 		// on `options`, so this merge is additive on top of whatever the
 		// `claude` CLI already discovers natively (project `.mcp.json`, its
 		// own user-level `claude mcp add` servers, plugins, etc).
-		// Gated by `feima.agents.claude.shareMcpServers` (default: on).
-		if (vscode.workspace.getConfiguration('feima.agents.claude').get<boolean>('shareMcpServers', true)) {
+		// Gated by `feima.agents.claude.shareMcpServers` (default: OFF — the
+		// Claude Agent SDK's own MCP client can't complete OAuth, so by default
+		// we instead expose `mcp_*` tools through the `vscode-tools` dynamic-tool
+		// bridge below, which reuses VS Code's own already-authenticated client).
+		if (vscode.workspace.getConfiguration('feima.agents.claude').get<boolean>('shareMcpServers', false)) {
 			const vsCodeMcpServers = await getEffectiveMcpServers(vscode.Uri.file(this.storagePath), this._log);
 			for (const [name, config] of Object.entries(vsCodeMcpServers)) {
 				(options.mcpServers ??= {})[name] = config as never;
@@ -293,25 +306,38 @@ export class ClaudeParticipant {
 			}
 		}
 
-		// ── 3. Start client-tool MCP server (Priority 3a) ────────────────────
-		if (!this._clientToolServer) {
-			try {
-				this._clientToolServer = await startClientToolMcpServer(this._log);
-				this._log.debug('client-tool MCP server started');
-			} catch (err) {
-				this._log.error(err instanceof Error ? err : String(err), 'failed to start client-tool MCP server');
-				// Graceful degradation — continue without dynamic tools
+		// ── 3. Build per-turn client-tool MCP server (dynamic vscode.lm tools) ──
+		// Built fresh every turn (tools can change between turns, e.g. another
+		// extension activating/deactivating) rather than cached as a singleton.
+		// Set _turnContext now, before any tool call can happen — read lazily by
+		// the server's handlers via the closure passed below.
+		this._turnContext = { request, token };
+		let dynamicToolNames: readonly string[] = [];
+		try {
+			const built = await buildClientToolMcpServer(this._toolManager, () => this._turnContext, this._log);
+			if (built) {
+				(options.mcpServers ??= {})[CLAUDE_TOOL_SERVER_NAME] = built.server;
+				dynamicToolNames = built.toolNames;
 			}
-		}
-		if (this._clientToolServer) {
-			(options.mcpServers ??= {})['vscode-tools'] = this._clientToolServer.getConfig() as Options['mcpServers'] extends Record<string, infer V> ? V : never;
+		} catch (err) {
+			this._log.error(err instanceof Error ? err : String(err), 'failed to build client-tool MCP server');
+			// Graceful degradation — continue without dynamic tools
 		}
 
 		// ── 4. Check for existing WarmQuery session ─────────────────────
 		if (savedSessionId && this._warmSessions.has(savedSessionId)) {
-			return this._handleWithWarmQuery(
-				request, stream, token, options, savedSessionId, ac, routing, effectiveVendor, effectiveModelId, streamBox, permissionModeBox, sessionApprovalsBox,
-			);
+			const entry = this._warmSessions.get(savedSessionId)!;
+			if (toolNamesEqual(entry.toolNames, dynamicToolNames)) {
+				return this._handleWithWarmQuery(
+					request, stream, token, options, savedSessionId, ac, routing, effectiveVendor, effectiveModelId, streamBox, permissionModeBox, sessionApprovalsBox, dynamicToolNames,
+				);
+			}
+			// This turn's dynamic tools differ from what's baked into the warm
+			// session's MCP server — the SDK has no way to swap it in place, so
+			// restart the session and fall through to the cold query() path below,
+			// which already built this turn's up-to-date MCP server above.
+			this._log.debug('WarmQuery tool snapshot changed, restarting session: ' + JSON.stringify({ savedSessionId }));
+			await this._disposeWarmSession(savedSessionId);
 		}
 
 		// ── 5. Run SDK query (standard path) ──────────────────────────────────
@@ -357,7 +383,7 @@ export class ClaudeParticipant {
 
 			// Promote to WarmQuery for next turn (deferred, in background)
 			if (finalSessionId && !this._warmSessions.has(finalSessionId)) {
-				this._promoteToWarmQuery(options, finalSessionId, streamBox, permissionModeBox, sessionApprovalsBox).catch(err => {
+				this._promoteToWarmQuery(options, finalSessionId, streamBox, permissionModeBox, sessionApprovalsBox, dynamicToolNames).catch(err => {
 					this._log.error(err instanceof Error ? err : String(err), 'WarmQuery promotion failed');
 				});
 			}
@@ -374,6 +400,7 @@ export class ClaudeParticipant {
 			cancellationSub.dispose();
 			if (savedSessionId) { this._sessions.delete(savedSessionId); }
 			this._editTracker.flush();
+			this._turnContext = undefined;
 		}
 
 		// ── 6. Persist session ID for the next turn ───────────────────────────
@@ -458,6 +485,7 @@ export class ClaudeParticipant {
 		streamBox: StreamBox,
 		permissionModeBox: PermissionModeBox,
 		sessionApprovalsBox: SessionApprovalsBox,
+		dynamicToolNames: readonly string[],
 	): Promise<vscode.ChatResult> {
 		const entry = this._warmSessions.get(sessionId)!;
 		clearTimeout(entry.idleTimer);
@@ -500,7 +528,7 @@ export class ClaudeParticipant {
 			// (not entry's, which belonged to the now-spent warmQuery) as the new
 			// entry's boxes.
 			if (finalSessionId) {
-				this._promoteToWarmQuery(options, finalSessionId, streamBox, permissionModeBox, sessionApprovalsBox).catch(err => {
+				this._promoteToWarmQuery(options, finalSessionId, streamBox, permissionModeBox, sessionApprovalsBox, dynamicToolNames).catch(err => {
 					this._log.error(err instanceof Error ? err : String(err), 'WarmQuery re-promotion failed');
 				});
 			}
@@ -527,6 +555,7 @@ export class ClaudeParticipant {
 			}
 		} finally {
 			this._editTracker.flush();
+			this._turnContext = undefined;
 		}
 
 		return {};
@@ -540,7 +569,7 @@ export class ClaudeParticipant {
 	 * claudeOptionsBuilder.ts) — stored on the new SessionEntry so the next
 	 * turn that reuses this WarmQuery can point it at its own stream.
 	 */
-	private async _promoteToWarmQuery(options: Options, sessionId: string, streamBox: StreamBox, permissionModeBox: PermissionModeBox, sessionApprovalsBox: SessionApprovalsBox): Promise<void> {
+	private async _promoteToWarmQuery(options: Options, sessionId: string, streamBox: StreamBox, permissionModeBox: PermissionModeBox, sessionApprovalsBox: SessionApprovalsBox, toolNames: readonly string[]): Promise<void> {
 		try {
 			const warmQuery = await startup({
 				options: {
@@ -550,7 +579,7 @@ export class ClaudeParticipant {
 			});
 			const entry: SessionEntry = {
 				warmQuery,
-				mcpServer: this._clientToolServer,
+				toolNames,
 				lastUsed: Date.now(),
 				streamBox,
 				permissionModeBox,
@@ -625,15 +654,15 @@ export class ClaudeParticipant {
 				this._log.error(err instanceof Error ? err : String(err), 'error disposing WarmQuery session');
 			});
 		}
-
-		// Stop client-tool MCP server
-		if (this._clientToolServer) {
-			stopClientToolMcpServer(this._clientToolServer).catch(err => {
-				this._log.error(err instanceof Error ? err : String(err), 'error stopping client-tool MCP server');
-			});
-			this._clientToolServer = null;
-		}
 	}
+}
+
+/** Order-insensitive comparison of two dynamic-tool-name snapshots. */
+function toolNamesEqual(a: readonly string[], b: readonly string[]): boolean {
+	if (a.length !== b.length) { return false; }
+	const sortedA = [...a].sort();
+	const sortedB = [...b].sort();
+	return sortedA.every((name, i) => name === sortedB[i]);
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

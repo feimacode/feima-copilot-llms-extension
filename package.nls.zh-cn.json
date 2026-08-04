@@ -111,8 +111,9 @@
 	"settings.agents.tools.excludePatterns.description": "要从各智能体共享的动态工具桥接中隐藏的工具名称（来自 `vscode.lm.tools`）。每个模式最多支持一个 `*` 通配符。默认排除 MCP 支持的工具（`mcp_*` —— MCP 服务器由各 CLI 自身的 MCP 客户端原生处理，参见 `.vscode/mcp.json`）、少数没有运行时实现的 Copilot Chat 清单专用工具，以及来自其他智能体 SDK 的内部智能体循环控制信号。",
 	"settings.agents.codex.tools.excludePatterns.description": "仅针对 @codex 覆盖 `#feima.agents.tools.excludePatterns#`。保持未设置（`null`）则使用共享列表；设置为数组（包括 `[]`）则仅为 @codex 替换该列表。",
 	"settings.agents.copilot.tools.excludePatterns.description": "仅针对 @copilot-cli 覆盖 `#feima.agents.tools.excludePatterns#`。保持未设置（`null`）则使用共享列表；设置为数组（包括 `[]`）则仅为 @copilot-cli 替换该列表。",
+	"settings.agents.claude.tools.excludePatterns.description": "仅针对 @claude 覆盖 `#feima.agents.tools.excludePatterns#`。**默认为共享列表去除 `mcp_*`**，从而让 VS Code 管理的 MCP 工具（包括 Claude SDK 自身无法完成 OAuth 认证的服务器，参见 `#feima.agents.claude.shareMcpServers#`）通过动态工具桥接暴露给 @claude。设置为 `null` 则回退使用共享列表（该列表会排除 `mcp_*`）；设置为自定义数组（包括 `[]`）则替换该列表。",
 
 	"settings.agents.codex.shareMcpServers.description": "将 VS Code 原生 mcp.json 配置（用户级 + 各工作区文件夹的 `.vscode/mcp.json`）中的 MCP 服务器传递给 @codex。如果只想使用 @codex 自身单独配置的 MCP 服务器（例如通过 `codex mcp add`），可关闭此项。",
 	"settings.agents.copilot.shareMcpServers.description": "将 VS Code 原生 mcp.json 配置（用户级 + 各工作区文件夹的 `.vscode/mcp.json`）中的 MCP 服务器传递给 @copilot-cli。如果只想使用 Copilot CLI 自身单独配置的 MCP 服务器，可关闭此项。",
-	"settings.agents.claude.shareMcpServers.description": "将 VS Code 原生 mcp.json 配置（用户级 + 各工作区文件夹的 `.vscode/mcp.json`）中的 MCP 服务器传递给 @claude。如果只想使用 Claude Code 自身单独配置的 MCP 服务器（例如通过 `claude mcp add`），可关闭此项。"
+	"settings.agents.claude.shareMcpServers.description": "将 VS Code 原生 mcp.json 配置（用户级 + 各工作区文件夹的 `.vscode/mcp.json`）中的 MCP 服务器传递给 @claude，让 Claude Agent SDK 自行连接。**默认关闭**，因为 Claude Agent SDK 自身的 MCP 客户端无法完成 OAuth（需要 OAuth 的服务器，如 Atlassian，会静默连接失败）。默认情况下，这些服务器改由 VS Code 自身管理（支持 OAuth），其工具通过动态工具桥接暴露给 @claude，参见 `#feima.agents.claude.tools.excludePatterns#`。仅在希望 @claude 自身的 SDK 直接连接某个 MCP 服务器时才启用此项。"
 }

@@ -30,8 +30,6 @@ head:
       }
 ---
 
-# Agent Participants
-
 Feima Copilot adds three chat participants — `@claude`, `@codex`, and `@copilot-cli` — that hand your chat turn to the *real* Claude Code, Codex, or GitHub Copilot CLI, while keeping VS Code's native chat experience: streaming responses, inline tool-call and diff rendering, and file edits applied directly in your editor. You never leave Copilot Chat or switch to a terminal.
 
 This is different from just picking "Claude" or "GPT" in the Copilot model picker — those still run Copilot's own agent loop. Typing `@claude` or `@codex` runs the actual CLI's agent loop (its own planning, tool use, and edit-review behavior), just rendered inside VS Code.
@@ -40,7 +38,7 @@ This is different from just picking "Claude" or "GPT" in the Copilot model picke
 
 | Your situation | Use this | Why |
 |---|---|---|
-| You already pay for Claude Pro/Max or ChatGPT Plus/Pro (for Codex), and want that same agent inside VS Code instead of a separate terminal window | `@claude` or `@codex`, with the tool's **own** model selected in the picker (**native mode**) | Uses your existing subscription's entitlement directly — no extra cost, no Copilot or Feima model involved |
+| You already pay for Claude Pro/Max or ChatGPT Plus/Pro (for Codex), and want that same agent inside VS Code instead of a separate terminal window | `@claude` or `@codex`, with the tool's **own** model selected in the picker (**native mode**) — step-by-step: [Use a Claude Code Subscription](/guides/use-claude-code-subscription-in-vscode) / [Use a Codex Subscription](/guides/use-codex-subscription-in-vscode) | Uses your existing subscription's entitlement directly — no extra cost, no Copilot or Feima model involved |
 | You like Claude Code's or Codex's agent workflow (planning, tool calls, edit review) but don't have — or don't want — a separate Anthropic/OpenAI subscription | `@claude` or `@codex`, with a **Copilot or BYOK model** selected in the picker (**proxy mode**) | Same CLI experience and tool loop, answered by whatever model your Copilot/BYOK plan already includes |
 | You're curious what Claude Code's or Codex's workflow feels like, without signing up for anything new | Either participant, proxy mode | Zero new accounts — your existing Copilot chat model answers the requests |
 | You want to run the actual `claude` or `codex` CLI in a regular terminal (outside VS Code), but billed through Copilot/BYOK instead of a separate API key | The **[Agent Proxy](/guides/agent-proxy)**'s external endpoints | Same local proxy this feature uses internally, reachable from outside VS Code too |
@@ -113,5 +111,7 @@ If you've seen the [Anthropic Messages API-Compatible Models](/guides/using-mode
 
 ## Next steps
 
+- [Use a Claude Code Subscription in VS Code](/guides/use-claude-code-subscription-in-vscode) — step-by-step for native `@claude` with your Claude Pro/Max subscription
+- [Use a Codex Subscription in VS Code](/guides/use-codex-subscription-in-vscode) — step-by-step for native `@codex` with your ChatGPT Plus/Pro subscription
 - [Setup & Troubleshooting](/guides/agent-participants-setup) — install the CLIs, configure binary paths and MCP servers, diagnose issues
 - [Agent Proxy](/guides/agent-proxy) — how proxy routing works, and how to point an external terminal session at it

@@ -30,8 +30,6 @@ head:
       }
 ---
 
-# LLM Proxy
-
 Feima Copilot runs a small local API gateway inside VS Code that re-exposes whatever model you currently have selected — a GitHub Copilot model, or any BYOK provider you've configured — as a standard **OpenAI-compatible** and **Anthropic-compatible** API. It's what powers proxy mode for the [Agent Participants](/guides/agent-participants) (`@claude`, `@codex`, `@copilot-cli`), but that's only one consumer of it. Anything on your machine that speaks either protocol can point at it directly: other CLIs, editor extensions, scripts, or your own code.
 
 The headline use case: **if you only have a GitHub Copilot subscription — no separate OpenAI or Anthropic API key — you can still run the standalone `codex` or `claude` CLIs (or any other OpenAI/Anthropic-shaped tool) against your Copilot models.** The CLI never knows it isn't talking to OpenAI or Anthropic; Copilot is doing the work underneath.

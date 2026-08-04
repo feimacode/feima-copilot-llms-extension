@@ -30,8 +30,6 @@ head:
       }
 ---
 
-# MCP Servers & Tools for Agent Participants
-
 `@claude`, `@codex`, and `@copilot-cli` (see [Agent Participants](/guides/agent-participants)) can each reach two separate pools of capabilities:
 
 1. **MCP servers** — external tool servers defined in VS Code's own `mcp.json` files, or in the CLI's own native MCP config.

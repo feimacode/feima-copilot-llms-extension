@@ -30,8 +30,6 @@ head:
       }
 ---
 
-# Agent Participants Setup & Troubleshooting
-
 New to `@claude`, `@codex`, or `@copilot-cli`? Read the [Agent Participants overview](/guides/agent-participants) first for what they do and which one fits your situation. This page covers getting each one running and fixing common problems.
 
 ## Prerequisite: install the CLI
@@ -88,5 +86,7 @@ Run **"Feima: Show Account"** from the Command Palette. The account view include
 
 ## Next steps
 
+- [Use a Claude Code Subscription in VS Code](/guides/use-claude-code-subscription-in-vscode) — step-by-step for native `@claude` with your Claude Pro/Max subscription
+- [Use a Codex Subscription in VS Code](/guides/use-codex-subscription-in-vscode) — step-by-step for native `@codex` with your ChatGPT Plus/Pro subscription
 - [MCP Servers & Tools for Agent Participants](/guides/agent-mcp-tools) — passing down `mcp.json`, the dynamic-tool bridge, and tool exclusion
 - [Agent Proxy](/guides/agent-proxy) — how proxy-mode routing works, and how to use it from outside VS Code

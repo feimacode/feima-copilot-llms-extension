@@ -71,6 +71,16 @@ const sidebarBilingual = [
     translations: { 'zh-CN': '智能体参与者' },
     items: [
       { slug: 'guides/agent-participants' },
+      {
+        label: 'Use a Claude Code Subscription',
+        translations: { 'zh-CN': '使用 Claude Code 订阅' },
+        slug: 'guides/use-claude-code-subscription-in-vscode',
+      },
+      {
+        label: 'Use a Codex Subscription',
+        translations: { 'zh-CN': '使用 Codex 订阅' },
+        slug: 'guides/use-codex-subscription-in-vscode',
+      },
       { slug: 'guides/agent-participants-setup' },
       { slug: 'guides/agent-mcp-tools' },
       { slug: 'guides/agent-proxy' },
@@ -223,6 +233,8 @@ const sidebarEnOnly = [
     label: 'Agent Participants',
     items: [
       { label: 'Overview', link: '/guides/agent-participants' },
+      { label: 'Use a Claude Code Subscription', link: '/guides/use-claude-code-subscription-in-vscode' },
+      { label: 'Use a Codex Subscription', link: '/guides/use-codex-subscription-in-vscode' },
       { label: 'Setup & Troubleshooting', link: '/guides/agent-participants-setup' },
       { label: 'MCP Servers & Tools', link: '/guides/agent-mcp-tools' },
       { label: 'Agent Proxy', link: '/guides/agent-proxy' },

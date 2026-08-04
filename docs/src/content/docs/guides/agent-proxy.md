@@ -34,6 +34,8 @@ head:
 
 The Agent Proxy is what powers **proxy mode** for the [Agent Participants](/guides/agent-participants) — it's what lets `@claude`, `@codex`, and `@copilot-cli` answer their requests using a Copilot or BYOK model instead of a native Anthropic/OpenAI subscription. This page explains how it works, and how to point an external terminal session at it too.
 
+> **Looking for general-purpose usage beyond these three participants?** The same local proxy can back *any* OpenAI- or Anthropic-compatible tool, not just the built-in participants — see [LLM Proxy](/guides/llm-proxy) for the broader picture, including driving the standalone `codex`/`claude` CLIs off your Copilot subscription.
+
 ## What it is
 
 When the extension activates, it starts two small local HTTP servers, bound only to `127.0.0.1`:

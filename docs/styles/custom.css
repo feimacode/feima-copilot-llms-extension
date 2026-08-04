@@ -1,0 +1,34 @@
+/*
+ * Starlight's default right sidebar ("On this page" TOC) grows with the
+ * viewport — it's the left sidebar width plus half of whatever space is left
+ * over after the content column, so on wide screens it can end up far wider
+ * than a short heading list needs. Cap it to a fixed, comfortable width
+ * instead and give the freed-up space back to the content column.
+ * (Overrides @astrojs/starlight/components/TwoColumnContent.astro — this
+ * stylesheet is loaded unlayered via `customCss`, so it wins over Starlight's
+ * own `@layer starlight.core` rules without needing extra specificity.)
+ */
+@media (min-width: 72rem) {
+	.right-sidebar-container {
+		width: 16rem;
+	}
+
+	/* .main-pane and .right-sidebar-container are plain flex siblings (no
+	 * flex-grow) that must sum to exactly 100% of their shared container —
+	 * NOT `100% - var(--sl-sidebar-width) - 16rem` (that extra sidebar-width
+	 * subtraction was double-counting: the left nav sidebar is a separate
+	 * element entirely outside this flex row; Starlight's own formula only
+	 * re-adds it to keep the right gutter visually matching the left
+	 * sidebar's width, it doesn't reserve real space here). Getting this
+	 * wrong left ~18.75rem unaccounted for, which — combined with
+	 * `--sl-content-width` staying fixed at 45rem — showed up as a large
+	 * unused left margin on the content column instead of extra width. */
+	[data-has-sidebar][data-has-toc] .main-pane {
+		width: calc(100% - 16rem);
+		/* Let prose actually use the freed-up space (up to a readable cap)
+		 * instead of leaving it as empty margin, and center any remainder
+		 * rather than dumping it all on one side. */
+		--sl-content-width: min(100%, 60rem);
+		--sl-content-margin-inline: auto;
+	}
+}

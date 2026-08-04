@@ -57,6 +57,8 @@ const sidebarBilingual = [
       { slug: 'guides/configuration' },
       { slug: 'guides/utility-models' },
       { slug: 'guides/billing' },
+      // EN-only for now — no zh/ mirror yet.
+      { slug: 'guides/llm-proxy' },
       { slug: 'guides/faq' },
     ],
   },
@@ -70,6 +72,7 @@ const sidebarBilingual = [
     items: [
       { slug: 'guides/agent-participants' },
       { slug: 'guides/agent-participants-setup' },
+      { slug: 'guides/agent-mcp-tools' },
       { slug: 'guides/agent-proxy' },
     ],
   },
@@ -212,6 +215,7 @@ const sidebarEnOnly = [
       { label: 'Configuration', link: '/guides/configuration' },
       { label: 'Utility Model Config', link: '/guides/utility-models' },
       { label: 'Billing', link: '/guides/billing' },
+      { label: 'LLM Proxy', link: '/guides/llm-proxy' },
       { label: 'FAQ', link: '/guides/faq' },
     ],
   },
@@ -220,6 +224,7 @@ const sidebarEnOnly = [
     items: [
       { label: 'Overview', link: '/guides/agent-participants' },
       { label: 'Setup & Troubleshooting', link: '/guides/agent-participants-setup' },
+      { label: 'MCP Servers & Tools', link: '/guides/agent-mcp-tools' },
       { label: 'Agent Proxy', link: '/guides/agent-proxy' },
     ],
   },
@@ -389,6 +394,9 @@ export default defineConfig({
   build: {
     format: 'directory',
   },
+  devToolbar: {
+    enabled: false,
+  },
 
   integrations: [
     starlight({
@@ -401,6 +409,8 @@ export default defineConfig({
       defaultLocale: 'root',
 
       sidebar,
+
+      customCss: ['./styles/custom.css'],
 
       social: [
         {

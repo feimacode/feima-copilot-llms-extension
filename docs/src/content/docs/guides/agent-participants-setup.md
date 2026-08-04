@@ -60,35 +60,9 @@ All three default to `""` (auto-discover via `PATH`). If the binary can't be fou
 
 > Could not find the `<name>` binary. Set the binary path in VS Code settings or make sure `<name>` is on your PATH.
 
-## Configuring MCP servers
+## Configuring MCP servers and tools
 
-`@claude`, `@codex`, and `@copilot-cli` all pick up MCP servers directly from VS Code's own native MCP config — the same `mcp.json` files VS Code's built-in MCP support already reads. No extension-specific setting is needed:
-
-- **User profile** — VS Code's own per-profile `mcp.json` (edit it via the **MCP: Open User Configuration** command).
-- **Per-workspace** — `.vscode/mcp.json` in each workspace folder.
-
-Each uses VS Code's own schema, keyed by server name under `servers`:
-
-```json
-{
-  "servers": {
-    "my-server": {
-      "command": "npx",
-      "args": ["-y", "@my-org/my-mcp-server"],
-      "env": { "MY_TOKEN": "..." }
-    }
-  }
-}
-```
-
-`command`/`args`/`env` start a local server over stdio; use `url` instead for a remote/HTTP MCP server. Workspace-folder servers take precedence over user-profile servers with the same name.
-
-## Excluding tools from the dynamic-tool bridge
-
-`@codex` and `@copilot-cli` build their dynamic-tool bridge from every tool registered in `vscode.lm.tools` (`@claude` doesn't use this bridge). Some of those shouldn't be exposed — MCP-backed tools (already handled natively per above), a few Copilot Chat manifest-only tools with no runtime implementation, and internal agent-loop control signals from other agent SDKs. Control this via:
-
-- `feima.agents.tools.excludePatterns` — shared default for both participants; an array of tool-name patterns (each may contain one `*` wildcard), the shipped default already covers the cases above.
-- `feima.agents.codex.tools.excludePatterns` / `feima.agents.copilot.tools.excludePatterns` — per-participant override. Leave unset to use the shared list; set to an array (including `[]`) to replace it for just that participant.
+`@claude`, `@codex`, and `@copilot-cli` all pick up MCP servers directly from VS Code's own native MCP config — the same `mcp.json` files VS Code's built-in MCP support already reads — and also expose VS Code's built-in and extension-contributed tools through a dynamic-tool bridge. See [MCP Servers & Tools for Agent Participants](/guides/agent-mcp-tools) for the full picture: how MCP passthrough is gated per participant, how to enable/restrict the dynamic-tool bridge, and which setup fits your preferences (CLI-native MCP management vs. everything in VS Code's `mcp.json`).
 
 ## Changing the default permission tier
 
@@ -114,4 +88,5 @@ Run **"Feima: Show Account"** from the Command Palette. The account view include
 
 ## Next steps
 
+- [MCP Servers & Tools for Agent Participants](/guides/agent-mcp-tools) — passing down `mcp.json`, the dynamic-tool bridge, and tool exclusion
 - [Agent Proxy](/guides/agent-proxy) — how proxy-mode routing works, and how to use it from outside VS Code

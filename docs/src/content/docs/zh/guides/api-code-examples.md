@@ -3,8 +3,6 @@ title: 代码示例
 description: 在多种编程语言中使用 Feima API 的示例代码
 ---
 
-# 代码示例
-
 本页面提供了在各种编程语言和框架中使用 Feima API 的示例代码。
 
 ## 目录

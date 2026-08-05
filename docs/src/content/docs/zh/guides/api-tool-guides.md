@@ -3,8 +3,6 @@ title: 工具指南
 description: 使用支持的 AI 编程工具配置 Feima API 的设置说明
 ---
 
-# 工具指南
-
 Feima API 密钥可与多种 AI 编程工具配合使用。本页面提供每个支持工具的设置说明。
 
 ## 目录

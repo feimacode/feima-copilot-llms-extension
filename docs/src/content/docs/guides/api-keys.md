@@ -27,8 +27,6 @@ head:
       }
 ---
 
-# API Keys
-
 API keys allow you to integrate Feima's AI coding assistant with your favorite tools and workflows. This guide covers creating API keys, authentication, and using them with supported tools.
 
 ## What Are API Keys?

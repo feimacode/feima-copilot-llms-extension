@@ -37,8 +37,6 @@ head:
       }
 ---
 
-# Quick Start Guide
-
 This guide will help you get Feima Copilot running in just a few minutes.
 
 ## Prerequisites

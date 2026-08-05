@@ -28,8 +28,6 @@ head:
       }
 ---
 
-# Configuration Reference
-
 Complete reference for all Feima Copilot configuration options.
 
 ## Settings Schema

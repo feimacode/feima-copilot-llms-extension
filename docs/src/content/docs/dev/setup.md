@@ -27,8 +27,6 @@ head:
       }
 ---
 
-# Development Setup
-
 This guide helps you set up a development environment for contributing to Feima Copilot.
 
 ## Prerequisites

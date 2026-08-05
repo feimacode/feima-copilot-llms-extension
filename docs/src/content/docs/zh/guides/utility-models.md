@@ -20,8 +20,6 @@ head:
       }
 ---
 
-# 工具模型配置
-
 当你使用飞码扣的模型（或任何 BYOK 模型）作为 GitHub Copilot 的主代理模型时，可能会遇到以下错误：
 
 > No utility model is configured for 'copilot-utility-small' while the selected main agent model is BYOK.

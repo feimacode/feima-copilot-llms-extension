@@ -27,8 +27,6 @@ head:
       }
 ---
 
-# Testing Guide
-
 This guide covers how to write and run tests for Feima Copilot.
 
 ## Testing Framework

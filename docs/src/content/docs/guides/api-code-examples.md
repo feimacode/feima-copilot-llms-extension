@@ -27,8 +27,6 @@ head:
       }
 ---
 
-# Code Examples
-
 This page provides sample code for using the Feima API in various programming languages and frameworks.
 
 ## Table of Contents

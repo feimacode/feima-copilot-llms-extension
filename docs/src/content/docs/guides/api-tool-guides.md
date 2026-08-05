@@ -27,8 +27,6 @@ head:
       }
 ---
 
-# Tool Guides
-
 Feima API keys work with a wide range of AI coding tools. This page provides setup instructions for each supported tool.
 
 ## Table of Contents

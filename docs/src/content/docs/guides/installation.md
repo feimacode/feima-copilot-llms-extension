@@ -42,8 +42,6 @@ head:
       }
 ---
 
-# Installation Guide
-
 This guide covers all the installation options for Feima Copilot.
 
 ## Requirements

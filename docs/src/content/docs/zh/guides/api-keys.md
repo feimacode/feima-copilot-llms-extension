@@ -3,8 +3,6 @@ title: API 密钥
 description: 创建和使用 API 密钥，将 Feima 与您喜爱的工具集成
 ---
 
-# API 密钥
-
 API 密钥允许您将 Feima 的 AI 编程助手与您喜爱的工具和工作流集成。本指南涵盖创建 API 密钥、身份验证以及在支持的工具中使用它们。
 
 ## 什么是 API 密钥？

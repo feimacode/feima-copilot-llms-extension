@@ -3,8 +3,6 @@ title: API Reference
 description: Complete API reference for Feima's OpenAI-compatible endpoints
 ---
 
-# API Reference
-
 This is the complete API reference for Feima's OpenAI-compatible API endpoints.
 
 ## Base URL

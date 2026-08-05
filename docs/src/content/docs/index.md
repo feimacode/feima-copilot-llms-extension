@@ -21,8 +21,6 @@ head:
       }
 ---
 
-# Welcome to Feima Copilot
-
 **More models. Native agent subscriptions. A local LLM proxy for everything else.**
 
 Feima Copilot is a VS Code extension built around three things: more models for Copilot Chat, native `@claude`/`@codex`/`@copilot-cli` agent participants that run on your own Claude Code/Codex/Copilot CLI subscription, and a local LLM proxy that lets any OpenAI- or Anthropic-compatible tool run on your Copilot or BYOK models.

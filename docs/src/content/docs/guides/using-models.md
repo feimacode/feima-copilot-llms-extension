@@ -27,8 +27,6 @@ head:
       }
 ---
 
-# Using Models
-
 Feima Copilot provides access to multiple AI models from diverse providers to suit different tasks and budgets.
 
 ## Available Models

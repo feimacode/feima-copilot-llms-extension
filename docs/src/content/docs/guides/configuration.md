@@ -27,8 +27,6 @@ head:
       }
 ---
 
-# Configuration Guide
-
 Feima Copilot offers various configuration options to customize your experience.
 
 ## Settings Location

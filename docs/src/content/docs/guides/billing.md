@@ -27,8 +27,6 @@ head:
       }
 ---
 
-# Billing & Pricing
-
 Feima uses a weighted request-based billing model that considers both the AI model you use and the context size of your requests. This fair and transparent system ensures you pay for what you use.
 
 > ⏰ **IMPORTANT: Promotional Credits Expire After 30 Days**

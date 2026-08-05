@@ -27,8 +27,6 @@ head:
       }
 ---
 
-# Authentication Guide
-
 Feima Copilot uses OAuth2 authentication to secure your account and manage API access.
 
 ## How OAuth2 Authentication Works

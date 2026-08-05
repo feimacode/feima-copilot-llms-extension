@@ -19,8 +19,6 @@ head:
       }
 ---
 
-# Utility Model Configuration
-
 When you use Feima's models (or any BYOK — Bring Your Own Key — models) as your main agent model in GitHub Copilot, you may encounter this error:
 
 > No utility model is configured for 'copilot-utility-small' while the selected main agent model is BYOK.

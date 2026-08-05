@@ -28,8 +28,6 @@ head:
       }
 ---
 
-# API Reference
-
 Complete API reference for Feima Copilot extension.
 
 ## Extension Commands

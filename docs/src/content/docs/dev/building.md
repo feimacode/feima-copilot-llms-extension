@@ -27,8 +27,6 @@ head:
       }
 ---
 
-# Building Guide
-
 This guide covers how to build and package Feima Copilot for distribution.
 
 ## Build Overview

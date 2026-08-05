@@ -1,9 +1,6 @@
 ---
 title: MCP Servers & Tools for Agent Participants
 description: Control which MCP servers and VS Code tools are shared with the @claude, @codex, and @copilot-cli agent participants
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
 head:
   - tag: script
     attrs:

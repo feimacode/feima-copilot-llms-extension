@@ -1,9 +1,6 @@
 ---
 title: Agent Proxy
 description: How Feima Copilot routes Claude Code, Codex, and Copilot CLI through your Copilot or BYOK models
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
 head:
   - tag: script
     attrs:

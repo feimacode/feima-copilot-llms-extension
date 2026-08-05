@@ -1,6 +1,6 @@
 # 飞码扣(Feima Copilot)
 
-**一键接入 GitHub Copilot 到中国顶级大模型支持：通义千问、DeepSeek、智谱 GLM、MiniMax、月之暗面等**
+**为 Copilot Chat 提供更多模型，用你自己的 Claude/Codex/Copilot CLI 订阅原生驱动智能体，再加一个服务任意工具的本地代理**
 
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -13,6 +13,7 @@
 - 💰 **灵活计费** - 按需付费，无订阅压力
 - 🌐 **中文优化** - 完整中文界面和文档
 - 🧑‍💻 **智能体参与者（全新）** - 通过 `@claude`、`@codex`、`@copilot-cli` 在聊天中原生驱动真正的 Claude Code、Codex 和 Copilot CLI 智能体
+- 🔌 **本地 LLM 代理** - 让任意兼容 OpenAI 或 Anthropic 的工具（甚至在 VS Code 之外）都能使用你的 Copilot 或 BYOK 模型
 
 ## � 获取免费额度
 
@@ -132,6 +133,7 @@ Claude: 我先看一下这个函数……
 
 - **三种权限等级**（按次生效）—— `/ask`（逐项确认）、`/acceptEdits`（自动批准文件编辑，命令仍需确认）、`/fullAuto`（完全自动）—— 也可为每个参与者设置持久默认值。
 - **自带模型** —— 通过本地、仅限回环地址的智能体代理，将任意参与者指向飞码模型，无需单独的 Anthropic/OpenAI API key。
+- **在 VS Code 之外也能用** —— 同样的本地代理还能驱动独立的 `claude`/`codex` CLI（或任何兼容 OpenAI/Anthropic 的工具）在普通终端中运行，不只是这些聊天参与者。详见 [LLM 代理指南](https://docs.feimacode.com/zh/guides/llm-proxy/)。
 - **MCP 服务器** —— 通过设置为 `@claude` 和 `@codex` 接入你自己的 MCP 工具。
 - **你的 CLI，你的登录态** —— 原生模式使用该 CLI 自己的订阅和登录态，就像在终端里使用一样；扩展本身不会接触你的 Anthropic/OpenAI 凭据。
 

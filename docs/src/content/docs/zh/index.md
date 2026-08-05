@@ -1,9 +1,6 @@
 ---
 title: 欢迎使用飞码扣
-description: 加速创意落地 - GitHub Copilot Chat 的中国 AI 模型支持
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">安装飞码扣扩展</a>，为 GitHub Copilot 增加中国 AI 模型支持
+description: 为 Copilot Chat 提供更多模型，原生驱动你自己的 Claude/Codex/Copilot CLI 订阅，还有本地 LLM 代理服务任意工具
 head:
   - tag: script
     attrs:
@@ -14,14 +11,14 @@ head:
         "@type": "WebSite",
         "name": "飞码扣文档",
         "url": "https://docs.feimacode.com/zh",
-        "description": "为 GitHub Copilot 提供中国 AI 模型支持的 VS Code 扩展文档",
+        "description": "为 Copilot Chat 提供更多模型、原生 Claude/Codex/Copilot CLI 智能体订阅与本地 LLM 代理的 VS Code 扩展",
         "inLanguage": ["zh-CN", "en"]
       }
 ---
 
-**加速创意落地 - Accelerating intent into execution**
+**为 Copilot Chat 提供更多模型，原生驱动你自己的智能体订阅，再加一个服务任意工具的本地代理**
 
-飞码扣是一个 VS Code 扩展，为 GitHub Copilot Chat 提供中国 AI 模型支持。
+飞码扣是一个围绕三件事打造的 VS Code 扩展：为 Copilot Chat 提供更多模型；提供原生的 `@claude`、`@codex`、`@copilot-cli` 智能体参与者，在你自己的 Claude Code/Codex/Copilot CLI 订阅上运行；以及一个本地 LLM 代理，让任意兼容 OpenAI 或 Anthropic 的工具都能运行在你的 Copilot 或 BYOK 模型之上。
 
 ## 什么是飞码扣？
 
@@ -33,6 +30,7 @@ head:
 - 🔒 **安全可靠**：OAuth2 认证，代码不离开 VS Code
 - 🧠 **深度思考**：支持思维链推理，复杂问题迎刃而解
 - 🤖 **智能体参与者**：通过 `@claude`、`@codex`、`@copilot-cli` 在 VS Code 聊天中直接驱动真正的 Claude Code、Codex 和 Copilot CLI 智能体
+- 🔌 **本地 LLM 代理**：让任意兼容 OpenAI 或 Anthropic 的工具（甚至在 VS Code 之外）都能使用你的 Copilot 或 BYOK 模型
 
 ## 快速开始
 
@@ -93,6 +91,8 @@ head:
 - 每一步操作都可以设为需要审批、只自动批准编辑，或完全自动运行，可按次覆盖或设为默认。
 
 👉 [智能体参与者概览](/zh/guides/agent-participants) —— 完整指南，包含帮你选择合适参与者和模式的场景对照表。
+
+👉 想在这三个参与者之外使用同样的本地代理？参见 [LLM 代理](/zh/guides/llm-proxy) 了解如何让任意兼容 OpenAI 或 Anthropic 的工具运行在你的 Copilot 或 BYOK 模型之上。
 
 ## 开发状态
 

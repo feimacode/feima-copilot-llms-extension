@@ -1,7 +1,7 @@
 {
 	"extension.name": "copilot-more-llms",
 	"extension.displayName": "Feima Copilot Models",
-	"extension.description": "Feima Copilot — add DeepSeek, Qwen, GLM, MiniMax, Kimi K3, Mimo and more top LLMs to GitHub Copilot Chat in VS Code. Pay-as-you-go, OAuth sign-in, chain-of-thought and vision support.",
+	"extension.description": "Feima Copilot — more models for GitHub Copilot Chat (DeepSeek, Qwen, GLM, MiniMax, Kimi), native Claude Code/Codex/Copilot CLI agents on your own subscription, and a local proxy to power any tool with Copilot or BYOK models.",
 	
 	"error.notAuthenticated": "Not authenticated",
 	"error.invalidRequest.noMessages": "Invalid request: no messages.",

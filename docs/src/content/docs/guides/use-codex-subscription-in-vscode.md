@@ -1,9 +1,6 @@
 ---
 title: I Have a Codex Subscription. How Can I Use It in VS Code?
 description: Use your existing ChatGPT/Codex subscription with the real Codex agent inside VS Code Copilot Chat — no extra cost, no extra API key.
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
 head:
   - tag: script
     attrs:

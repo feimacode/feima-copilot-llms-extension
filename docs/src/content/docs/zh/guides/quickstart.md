@@ -1,9 +1,6 @@
 ---
 title: 快速入门
 description: 几分钟内开始使用飞码扣
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">安装飞码扣扩展</a>，为 GitHub Copilot 增加中国 AI 模型支持
 head:
   - tag: script
     attrs:

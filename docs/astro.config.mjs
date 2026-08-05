@@ -414,8 +414,14 @@ export default defineConfig({
     starlight({
       title: isZh ? '飞码扣文档' : 'Feima Copilot Docs',
       description: isZh
-        ? '为 GitHub Copilot 提供中国 AI 模型支持的 VS Code 扩展文档'
-        : 'VS Code extension for GitHub Copilot with China AI model support',
+        ? '为 GitHub Copilot 提供更多模型、原生 Claude/Codex/Copilot CLI 智能体订阅与本地 LLM 代理的 VS Code 扩展文档'
+        : 'VS Code extension docs: more models for Copilot Chat, native Claude/Codex/Copilot CLI agent subscriptions, and a local LLM proxy',
+
+      // Site-wide banner is implemented via a custom component override (./components/Banner.astro)
+      // since Starlight only supports `banner` as per-page frontmatter, not a top-level config option.
+      components: {
+        Banner: './components/Banner.astro',
+      },
 
       locales,
       defaultLocale: 'root',

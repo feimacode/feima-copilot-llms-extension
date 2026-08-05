@@ -1,9 +1,6 @@
 ---
 title: Feima Copilot Documentation
-description: Accelerating intent into execution - Alternative AI models for GitHub Copilot Chat
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
+description: More models for Copilot Chat, native Claude/Codex/Copilot CLI agent subscriptions, and a local LLM proxy for any tool
 head:
   - tag: script
     attrs:
@@ -14,7 +11,7 @@ head:
         "@type": "WebSite",
         "name": "Feima Copilot Docs",
         "url": "https://docs.feimacode.com",
-        "description": "VS Code extension for GitHub Copilot with open-weight AI model support",
+        "description": "VS Code extension: more models for Copilot Chat, native Claude/Codex/Copilot CLI agent subscriptions, and a local LLM proxy",
         "inLanguage": ["en", "zh-CN"],
         "potentialAction": {
           "@type": "SearchAction",
@@ -26,9 +23,9 @@ head:
 
 # Welcome to Feima Copilot
 
-**Accelerating intent into execution**
+**More models. Native agent subscriptions. A local LLM proxy for everything else.**
 
-Feima Copilot is a VS Code extension that enhances GitHub Copilot Chat with alternative AI model support — cost-effective alternatives with diverse model selection.
+Feima Copilot is a VS Code extension built around three things: more models for Copilot Chat, native `@claude`/`@codex`/`@copilot-cli` agent participants that run on your own Claude Code/Codex/Copilot CLI subscription, and a local LLM proxy that lets any OpenAI- or Anthropic-compatible tool run on your Copilot or BYOK models.
 
 ## What is Feima Copilot?
 
@@ -40,6 +37,7 @@ Feima Copilot is a VS Code extension that enhances GitHub Copilot Chat with alte
 - 🔒 **Secure**: OAuth2 authentication with code that never leaves VS Code
 - 🧠 **Thinking Models**: Support for chain-of-thought reasoning for complex problems
 - 🤖 **Agent Participants**: Drive the real Claude Code, Codex, and Copilot CLI agents right inside VS Code chat with `@claude`, `@codex`, `@copilot-cli`
+- 🔌 **Local LLM Proxy**: Point any OpenAI- or Anthropic-compatible tool — even outside VS Code — at your Copilot or BYOK models
 
 ## Quick Start
 
@@ -99,6 +97,8 @@ Beyond model access, Feima Copilot lets you drive the *real* Claude Code, Codex,
 - Every action can require approval, auto-approve edits only, or run hands-off, per turn or by default.
 
 👉 [Agent Participants Overview](/guides/agent-participants) — full guide, including a scenario table to help you pick the right participant and mode for your situation.
+
+👉 Want the same local proxy outside these three participants? See [LLM Proxy](/guides/llm-proxy) for driving any OpenAI- or Anthropic-compatible tool off your Copilot or BYOK models.
 
 ## Development Status
 

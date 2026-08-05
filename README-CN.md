@@ -1,8 +1,8 @@
 # 飞码扣 (Feima Copilot)
 
-> **加速创意落地** - Accelerating intent into execution
+> **为 Copilot Chat 提供更多模型，用你自己的 Claude Code / Codex / Copilot CLI 订阅原生驱动智能体，再加一个服务于任意工具的本地代理**
 
-为 GitHub Copilot 提供中国 AI 模型支持的 VS Code 扩展
+一个让 GitHub Copilot 化身模型提供商（DeepSeek、通义千问、智谱 GLM 等）、在聊天中原生驱动你自己的 Claude Code/Codex/Copilot CLI 订阅、并提供本地 LLM 代理服务任意 OpenAI/Anthropic 兼容工具的 VS Code 扩展
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
@@ -16,11 +16,12 @@
 - 📦 [安装指南](https://ivenxu.github.io/feima-copilot-llms-extension/guides/installation/) | [安装指南（中文）](https://docs.feimacode.com/zh/guides/installation/)
 - 🔧 [配置选项](https://ivenxu.github.io/feima-copilot-llms-extension/guides/configuration/) | [配置选项（中文）](https://docs.feimacode.com/zh/guides/configuration/)
 - 🤖 [智能体参与者](https://ivenxu.github.io/feima-copilot-llms-extension/guides/agent-participants/) | [智能体参与者（中文）](https://docs.feimacode.com/zh/guides/agent-participants/)
+- 🔌 [本地 LLM 代理](https://ivenxu.github.io/feima-copilot-llms-extension/guides/llm-proxy/) | [本地 LLM 代理（中文）](https://docs.feimacode.com/zh/guides/llm-proxy/)
 - 💻 [开发指南](https://ivenxu.github.io/feima-copilot-llms-extension/dev/setup/) | [开发指南（中文）](https://docs.feimacode.com/zh/dev/setup/)
 
 ## 简介
 
-飞码扣是 VS Code 的扩展插件，为 GitHub Copilot Chat 添加中国 AI 模型支持。使用 DeepSeek、通义千问、智谱GLM、MiniMax、Moonshot Kimi 等国产顶级大模型，更懂中文，更适合中国开发者。
+飞码扣是一个围绕三件事打造的 VS Code 扩展：为 Copilot Chat 提供**更多模型**（DeepSeek、通义千问、智谱 GLM、MiniMax、Moonshot Kimi 等国产顶级大模型，更懂中文，更适合中国开发者）；提供**原生智能体参与者**，在聊天中直接驱动你自己的 Claude Code/Codex/Copilot CLI 订阅；以及一个**本地 LLM 代理**，让任意兼容 OpenAI 或 Anthropic 的工具都能运行在你的 Copilot 或 BYOK 模型之上。
 
 ### 核心特点
 
@@ -30,6 +31,7 @@
 - 🔒 **安全可靠**: OAuth2 认证，代码不离开 VS Code
 - 🧠 **深度思考**: 支持思维链推理，复杂问题迎刃而解
 - 🤖 **智能体参与者（全新）**: 通过 `@claude`、`@codex`、`@copilot-cli` 驱动真正的 Claude Code、Codex 和 Copilot CLI 智能体 —— 详见下文
+- 🔌 **本地 LLM 代理**: 让任意兼容 OpenAI 或 Anthropic 的工具（甚至在 VS Code 之外）都能使用你的 Copilot 或 BYOK 模型
 
 ### 为什么选择飞码扣？
 

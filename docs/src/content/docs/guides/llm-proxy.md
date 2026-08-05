@@ -1,9 +1,6 @@
 ---
 title: LLM Proxy
 description: Use Feima's local OpenAI- and Anthropic-compatible proxy to drive any external tool — including the standalone Codex and Claude Code CLIs — with your Copilot or BYOK models
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
 head:
   - tag: script
     attrs:

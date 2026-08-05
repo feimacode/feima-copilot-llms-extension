@@ -1,8 +1,8 @@
 # Feima Copilot
 
-> **Accelerating Intent into Execution**
+> **More models for Copilot Chat. Your own Claude Code, Codex & Copilot CLI subscriptions, natively in VS Code. A local proxy for any tool.**
 
-A VS Code extension that adds alternative AI model support to GitHub Copilot Chat
+A VS Code extension that turns GitHub Copilot into a model provider (DeepSeek, Qwen, GLM, and more), a home for your own Claude Code/Codex/Copilot CLI subscriptions inside chat, and a local LLM proxy for any OpenAI- or Anthropic-compatible tool
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
@@ -16,11 +16,12 @@ A VS Code extension that adds alternative AI model support to GitHub Copilot Cha
 - 📦 [Installation Guide](https://docs.feimacode.com/guides/installation/) | [安装指南](https://docs.feimacode.com/zh/guides/installation/)
 - 🔧 [Configuration Options](https://docs.feimacode.com/guides/configuration/) | [配置选项](https://docs.feimacode.com/zh/guides/configuration/)
 - 🤖 [Agent Participants](https://docs.feimacode.com/guides/agent-participants/) | [智能体参与者](https://docs.feimacode.com/zh/guides/agent-participants/)
+- 🔌 [LLM Proxy](https://docs.feimacode.com/guides/llm-proxy/) | [本地代理](https://docs.feimacode.com/zh/guides/llm-proxy/)
 - 💻 [Development Guide](https://docs.feimacode.com/dev/setup/) | [开发指南](https://docs.feimacode.com/zh/dev/setup/)
 
 ## Overview
 
-Feima Copilot is a VS Code extension that adds alternative AI model support to GitHub Copilot Chat. Access top-tier models like DeepSeek, Qwen, and more — cost-effective alternatives with diverse model selection and benchmark-parity performance.
+Feima Copilot is a VS Code extension built around three things: **more models** for Copilot Chat (DeepSeek, Qwen, GLM, and more — cost-effective alternatives with diverse model selection and benchmark-parity performance), **native agent participants** that drive your own Claude Code/Codex/Copilot CLI subscriptions right inside chat, and a **local LLM proxy** that lets any OpenAI- or Anthropic-compatible tool run on your Copilot or BYOK models.
 
 ### Key Features
 
@@ -30,6 +31,7 @@ Feima Copilot is a VS Code extension that adds alternative AI model support to G
 - 🔒 **Secure & Reliable**: OAuth2 authentication, code never leaves VS Code
 - 🧠 **Chain-of-Thought**: Full support for reasoning models, solving complex problems effortlessly
 - 🤖 **Agent Participants (NEW)**: Drive the real Claude Code, Codex, and Copilot CLI agents with `@claude`, `@codex`, `@copilot-cli` — see below
+- 🔌 **Local LLM Proxy**: Power any OpenAI- or Anthropic-compatible tool — even outside VS Code — with your Copilot or BYOK models
 
 ### Why Choose Feima Copilot?
 

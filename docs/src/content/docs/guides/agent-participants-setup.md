@@ -1,9 +1,6 @@
 ---
 title: Agent Participants Setup & Troubleshooting
 description: Install and configure the Claude Code, Codex, and Copilot CLI agent participants
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
 head:
   - tag: script
     attrs:

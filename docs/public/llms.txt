@@ -1,6 +1,6 @@
 # Feima Copilot Documentation
 
-> Technical documentation for the Feima Copilot VS Code extension. Covers installation, authentication, model configuration, API tools, billing, and VS Code Copilot integration guides. Bilingual (English + 中文), built with Astro Starlight.
+> Technical documentation for the Feima Copilot VS Code extension — a model provider for GitHub Copilot Chat, a home for native Claude Code/Codex/Copilot CLI agent subscriptions, and a local LLM proxy for any OpenAI- or Anthropic-compatible tool. Bilingual (English + 中文), built with Astro Starlight.
 
 ## English Documentation
 
@@ -10,6 +10,13 @@
 - [Authentication](https://docs.feimacode.com/guides/authentication/): OAuth2 sign-in flow and account management
 - [API Keys](https://docs.feimacode.com/guides/api-keys/): Using Feima as a standalone API provider
 - [Using Models](https://docs.feimacode.com/guides/using-models/): Switching between AI models in Copilot Chat
+- [Agent Participants](https://docs.feimacode.com/guides/agent-participants/): Use the real Claude Code, Codex, and Copilot CLI agents from inside VS Code chat
+- [Agent Participants Setup](https://docs.feimacode.com/guides/agent-participants-setup/): Install and configure the Claude Code, Codex, and Copilot CLI agent participants
+- [MCP Servers & Tools](https://docs.feimacode.com/guides/agent-mcp-tools/): Control which MCP servers and VS Code tools are shared with the agent participants
+- [Agent Proxy](https://docs.feimacode.com/guides/agent-proxy/): How Feima Copilot routes Claude Code, Codex, and Copilot CLI through your Copilot or BYOK models
+- [LLM Proxy](https://docs.feimacode.com/guides/llm-proxy/): Use Feima's local OpenAI- and Anthropic-compatible proxy to drive any external tool with your Copilot or BYOK models
+- [I Have a Claude Code Subscription](https://docs.feimacode.com/guides/use-claude-code-subscription-in-vscode/): Use your existing Claude Pro/Max subscription with the real Claude Code agent inside VS Code
+- [I Have a Codex Subscription](https://docs.feimacode.com/guides/use-codex-subscription-in-vscode/): Use your existing ChatGPT/Codex subscription with the real Codex agent inside VS Code
 - [Configuration](https://docs.feimacode.com/guides/configuration/): Extension settings reference
 - [Billing](https://docs.feimacode.com/guides/billing/): Plans, credits, pay-per-use pricing
 - [FAQ](https://docs.feimacode.com/guides/faq/): Frequently asked questions

@@ -1,9 +1,6 @@
 ---
 title: I Have a Claude Code Subscription. How Can I Use It in VS Code?
 description: Use your existing Claude Pro/Max subscription with the real Claude Code agent inside VS Code Copilot Chat — no extra cost, no extra API key.
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
 head:
   - tag: script
     attrs:

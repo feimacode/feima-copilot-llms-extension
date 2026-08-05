@@ -1,9 +1,6 @@
 ---
 title: Quick Start
 description: Get up and running with Feima Copilot in minutes
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
 head:
   - tag: script
     attrs:

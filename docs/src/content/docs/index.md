@@ -58,7 +58,8 @@ Feima Copilot is a VS Code extension built around three things: more models for 
 
 | Model | Provider | Context | Features |
 |-------|----------|---------|----------|
-| Qwen3 Max | Alibaba | 256K | Thinking chain, tool calls |
+| Qwen3.8 Max | Alibaba | ~1M | 983K deep thinking chain (Pro tier) |
+| Qwen3.7 Max | Alibaba | 256K | Thinking chain, tool calls |
 | Qwen3 Coder Plus | Alibaba | 1M | Code specialized, 1M context |
 | Qwen3.5 Plus | Alibaba | 1M | 80K thinking chain |
 | DeepSeek V3.2 | DeepSeek | 128K | Thinking, sparse attention |

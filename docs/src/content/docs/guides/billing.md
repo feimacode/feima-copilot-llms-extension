@@ -88,6 +88,14 @@ Different AI models have different costs based on their capabilities and resourc
 - **Characteristics**: State-of-the-art performance, maximum capabilities
 - **Use When**: Critical tasks requiring the highest quality output
 
+### Flagship Models (3.0x)
+
+**Examples**: Qwen3.8 Max
+
+- **Best For**: Hardest problems, flagship reasoning, architecture design
+- **Characteristics**: ~1M context with 983K deep thinking chain, strongest reasoning
+- **Use When**: Only the highest-quality output will do
+
 ## Context Multipliers
 
 Larger context windows require more computational resources:

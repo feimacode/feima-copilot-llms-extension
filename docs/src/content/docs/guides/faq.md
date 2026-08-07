@@ -47,7 +47,7 @@ head:
             "name": "Which models are supported?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Feima supports 10+ top open-weight LLMs including Qwen 3.7, DeepSeek V4, GLM-5, Kimi K2.7, MiniMax M3, Mimo V2.5, Kimi K3, and HY3 from leading providers like Alibaba, DeepSeek, Zhipu AI, Moonshot, MiniMax, Xiaomi, and Tencent."
+              "text": "Feima supports 10+ top open-weight LLMs including Qwen 3.8, DeepSeek V4, GLM-5, Kimi K2.7, MiniMax M3, Mimo V2.5, Kimi K3, and HY3 from leading providers like Alibaba, DeepSeek, Zhipu AI, Moonshot, MiniMax, Xiaomi, and Tencent."
             }
           },
           {
@@ -199,6 +199,7 @@ All chat models support tool call functionality, including:
 **A: Yes, multiple models support thinking.**
 
 Models that support thinking:
+- Qwen3.8 Max (983K thinking tokens)
 - Qwen3.7 Max (983K thinking tokens)
 - Qwen3.6 Plus (80K thinking tokens)
 - Qwen3.7 Plus (983K thinking tokens)
@@ -240,6 +241,7 @@ Feima Copilot provides:
 **A: Yes, supports code review.**
 
 Recommended models:
+- **Qwen3.8 Max**: Flagship deep analysis, 983K thinking chain
 - **Qwen3.7 Max**: Deep analysis, 983K thinking chain
 - **GLM 5.2**: Advanced reasoning, 1M context
 

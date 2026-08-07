@@ -1,9 +1,6 @@
 ---
 title: Billing & Pricing
 description: Understand how Feima charges for AI requests and optimize your usage
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
 head:
   - tag: script
     attrs:
@@ -29,8 +26,6 @@ head:
         }
       }
 ---
-
-# Billing & Pricing
 
 Feima uses a weighted request-based billing model that considers both the AI model you use and the context size of your requests. This fair and transparent system ensures you pay for what you use.
 

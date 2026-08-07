@@ -3,8 +3,6 @@ title: API 参考
 description: Feima OpenAI 兼容端点的完整 API 参考
 ---
 
-# API 参考
-
 这是 Feima OpenAI 兼容 API 端点的完整 API 参考。
 
 ## 基础 URL

@@ -13,8 +13,8 @@ const REGION_CONFIGS = {
 	cn: {
 		extensionId: 'copilot-cn-models',
         displayName: '飞码扣(Feimacode)',
-		description: '一键接入 GitHub Copilot 国产顶级大模型：DeepSeek、通义千问 Qwen、智谱 GLM、MiniMax、月之暗面 Kimi、小米 Mimo，按次计费、中文优化、思维链与视觉支持。',
-		keywords: ['copilot', 'ai', 'deepseek', 'qwen', '通义千问', 'glm', '智谱', 'minimax', 'kimi', '月之暗面', 'mimo', '小米', '中文', '国产模型'],
+		description: '飞码扣 —— 为 GitHub Copilot Chat 接入 DeepSeek、通义千问 Qwen、智谱 GLM、MiniMax、Kimi 等顶级大模型；用你自己的 Claude/Codex/Copilot CLI 订阅在 VS Code 中原生驱动智能体；还提供本地代理，让 Copilot/BYOK 模型驱动任意工具。',
+		keywords: ['copilot', 'ai', 'deepseek', 'qwen', '通义千问', 'glm', '智谱', 'minimax', 'kimi', '月之暗面', 'mimo', '小米', '中文', '国产模型', 'claude', 'codex', 'copilot cli', '订阅', '本地代理', 'model provider'],
 		categories: ['AI', 'LLM', 'Programming Agents'],
 		defaultAuthUrl: 'https://auth.feimacode.com',
 		defaultApiUrl: 'https://api.feimacode.com/v1',
@@ -27,8 +27,8 @@ const REGION_CONFIGS = {
 	global: {
 		extensionId: 'copilot-more-llms',
 		displayName: 'Feima Copilot Models',
-		description: 'Add DeepSeek, Qwen, GLM, MiniMax, Kimi, Mimo and more top LLMs to GitHub Copilot Chat in VS Code. Pay-as-you-go, OAuth sign-in, chain-of-thought and vision support.',
-		keywords: ['copilot', 'ai', 'llm', 'deepseek', 'qwen', 'glm', 'minimax', 'kimi', 'moonshot', 'mimo', 'language-model', 'coding-assistant'],
+		description: 'Feima Copilot — more models for GitHub Copilot Chat (DeepSeek, Qwen, GLM, MiniMax, Kimi), native Claude Code/Codex/Copilot CLI agents on your own subscription, and a local proxy to power any tool with Copilot or BYOK models.',
+		keywords: ['copilot', 'ai', 'llm', 'deepseek', 'qwen', 'glm', 'minimax', 'kimi', 'moonshot', 'mimo', 'language-model', 'coding-assistant', 'model provider', 'claude', 'codex', 'copilot cli', 'subscription', 'local proxy', 'llm proxy'],
 		categories: ['AI', 'Other'],
 		defaultAuthUrl: 'https://auth.feimacode.com',
 		defaultApiUrl: 'https://api.feimacode.com/v1',

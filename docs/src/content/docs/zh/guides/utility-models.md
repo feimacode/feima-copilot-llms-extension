@@ -1,9 +1,6 @@
 ---
 title: 工具模型配置
 description: 配置 BYOK 场景下的工具模型，避免飞码扣使用报错
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">安装飞码扣扩展</a>，为 GitHub Copilot 增加中国 AI 模型支持
 head:
   - tag: script
     attrs:
@@ -22,8 +19,6 @@ head:
         "inLanguage": "zh-CN"
       }
 ---
-
-# 工具模型配置
 
 当你使用飞码扣的模型（或任何 BYOK 模型）作为 GitHub Copilot 的主代理模型时，可能会遇到以下错误：
 

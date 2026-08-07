@@ -1,9 +1,6 @@
 ---
 title: Frequently Asked Questions
 description: Common questions about Feima Copilot answered
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
 head:
   - tag: script
     attrs:
@@ -51,6 +48,14 @@ head:
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "Feima supports 10+ top open-weight LLMs including Qwen 3.7, DeepSeek V4, GLM-5, Kimi K2.7, MiniMax M3, Mimo V2.5, Kimi K3, and HY3 from leading providers like Alibaba, DeepSeek, Zhipu AI, Moonshot, MiniMax, Xiaomi, and Tencent."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "I already have a Claude Code or Codex subscription — how do I use it in VS Code?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Install the Feima Copilot extension and the corresponding CLI (Claude Code or Codex), sign in to the CLI with your existing account, then chat with @claude or @codex in VS Code Copilot Chat and pick one of your subscription's models. The model list is read live from your login's entitlement, and requests are billed against your existing subscription — no extra cost."
             }
           }
         ]
@@ -237,6 +242,48 @@ Feima Copilot provides:
 Recommended models:
 - **Qwen3.7 Max**: Deep analysis, 983K thinking chain
 - **GLM 5.2**: Advanced reasoning, 1M context
+
+---
+
+## Agent Participants
+
+### Q: Which participant or mode should I use for my situation?
+
+**A: See the scenario table in the overview.**
+
+The [Agent Participants overview](/guides/agent-participants#is-this-for-me-common-scenarios) has a table matching common situations (existing Claude/Codex subscription, no subscription, wanting to use it outside VS Code, etc.) to the right participant and mode.
+
+---
+
+### Q: What's the difference between `@claude` and just picking a Claude model in Copilot Chat?
+
+**A: Different agent loop.**
+
+Picking a Claude model in the regular model picker still runs **Copilot's** agent loop with Claude answering the requests. Typing `@claude` instead runs the **real Claude Code CLI's** own agent loop — its own planning, tool use, and edit-review behavior — rendered inside VS Code's chat UI. Same applies to `@codex` versus picking a GPT/Codex model normally.
+
+---
+
+### Q: Do I need a paid Claude or OpenAI subscription to use `@claude` or `@codex`?
+
+**A: No — only if you want native mode.**
+
+You can use both participants in **proxy mode**, where the CLI's requests are answered by a Copilot or BYOK model you already have access to — no separate Anthropic or OpenAI subscription required. A subscription is only needed for **native mode**, where the CLI talks to Anthropic/OpenAI directly using its own login. See [Native vs. proxy routing](/guides/agent-participants#native-vs-proxy-routing).
+
+---
+
+### Q: I already have a Claude Code or Codex subscription — how do I use it in VS Code?
+
+**A: Install the CLI, sign in, then chat with `@claude` / `@codex` and pick one of your subscription's models.**
+
+The model list is read live from your login's entitlement, and requests are billed against your existing subscription — no extra cost. Follow the step-by-step guides: [Use a Claude Code Subscription in VS Code](/guides/use-claude-code-subscription-in-vscode) or [Use a Codex Subscription in VS Code](/guides/use-codex-subscription-in-vscode).
+
+---
+
+### Q: Can I use `@claude`, `@codex`, or `@copilot-cli` with my own API key instead of Copilot?
+
+**A: Yes, if it's registered as a BYOK model in VS Code.**
+
+Proxy mode routes through whatever model is selected in VS Code's chat model picker — that includes any BYOK model provider you've configured, not just Copilot. Select your BYOK model in the picker before starting the conversation with `@claude`, `@codex`, or `@copilot-cli`.
 
 ---
 

@@ -1,9 +1,6 @@
 ---
 title: Quick Start
 description: Get up and running with Feima Copilot in minutes
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
 head:
   - tag: script
     attrs:
@@ -39,8 +36,6 @@ head:
         ]
       }
 ---
-
-# Quick Start Guide
 
 This guide will help you get Feima Copilot running in just a few minutes.
 
@@ -118,6 +113,16 @@ Try this simple example to verify everything is working:
 2. Ask: "How do I create a REST API endpoint in Node.js with Express?"
 3. The AI should provide code and explanation
 
+## Optional: Try an Agent Participant
+
+Feima Copilot also adds three chat participants — `@claude`, `@codex`, `@copilot-cli` — that run the *real* Claude Code, Codex, or GitHub Copilot CLI agent inside VS Code chat, if you have the corresponding CLI installed:
+
+1. In the chat input, type `@claude` (or `@codex` / `@copilot-cli`) followed by a request, e.g. `@claude explain what this file does`
+2. Pick a model when prompted — the CLI's own model to use your existing subscription, or a Feima/Copilot model to route through those instead
+3. Watch the agent plan, read files, and propose edits inline
+
+See the [Agent Participants guide](/guides/agent-participants) for the full picture, including which mode fits your situation, and [Setup & Troubleshooting](/guides/agent-participants-setup) if a CLI isn't detected.
+
 ## Troubleshooting
 
 ### Browser doesn't open
@@ -145,6 +150,7 @@ Try this simple example to verify everything is working:
 - [Installation Guide](/guides/installation) - More detailed installation options
 - [Authentication Guide](/guides/authentication) - Learn about OAuth2 flow
 - [Configuration Guide](/guides/configuration) - Customize your experience
+- [Agent Participants](/guides/agent-participants) - Drive Claude Code, Codex, and Copilot CLI from chat
 - [Development Guide](/dev/setup) - Contribute to the project
 
 ## Need Help?

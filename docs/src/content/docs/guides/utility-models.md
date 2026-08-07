@@ -1,9 +1,6 @@
 ---
 title: Utility Model Configuration
 description: Configure utility models for BYOK setups to avoid errors with Feima Copilot
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
 head:
   - tag: script
     attrs:
@@ -21,8 +18,6 @@ head:
         }
       }
 ---
-
-# Utility Model Configuration
 
 When you use Feima's models (or any BYOK — Bring Your Own Key — models) as your main agent model in GitHub Copilot, you may encounter this error:
 

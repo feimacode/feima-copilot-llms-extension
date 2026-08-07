@@ -57,7 +57,33 @@ const sidebarBilingual = [
       { slug: 'guides/configuration' },
       { slug: 'guides/utility-models' },
       { slug: 'guides/billing' },
+      // EN-only for now — no zh/ mirror yet.
+      { slug: 'guides/llm-proxy' },
       { slug: 'guides/faq' },
+    ],
+  },
+  {
+    // EN-only for now — no zh/ mirror yet. Starlight's built-in i18n fallback
+    // shows the English content (with a "not yet translated" notice) when this
+    // slug is visited from the /zh/ locale, so it's safe to list here before a
+    // Chinese translation lands.
+    label: 'Agent Participants',
+    translations: { 'zh-CN': '智能体参与者' },
+    items: [
+      { slug: 'guides/agent-participants' },
+      {
+        label: 'Use a Claude Code Subscription',
+        translations: { 'zh-CN': '使用 Claude Code 订阅' },
+        slug: 'guides/use-claude-code-subscription-in-vscode',
+      },
+      {
+        label: 'Use a Codex Subscription',
+        translations: { 'zh-CN': '使用 Codex 订阅' },
+        slug: 'guides/use-codex-subscription-in-vscode',
+      },
+      { slug: 'guides/agent-participants-setup' },
+      { slug: 'guides/agent-mcp-tools' },
+      { slug: 'guides/agent-proxy' },
     ],
   },
   {
@@ -199,7 +225,19 @@ const sidebarEnOnly = [
       { label: 'Configuration', link: '/guides/configuration' },
       { label: 'Utility Model Config', link: '/guides/utility-models' },
       { label: 'Billing', link: '/guides/billing' },
+      { label: 'LLM Proxy', link: '/guides/llm-proxy' },
       { label: 'FAQ', link: '/guides/faq' },
+    ],
+  },
+  {
+    label: 'Agent Participants',
+    items: [
+      { label: 'Overview', link: '/guides/agent-participants' },
+      { label: 'Use a Claude Code Subscription', link: '/guides/use-claude-code-subscription-in-vscode' },
+      { label: 'Use a Codex Subscription', link: '/guides/use-codex-subscription-in-vscode' },
+      { label: 'Setup & Troubleshooting', link: '/guides/agent-participants-setup' },
+      { label: 'MCP Servers & Tools', link: '/guides/agent-mcp-tools' },
+      { label: 'Agent Proxy', link: '/guides/agent-proxy' },
     ],
   },
   {
@@ -368,18 +406,29 @@ export default defineConfig({
   build: {
     format: 'directory',
   },
+  devToolbar: {
+    enabled: false,
+  },
 
   integrations: [
     starlight({
       title: isZh ? '飞码扣文档' : 'Feima Copilot Docs',
       description: isZh
-        ? '为 GitHub Copilot 提供中国 AI 模型支持的 VS Code 扩展文档'
-        : 'VS Code extension for GitHub Copilot with China AI model support',
+        ? '为 GitHub Copilot 提供更多模型、原生 Claude/Codex/Copilot CLI 智能体订阅与本地 LLM 代理的 VS Code 扩展文档'
+        : 'VS Code extension docs: more models for Copilot Chat, native Claude/Codex/Copilot CLI agent subscriptions, and a local LLM proxy',
+
+      // Site-wide banner is implemented via a custom component override (./components/Banner.astro)
+      // since Starlight only supports `banner` as per-page frontmatter, not a top-level config option.
+      components: {
+        Banner: './components/Banner.astro',
+      },
 
       locales,
       defaultLocale: 'root',
 
       sidebar,
+
+      customCss: ['./styles/custom.css'],
 
       social: [
         {

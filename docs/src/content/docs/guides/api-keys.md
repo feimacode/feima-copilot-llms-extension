@@ -1,9 +1,6 @@
 ---
 title: API Keys
 description: Create and use API keys to integrate Feima with your favorite tools
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
 head:
   - tag: script
     attrs:
@@ -29,8 +26,6 @@ head:
         }
       }
 ---
-
-# API Keys
 
 API keys allow you to integrate Feima's AI coding assistant with your favorite tools and workflows. This guide covers creating API keys, authentication, and using them with supported tools.
 

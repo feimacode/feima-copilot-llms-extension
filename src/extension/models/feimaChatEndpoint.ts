@@ -4,6 +4,7 @@
  *  Pattern adapted from feima-code/src/platform/endpoint/node/feimaChatEndpoint.ts
  *--------------------------------------------------------------------------------------------*/
 
+import * as crypto from 'crypto';
 import * as vscode from 'vscode';
 import { ILogService } from '../platform/log/common/logService';
 import { FeimaAuthenticationService } from '../platform/authentication/vscode/feimaAuthenticationService';
@@ -742,6 +743,36 @@ export class FeimaChatEndpoint {
 	}
 
 	/**
+	 * Finalize accumulated tool-call deltas into the shape `StreamDelta.toolCalls`
+	 * expects. A tool call without a `name` can't be identified, so it's dropped
+	 * (loudly — a missing name means the upstream response is genuinely
+	 * malformed). A tool call with a `name` but no `id` gets a synthesized one
+	 * instead of being dropped — some backends are slow to assign one, and
+	 * silently discarding the whole call here means the model's intended action
+	 * (e.g. "let me rewrite this file...") never reaches the caller, ending the
+	 * turn as if the model had nothing left to do.
+	 */
+	private _finalizeToolCalls(
+		toolCallsMap: Map<number, { id: string; name: string; arguments: string }>,
+	): Array<{ id: string; name: string; arguments: string }> {
+		const completed: Array<{ id: string; name: string; arguments: string }> = [];
+		for (const call of toolCallsMap.values()) {
+			if (!call.name) {
+				this.log.warn(`[FeimaChatEndpoint] Dropping tool call with no name (id=${call.id || '(none)'}): ${call.arguments.slice(0, 200)}`);
+				continue;
+			}
+			if (!call.id) {
+				const syntheticId = `call_${crypto.randomUUID()}`;
+				this.log.warn(`[FeimaChatEndpoint] Tool call "${call.name}" had no id from the provider; synthesizing ${syntheticId}`);
+				completed.push({ ...call, id: syntheticId });
+				continue;
+			}
+			completed.push(call);
+		}
+		return completed;
+	}
+
+	/**
 	 * Parse SSE stream from response body.
 	 * Pattern from feima-code CopilotLanguageModelWrapper._parseSSEStream.
 	 */
@@ -798,9 +829,7 @@ export class FeimaChatEndpoint {
 							this.log.debug(`[FeimaChatEndpoint] Received [DONE] marker after ${chunkCount} chunks`);
 							// Emit accumulated tool calls when stream is done
 							if (toolCallsMap.size > 0) {
-								const completedCalls = Array.from(toolCallsMap.values()).filter(
-									call => call.id && call.name
-								);
+								const completedCalls = this._finalizeToolCalls(toolCallsMap);
 								if (completedCalls.length > 0) {
 									this.log.debug(`[FeimaChatEndpoint] Emitting ${completedCalls.length} tool calls at [DONE]`);
 									emitCount++;
@@ -893,10 +922,16 @@ export class FeimaChatEndpoint {
 									const existing = toolCallsMap.get(index);
 
 									if (existing) {
-										// Accumulate arguments
-										if (toolCall.function?.arguments) {
-											existing.arguments += toolCall.function.arguments;
-										}
+										// Most OpenAI-compatible streams only send `id`/`function.name` in
+										// the first delta for an index and `arguments` in the rest — but
+										// some backends send them late or split across chunks, so keep
+										// accepting id/name updates instead of assuming the first sighting
+										// is final (a late-arriving id/name would otherwise be discarded,
+										// leaving the call stuck with an empty id/name and silently
+										// dropped below).
+										if (toolCall.id) { existing.id = toolCall.id; }
+										if (toolCall.function?.name) { existing.name = toolCall.function.name; }
+										if (toolCall.function?.arguments) { existing.arguments += toolCall.function.arguments; }
 									} else {
 										// New tool call
 										toolCallsMap.set(index, {
@@ -913,9 +948,7 @@ export class FeimaChatEndpoint {
 							// Check for finish_reason - indicates this choice is complete
 							if (choice.finish_reason && toolCallsMap.size > 0) {
 								// Emit tool calls when finish_reason present
-								const completedCalls = Array.from(toolCallsMap.values()).filter(
-									call => call.id && call.name
-								);
+								const completedCalls = this._finalizeToolCalls(toolCallsMap);
 								if (completedCalls.length > 0) {
 									this.log.debug(`[FeimaChatEndpoint] Emitting ${completedCalls.length} tool calls at finish_reason: ${choice.finish_reason}`);
 									streamDelta.toolCalls = completedCalls;
@@ -946,9 +979,7 @@ export class FeimaChatEndpoint {
 
 			// Safety: emit any remaining tool calls if stream ended without [DONE]
 			if (toolCallsMap.size > 0) {
-				const completedCalls = Array.from(toolCallsMap.values()).filter(
-					call => call.id && call.name
-				);
+				const completedCalls = this._finalizeToolCalls(toolCallsMap);
 				if (completedCalls.length > 0) {
 					this.log.debug(`[FeimaChatEndpoint] Emitting ${completedCalls.length} tool calls at stream end`);
 					await callback(fullText, { toolCalls: completedCalls });

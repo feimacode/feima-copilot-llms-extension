@@ -1,9 +1,6 @@
 ---
 title: Configuration Reference
 description: Complete reference for Feima Copilot configuration
-banner:
-  content: |
-    🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot extension</a> to add open weight models to GitHub Copilot
 head:
   - tag: script
     attrs:
@@ -30,8 +27,6 @@ head:
         }
       }
 ---
-
-# Configuration Reference
 
 Complete reference for all Feima Copilot configuration options.
 
@@ -338,6 +333,152 @@ Proxy URL for API requests.
   "feima.proxyUrl": "http://proxy.example.com:8080"
 }
 ```
+
+---
+
+## Agent Participant Settings
+
+Settings for the [`@claude`, `@codex`, and `@copilot-cli` agent participants](/guides/agent-participants). See [Agent Participants Setup](/guides/agent-participants-setup) for a task-oriented walkthrough, and [MCP Servers & Tools for Agent Participants](/guides/agent-mcp-tools) for the MCP/tool-related settings below.
+
+### `feima.agents.claude.binaryPath`
+
+Absolute path to the `claude` binary.
+
+**Type**: `string`
+**Default**: `""`
+**Scope**: Machine-overridable
+
+**Description**: Leave empty to auto-discover via `PATH`.
+
+---
+
+### `feima.agents.codex.binaryPath`
+
+Absolute path to the `codex` binary.
+
+**Type**: `string`
+**Default**: `""`
+**Scope**: Machine-overridable
+
+**Description**: Leave empty to auto-discover via `PATH`.
+
+---
+
+### `feima.agents.copilot.binaryPath`
+
+Absolute path to the GitHub Copilot CLI binary.
+
+**Type**: `string`
+**Default**: `""`
+**Scope**: Machine-overridable
+
+**Description**: Leave empty to auto-discover via `PATH`.
+
+---
+
+### `feima.agents.codex.shareMcpServers` / `feima.agents.copilot.shareMcpServers`
+
+Pass MCP servers from VS Code's own native `mcp.json` config (user profile + every workspace folder's `.vscode/mcp.json`) down to `@codex` / `@copilot-cli`, letting that CLI's own native MCP client connect to them directly.
+
+**Type**: `boolean`
+**Default**: `true`
+
+**Description**: Disable if you only want that participant's own separately configured MCP servers (e.g. via `codex mcp add`). See [MCP Servers & Tools for Agent Participants](/guides/agent-mcp-tools).
+
+---
+
+### `feima.agents.claude.shareMcpServers`
+
+Pass MCP servers from VS Code's own native `mcp.json` config down to `@claude`, letting the Claude Agent SDK connect to them itself.
+
+**Type**: `boolean`
+**Default**: `false`
+
+**Description**: Defaults to off, because the Claude Agent SDK's own MCP client can't complete OAuth — servers that need it (e.g. Atlassian) silently fail to connect. Instead, by default those servers are managed by VS Code (which does support OAuth) and their tools are exposed to `@claude` through the dynamic-tool bridge — see `feima.agents.claude.tools.excludePatterns` below and [MCP Servers & Tools for Agent Participants](/guides/agent-mcp-tools).
+
+---
+
+### `feima.agents.tools.excludePatterns`
+
+Tool names (from `vscode.lm.tools`) to hide from the dynamic-tool bridge shared by agent participants.
+
+**Type**: `string[]`
+**Default**:
+```json
+[
+  "mcp_*",
+  "copilot_*",
+  "ask_user",
+  "task_complete",
+  "exit_plan_mode",
+  "task",
+  "read_agent",
+  "write_agent",
+  "list_agents",
+  "send_inbox",
+  "context_board",
+  "skill"
+]
+```
+**Scope**: Window
+
+**Description**: Each entry may contain a single `*` wildcard, matched against the full tool name. The default excludes MCP-backed tools (`mcp_*` — MCP servers are handled natively by each CLI's own MCP client; see `.vscode/mcp.json` / VS Code's user-profile `mcp.json`), a few Copilot Chat manifest-only tools with no runtime implementation, and internal agent-loop control signals from other agent SDKs.
+
+---
+
+### `feima.agents.codex.tools.excludePatterns` / `feima.agents.copilot.tools.excludePatterns`
+
+Per-participant override of `feima.agents.tools.excludePatterns` for @codex / @copilot-cli only.
+
+**Type**: `string[]`
+**Default**: *(unset)*
+**Scope**: Window
+
+**Description**: Leave unset to use the shared list above. Set to an array — including `[]` to disable exclusions entirely — to replace the shared list just for that participant.
+
+---
+
+### `feima.agents.claude.tools.excludePatterns`
+
+Per-participant override of `feima.agents.tools.excludePatterns` for `@claude` only.
+
+**Type**: `string[]`
+**Default**: `["copilot_*", "mcp_aws*"]`
+**Scope**: Window
+
+**Description**: Defaults to the shared list minus `mcp_*`, so VS Code-managed MCP tools — including OAuth-authenticated ones the Claude SDK can't reach on its own (see `feima.agents.claude.shareMcpServers` above) — are exposed to `@claude` via the dynamic-tool bridge. Set to an empty array `[]` to disable all exclusions for @claude, or a custom array to replace the default.
+
+---
+
+### `feima.agents.claude.permissionMode`
+
+Default permission tier for `@claude`.
+
+**Type**: `"ask" | "acceptEdits" | "fullAuto"`
+**Default**: `"ask"`
+
+**Description**: How much `@claude` asks before running commands or changing files. Override for a single turn with `/ask`, `/acceptEdits`, or `/fullAuto`.
+- `ask` — Ask for approval before running commands or changing files (safe default).
+- `acceptEdits` — Auto-approve file edits; still ask before running commands or other tools.
+- `fullAuto` — Auto-approve everything; never ask. Use with caution.
+
+---
+
+### `feima.agents.codex.permissionMode`
+
+Default permission tier for `@codex`. Same values and behavior as `feima.agents.claude.permissionMode`, above.
+
+**Type**: `"ask" | "acceptEdits" | "fullAuto"`
+**Default**: `"ask"`
+
+---
+
+### `feima.agents.copilot.permissionMode`
+
+Default permission tier for `@copilot-cli`. Same values and behavior as `feima.agents.claude.permissionMode`, above.
+
+**Type**: `"ask" | "acceptEdits" | "fullAuto"`
+**Default**: `"ask"`
 
 ---
 

@@ -1,6 +1,6 @@
 # Feima Copilot
 
-**Access Qwen, DeepSeek, GLM, and more — one extension, multiple LLMs**
+**More models for Copilot Chat, your own Claude/Codex/Copilot CLI subscriptions natively in VS Code, plus a local proxy to power any tool with Copilot or BYOK models**
 
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -11,6 +11,8 @@
 - 🔐 **Secure Login** - GitHub OAuth for quick authentication
 - 💰 **Pay-As-You-Go** - No subscription required, pay only for what you use
 - 🚀 **Fast & Reliable** - Optimized for low latency responses
+- 🧑‍💻 **Agent Participants (NEW)** - Drive the real Claude Code, Codex, and Copilot CLI agents natively in chat with `@claude`, `@codex`, `@copilot-cli`
+- 🔌 **Local LLM Proxy** - Power any OpenAI- or Anthropic-compatible tool, even outside VS Code, with your Copilot or BYOK models
 
 ## Prerequisites
 
@@ -86,6 +88,8 @@ Make sure you have the **GitHub Copilot Chat** extension installed. Feima Copilo
 2. The AI will respond using the selected model
 3. You can switch models anytime during your session
 
+> **Want to drive Claude Code, Codex, or Copilot CLI right inside VS Code chat instead of a terminal?** See the **🤖 Agent Participants** section below — that's a different, newer feature from the API keys described here.
+
 ### 🔑 API Key Support
 
 Feima Copilot also provides API keys for use beyond the VS Code extension:
@@ -104,6 +108,46 @@ Get your API key:
 4. Configure the key in your CLI tools
 
 API keys use the same billing system - no separate subscription needed.
+
+## 🤖 Agent Participants — NEW: Claude Code, Codex & Copilot CLI, right in chat
+
+**Feima Copilot isn't just another model provider — it also lets you drive the *real* Claude Code, Codex, and GitHub Copilot CLI agents from directly inside GitHub Copilot Chat.**
+
+Type `@claude`, `@codex`, or `@copilot-cli` and you get that CLI's own agent loop — its own planning, tool calls, and file-edit review — rendered with VS Code's native chat UI: streaming responses, inline diffs, no terminal window, no copy-pasting code back and forth.
+
+### Which one is for you?
+
+| If you… | Try | Why |
+|---|---|---|
+| Already pay for **Claude Pro/Max** or **ChatGPT Plus/Pro** | `@claude` / `@codex`, with the CLI's own model selected | Uses your existing subscription directly — no extra cost, nothing else to configure |
+| Don't have (or don't want) a separate Anthropic/OpenAI subscription | `@claude` / `@codex`, with a **Feima model** selected instead | Same agent workflow and tool loop, powered by a Feima model you already have access to |
+| Just want **GitHub Copilot CLI**'s terminal-automation skills without leaving chat | `@copilot-cli` | Runs Copilot CLI's agent, powered by your Feima/Copilot model |
+| Want to try Claude Code's or Codex's workflow before committing to a subscription | Either participant, with a Feima model | Zero new signups — see what the fuss is about first |
+
+### What it looks like
+
+```
+You: @claude Refactor parseInvoice() to handle malformed dates and add tests
+
+Claude: I'll take a look at the function first...
+  ⚙ Reading src/billing/parseInvoice.ts
+  ⚙ Reading test/billing/parseInvoice.test.ts
+  ✎ Editing src/billing/parseInvoice.ts
+  ✎ Creating test/billing/parseInvoice.test.ts
+  Done — added guard clauses for 3 malformed date formats and 5 new test cases.
+```
+
+No terminal, no `cd`, no copy-paste — the edits land in your open editor exactly like a native Copilot Chat edit would.
+
+### Good to know
+
+- **Three permission tiers** per turn — `/ask` (review everything), `/acceptEdits` (auto-approve file edits, still ask before commands), `/fullAuto` (hands-off) — or set a persistent default per participant.
+- **Bring your own model** — point any participant at a Feima model through a local, loopback-only Agent Proxy; no separate Anthropic/OpenAI API key required.
+- **Take it outside VS Code, too** — the same local proxy can drive the standalone `claude`/`codex` CLI (or any other OpenAI-/Anthropic-compatible tool) from a plain terminal, not just these chat participants. See the [LLM Proxy guide](https://docs.feimacode.com/guides/llm-proxy/).
+- **MCP servers** — wire your own MCP tools into `@claude` and `@codex` via settings.
+- **Your CLI, your login** — native mode uses the CLI's own subscription and login exactly as it would from a terminal; the extension never touches your Anthropic/OpenAI credentials.
+
+📖 Full guide: [Agent Participants](https://docs.feimacode.com/guides/agent-participants/) · [Setup & Troubleshooting](https://docs.feimacode.com/guides/agent-participants-setup/) · [Agent Proxy](https://docs.feimacode.com/guides/agent-proxy/)
 
 ## 💰 Pricing
 

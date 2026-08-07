@@ -1,0 +1,32 @@
+---
+// Site-wide promo banner, shown on every page. Locale-aware via Astro.currentLocale.
+// A page can still opt out by setting its own `banner:` frontmatter (empty object/false-y skip is not supported by Starlight's schema, so use content override instead).
+const isZh = Astro.currentLocale === 'zh-CN';
+
+const defaultContent = isZh
+  ? '🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">安装飞码扣扩展</a>，为 Copilot Chat 提供更多模型，用你自己的 Claude/Codex/Copilot CLI 订阅原生驱动智能体，还有本地 LLM 代理服务任意工具'
+  : '🚀 <a href="https://marketplace.visualstudio.com/items?itemName=feima.copilot-more-llms" target="_blank">Install Feima Copilot</a> — more models for Copilot Chat, native Claude Code/Codex/Copilot CLI on your own subscription, and a local LLM proxy for any tool';
+
+const pageBanner = Astro.locals.starlightRoute.entry.data.banner;
+const content = pageBanner ? pageBanner.content : defaultContent;
+---
+
+<div class="sl-banner" data-pagefind-ignore set:html={content} />
+
+<style>
+	@layer starlight.core {
+		.sl-banner {
+			--__sl-banner-text: var(--sl-color-banner-text, var(--sl-color-text-invert));
+			padding: var(--sl-nav-pad-y) var(--sl-nav-pad-x);
+			background-color: var(--sl-color-banner-bg, var(--sl-color-bg-accent));
+			color: var(--__sl-banner-text);
+			line-height: var(--sl-line-height-headings);
+			text-align: center;
+			text-wrap: balance;
+			box-shadow: var(--sl-shadow-sm);
+		}
+		.sl-banner :global(a) {
+			color: var(--__sl-banner-text);
+		}
+	}
+</style>

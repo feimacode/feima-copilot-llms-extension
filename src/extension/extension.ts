@@ -15,6 +15,7 @@ import { FEIMA_AUTH_SIGNED_IN_KEY, FEIMA_IS_GLOBAL_MARKET_KEY } from './contextK
 import { FEIMA_REGION } from '../config/regions';
 import { initializeStatusBar, resetStatusBar } from './statusBar';
 import { getQuotaService } from './services/quotaService';
+import { registerAgents } from './agents/agentsContribution';
 
 // Store auth service for disposal
 let authService: FeimaAuthenticationService | undefined;
@@ -174,6 +175,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 				// Non-fatal error - continue activation
 			}
 			logService.info('===============================');
+		}
+
+		// 9. Register agent chat participants (@codex, @copilot-cli, @claude)
+		// Non-fatal: if agent registration fails, the core extension still works.
+		try {
+			registerAgents(context, logService);
+		} catch (error) {
+			logService.error(error as Error, 'Failed to register agent participants');
 		}
 
 		logService.info('');

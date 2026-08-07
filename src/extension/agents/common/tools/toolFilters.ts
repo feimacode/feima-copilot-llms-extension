@@ -17,9 +17,10 @@ import * as vscode from 'vscode';
  * control signals from other agent SDKs).
  *
  * Each participant may also override the shared list entirely via
- * `feima.agents.<participant>.tools.excludePatterns` — unset (`null`, the
- * default) falls back to the shared list above; an explicit array (including
- * `[]`) replaces it for that participant only.
+ * `feima.agents.<participant>.tools.excludePatterns` — left unset, the
+ * default falls back to the shared list above (or, for `@claude`, its own
+ * baked-in default); an explicit array (including `[]`) replaces it for that
+ * participant only.
  */
 const CONFIG_SECTION = 'feima.agents.tools';
 const CONFIG_KEY = 'excludePatterns';

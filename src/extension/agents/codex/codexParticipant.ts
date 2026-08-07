@@ -551,7 +551,10 @@ export class CodexParticipant {
 				} catch (err) {
 					this._log.error(err instanceof Error ? err : String(err), 'resume failed');
 					stream.progress('Starting new session...');
-					const fallbackModelId = request.model.vendor ? `${request.model.vendor}/${request.model.id}` : request.model.id;
+					// Native: pass the bare model id straight through to codex-rs's own
+					// model resolution. Proxy: encode vendor+id for precise proxy lookup.
+					const fallbackModelId = routing === 'native' ? request.model.id
+						: (request.model.vendor ? `${request.model.vendor}/${request.model.id}` : request.model.id);
 					codexThread = await conn.startThread({
 						model: fallbackModelId, cwd,
 						approvalPolicy, sandbox: 'workspace-write',
@@ -561,7 +564,10 @@ export class CodexParticipant {
 			}
 		} else {
 			stream.progress('Starting new session...');
-			const modelId = request.model.vendor ? `${request.model.vendor}/${request.model.id}` : request.model.id;
+			// Native: pass the bare model id straight through to codex-rs's own
+			// model resolution. Proxy: encode vendor+id for precise proxy lookup.
+			const modelId = routing === 'native' ? request.model.id
+				: (request.model.vendor ? `${request.model.vendor}/${request.model.id}` : request.model.id);
 			codexThread = await conn.startThread({
 				model: modelId, cwd,
 				approvalPolicy, sandbox: 'workspace-write',
@@ -782,6 +788,11 @@ export class CodexParticipant {
 				void this._interruptTurn(conn, session!);
 			}
 		});
+		// Status (idle/active/etc.) isn't surfaced to the UI; acknowledged here
+		// so the per-thread dispatcher's "zero listeners" diagnostic doesn't fire
+		// on every transition for an event we intentionally ignore.
+		ts.on('thread/status/changed', () => {});
+
 		// The `error` notification is informational — codex may retry (willRetry)
 		// or proceed to `turn/completed`. Do NOT reject the turn here; let
 		// `turn/completed` be the sole authority on turn completion.
@@ -824,7 +835,10 @@ export class CodexParticipant {
 		session.lastToolsHash = newToolsHash;
 		this._log.debug(`starting turn ${JSON.stringify({ prompt: request.prompt.slice(0, 120), threadId: codexThread.id, modelId: request.model.id })}`);
 		try {
-			const turnModelId = request.model.vendor ? `${request.model.vendor}/${request.model.id}` : request.model.id;
+			// Native: pass the bare model id straight through to codex-rs's own
+			// model resolution. Proxy: encode vendor+id for precise proxy lookup.
+			const turnModelId = routing === 'native' ? request.model.id
+				: (request.model.vendor ? `${request.model.vendor}/${request.model.id}` : request.model.id);
 			const startResult = await conn.startTurn({ threadId: codexThread.id, input: [{ type: 'text', text: request.prompt }], model: turnModelId, approvalPolicy });
 			// Store the app-server turn id for cancellation (§8) and steering (§9).
 			session.currentAppTurnId = startResult.id;

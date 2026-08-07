@@ -420,7 +420,7 @@ Tool names (from `vscode.lm.tools`) to hide from the dynamic-tool bridge shared 
   "skill"
 ]
 ```
-**Scope**: Machine-overridable
+**Scope**: Window
 
 **Description**: Each entry may contain a single `*` wildcard, matched against the full tool name. The default excludes MCP-backed tools (`mcp_*` — MCP servers are handled natively by each CLI's own MCP client; see `.vscode/mcp.json` / VS Code's user-profile `mcp.json`), a few Copilot Chat manifest-only tools with no runtime implementation, and internal agent-loop control signals from other agent SDKs.
 
@@ -430,11 +430,11 @@ Tool names (from `vscode.lm.tools`) to hide from the dynamic-tool bridge shared 
 
 Per-participant override of `feima.agents.tools.excludePatterns` for @codex / @copilot-cli only.
 
-**Type**: `string[] | null`
-**Default**: `null`
-**Scope**: Machine-overridable
+**Type**: `string[]`
+**Default**: *(unset)*
+**Scope**: Window
 
-**Description**: Leave unset (`null`) to use the shared list above. Set to an array — including `[]` to disable exclusions entirely — to replace the shared list just for that participant.
+**Description**: Leave unset to use the shared list above. Set to an array — including `[]` to disable exclusions entirely — to replace the shared list just for that participant.
 
 ---
 
@@ -442,11 +442,11 @@ Per-participant override of `feima.agents.tools.excludePatterns` for @codex / @c
 
 Per-participant override of `feima.agents.tools.excludePatterns` for `@claude` only.
 
-**Type**: `string[] | null`
+**Type**: `string[]`
 **Default**: `["copilot_*", "mcp_aws*"]`
-**Scope**: Machine-overridable
+**Scope**: Window
 
-**Description**: Defaults to the shared list minus `mcp_*`, so VS Code-managed MCP tools — including OAuth-authenticated ones the Claude SDK can't reach on its own (see `feima.agents.claude.shareMcpServers` above) — are exposed to `@claude` via the dynamic-tool bridge. Set to `null` to fall back to the shared list (which excludes `mcp_*`); set to a custom array (including `[]`) to replace it.
+**Description**: Defaults to the shared list minus `mcp_*`, so VS Code-managed MCP tools — including OAuth-authenticated ones the Claude SDK can't reach on its own (see `feima.agents.claude.shareMcpServers` above) — are exposed to `@claude` via the dynamic-tool bridge. Set to an empty array `[]` to disable all exclusions for @claude, or a custom array to replace the default.
 
 ---
 

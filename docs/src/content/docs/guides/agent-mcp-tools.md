@@ -113,7 +113,7 @@ Each entry may contain a single `*` wildcard, matched against the full tool name
 - **`copilot_*`** — a handful of Copilot Chat manifest-only tools with no runtime implementation (calling them fails with "no implementation registered").
 - The rest — internal agent-loop control signals from other agent SDKs (planning/task/inbox tools) that don't make sense outside their own loop.
 
-Override the shared list per participant with `feima.agents.codex.tools.excludePatterns` / `feima.agents.copilot.tools.excludePatterns` — leave `null` (the default) to inherit the shared list, or set an array (including `[]`) to replace it entirely for that participant. `@claude` has its own override, `feima.agents.claude.tools.excludePatterns`, which **defaults to the shared list minus `mcp_*`** (`["copilot_*", "mcp_aws*"]`) so VS Code-managed MCP tools — including OAuth-authenticated ones @claude's own SDK can't reach — stay visible to it via the bridge.
+Override the shared list per participant with `feima.agents.codex.tools.excludePatterns` / `feima.agents.copilot.tools.excludePatterns` — leave unset (the default) to inherit the shared list, or set an array (including `[]`) to replace it entirely for that participant. `@claude` has its own override, `feima.agents.claude.tools.excludePatterns`, which **defaults to the shared list minus `mcp_*`** (`["copilot_*", "mcp_aws*"]`) so VS Code-managed MCP tools — including OAuth-authenticated ones @claude's own SDK can't reach — stay visible to it via the bridge.
 
 ### Use case: context optimization
 

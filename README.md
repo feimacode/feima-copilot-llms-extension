@@ -25,7 +25,7 @@ Feima Copilot is a VS Code extension built around three things: **more models** 
 
 ### Key Features
 
-- � **Diverse Model Selection**: Qwen3.7, DeepSeek V4, GLM-5, MiniMax M3, Mimo V2.5, Kimi K2.7 Code, Kimi K3, HY3
+- � **Diverse Model Selection**: Qwen3.8, DeepSeek V4, GLM-5, MiniMax M3, Mimo V2.5, Kimi K2.7 Code, Kimi K3, HY3
 - 💬 **Seamless Integration**: Works directly in GitHub Copilot Chat, no interface switching needed
 - 💰 **Pay-per-Request**: Request-based pricing, cost-controllable, no monthly subscriptions
 - 🔒 **Secure & Reliable**: OAuth2 authentication, code never leaves VS Code
@@ -45,6 +45,7 @@ Feima Copilot is a VS Code extension built around three things: **more models** 
 
 | Model | Provider | Features |
 |-------|----------|----------|
+| Qwen3.8 Max | Alibaba Cloud | ~1M context, deep chain-of-thought reasoning (Pro) |
 | Qwen3.7 Max | Alibaba Cloud | ~1M context, chain-of-thought reasoning |
 | Qwen3.6 Plus | Alibaba Cloud | 1M token context, 80K chain-of-thought, vision |
 | Qwen3.6 Flash | Alibaba Cloud | 1M token context, thinking support (default) |

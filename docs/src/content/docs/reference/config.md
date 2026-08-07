@@ -47,6 +47,7 @@ Default model for new conversations.
 **Valid Values**:
 - `"qwen3.6-flash"` - Qwen3.6 Flash (free tier, chat default, thinking-capable)
 - `"qwen3.7-max"` - Qwen3.7 Max (~1M context, deep thinking)
+- `"qwen3.8-max"` - Qwen3.8 Max (~1M context, 983K deep thinking, Pro tier)
 - `"qwen3-coder-plus"` - Qwen3 Coder Plus (1M context)
 - `"qwen3.6-plus"` - Qwen3.6 Plus (vision + thinking, 1M context)
 - `"qwen3.7-plus"` - Qwen3.7 Plus (~1M context, vision + deep thinking)

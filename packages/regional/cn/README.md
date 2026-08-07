@@ -31,6 +31,7 @@
 |------|--------|------|------|
 | **Qwen3.6 Flash** | 阿里云 | 极速响应，100万token长文本（默认） | 🟦 最便宜 |
 | **Qwen3.7 Max** | 阿里云 | 高质量推理，~1M token，支持思维链 | 🟩 标准 |
+| **Qwen3.8 Max** | 阿里云 | 旗舰推理，~1M token，983K 深度思维链 | 🟧 专业 |
 | **Qwen3.6 Plus** | 阿里云 | **最强推理**，1M token，80K思维链，视觉 | 🟧 专业 |
 | **Qwen3.7 Plus** | 阿里云 | ~1M token，视觉，深度思考 | 🟧 专业 |
 | **DeepSeek V4 Pro** | DeepSeek | 100万 token 上下文，深度思考 | 🟧 专业 |
@@ -203,7 +204,7 @@ A: 是的，和原生 Copilot 一样支持。飞码扣完全支持 Skills 功能
 A: 是的，支持工具调用。所有聊天模型都支持工具调用功能，包括代码执行、文件操作、API 调用等。
 
 **Q: 是否支持思维链（Thinking）？**
-A: 是的，多个模型支持思维链。包括 Qwen3.7 Max（983K）、Qwen3.6 Plus（80K）、Qwen3.7 Plus（983K）、DeepSeek V3.2、DeepSeek V4 Pro、DeepSeek V4 Flash、GLM-5、GLM-4.7、MiniMax M2.5（32K）、Kimi K2.6（16K）。思维链功能可提高复杂问题的解决质量。
+A: 是的，多个模型支持思维链。包括 Qwen3.8 Max（983K）、Qwen3.7 Max（983K）、Qwen3.6 Plus（80K）、Qwen3.7 Plus（983K）、DeepSeek V3.2、DeepSeek V4 Pro、DeepSeek V4 Flash、GLM-5、GLM-4.7、MiniMax M2.5（32K）、Kimi K2.6（16K）。思维链功能可提高复杂问题的解决质量。
 
 **Q: 是否支持视觉（Vision）？**
 A: 是的，支持图片上传和视觉理解。您可以直接在对话框中粘贴图片、上传截图或拖拽图片文件，AI 将分析图片内容并回答相关问题。适用于分析报错截图、设计稿、图表、代码片段等场景。

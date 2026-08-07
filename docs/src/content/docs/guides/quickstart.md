@@ -87,6 +87,7 @@ Make sure you have the **GitHub Copilot Chat** extension installed. Feima Copilo
 3. Choose a Feima model from the list:
    - **Qwen3.6 Flash** - Fast responses, thinking support, free tier (chat default)
    - **Qwen3.7 Max** - Complex reasoning with deep thinking, ~1M context
+   - **Qwen3.8 Max** - Flagship deep-thinking reasoning, ~1M context (Pro tier)
    - **Qwen3.6 Plus** - Vision-capable with 80K thinking chain, 1M context
    - **Qwen3.7 Plus** - ~1M context, vision and deep thinking
    - **DeepSeek V3.2** - Deep thinking for complex problems

@@ -140,6 +140,7 @@ VS Code Insiders 版本与稳定版功能相同，飞码扣在两个版本中都
 **A: 是的，多个模型支持思维链。**
 
 支持思维链的模型：
+- Qwen3.8 Max（983K 思维 tokens）
 - Qwen3.7 Max（983K 思维 tokens）
 - Qwen3.6 Plus（80K 思维 tokens）
 - Qwen3.7 Plus（983K 思维 tokens）
@@ -181,6 +182,7 @@ VS Code Insiders 版本与稳定版功能相同，飞码扣在两个版本中都
 **A: 是的，支持代码审查。**
 
 推荐使用：
+- **Qwen3.8 Max**：旗舰级深度分析，983K 思维链
 - **Qwen3.7 Max**：深度分析，983K 思维链
 - **GLM 5.2**：高级推理，1M 上下文
 
@@ -245,6 +247,7 @@ VS Code Insiders 版本与稳定版功能相同，飞码扣在两个版本中都
 | Qwen Flash | 0.1x | 最便宜，适合快速任务 |
 | Qwen3.5 Plus | 0.5x | 性价比高，80K 思维链 |
 | Qwen3 Max | 1.0x | 标准，256K 上下文 |
+| Qwen3.8 Max | 3.0x | 旗舰，~1M 上下文，983K 思维链 |
 | DeepSeek V3.2 | 1.0x | 标准，代码专精 |
 | GLM-4.7 | 1.0x | 标准，长文本输出 |
 | MiniMax M2.5 | 1.0x | 标准，中文优化 |

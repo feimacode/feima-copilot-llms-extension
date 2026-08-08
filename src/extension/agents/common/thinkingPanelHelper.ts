@@ -19,6 +19,16 @@ type ThinkingStream = {
 };
 
 /**
+ * Cached availability of `thinkingProgress`, shared across all helper
+ * instances/turns. In a packaged install (no `--enable-proposed-api`) VS
+ * Code still exposes `thinkingProgress` as a function — it just throws
+ * on invocation instead of being `undefined` — so a `typeof` duck-type
+ * check alone isn't enough to detect the fallback case. We probe by
+ * calling it and disable for the rest of the session on the first throw.
+ */
+let _thinkingAvailable: boolean | null = null;
+
+/**
  * Helper that manages the native thinking panel lifecycle across all three
  * agent participants (Codex, Copilot, Claude).
  *
@@ -57,9 +67,32 @@ export class ThinkingPanelHelper {
 		this._stream = stream;
 		this._fallbackId = fallbackId;
 		this._thinkingStream =
+			_thinkingAvailable !== false &&
 			typeof (stream as unknown as ThinkingStream).thinkingProgress === 'function'
 				? (stream as unknown as ThinkingStream)
 				: undefined;
+	}
+
+	/**
+	 * Calls `thinkingProgress`, catching the case where VS Code exposes the
+	 * method but throws because the proposal isn't actually enabled (packaged
+	 * builds without `--enable-proposed-api`). Disables the native path for
+	 * the rest of the session on first failure.
+	 */
+	private _emitNative(payload: {
+		text?: string | string[];
+		id?: string;
+		metadata?: Record<string, unknown>;
+	}): boolean {
+		if (!this._thinkingStream) { return false; }
+		try {
+			this._thinkingStream.thinkingProgress(payload);
+			_thinkingAvailable = true;
+			return true;
+		} catch {
+			_thinkingAvailable = false;
+			return false;
+		}
 	}
 
 	/** Whether a thinking panel is currently open. */
@@ -75,9 +108,7 @@ export class ThinkingPanelHelper {
 		if (this._active) { return; }
 		this._active = true;
 		this._accumulatedText = '';
-		if (this._thinkingStream) {
-			this._thinkingStream.thinkingProgress({ text: 'Thinking…', id: this._fallbackId });
-		} else {
+		if (!this._emitNative({ text: 'Thinking…', id: this._fallbackId })) {
 			this._stream.progress('Thinking…');
 		}
 	}
@@ -90,12 +121,13 @@ export class ThinkingPanelHelper {
 	pushDelta(delta: string): void {
 		if (!this._active) { this.open(); }
 		this._accumulatedText += delta;
-		if (this._thinkingStream) {
-			this._thinkingStream.thinkingProgress({
-				text: this._accumulatedText,
-				id: this._fallbackId,
-			});
-		}
+		this._emitNative({
+			text: this._accumulatedText,
+			id: this._fallbackId,
+		});
+		// No per-delta fallback: `open()` already emitted a single "Thinking…"
+		// progress line when the native API is unavailable, and streaming the
+		// full accumulated text on every delta would flood the chat.
 	}
 
 	/**
@@ -108,13 +140,11 @@ export class ThinkingPanelHelper {
 		if (!this._active) { return; }
 		this._active = false;
 		this._accumulatedText = '';
-		if (this._thinkingStream) {
-			this._thinkingStream.thinkingProgress({
-				id: '',
-				text: '',
-				metadata: { vscodeReasoningDone: true, stopReason },
-			});
-		}
+		this._emitNative({
+			id: '',
+			text: '',
+			metadata: { vscodeReasoningDone: true, stopReason },
+		});
 	}
 
 	/**

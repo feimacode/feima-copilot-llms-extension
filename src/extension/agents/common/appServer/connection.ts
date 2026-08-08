@@ -82,6 +82,13 @@ export class AppServerConnection extends EventEmitter {
 				`features.tool_call_mcp_elicitation=false`,
 			];
 			extraArgs = [...overrides.flatMap(kv => ['-c', kv]), ...extraArgs];
+		} else {
+			// Force codex-rs's built-in `openai` provider so a standalone-CLI
+			// `model_provider` override in the user's own ~/.codex/config.toml
+			// (set up for terminal use) can't hijack this "talk to OpenAI
+			// directly" native path and send its models to a backend that
+			// doesn't serve them.
+			extraArgs = ['-c', `model_provider="openai"`, ...extraArgs];
 		}
 
 		this._client = new AppServerClient({

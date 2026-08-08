@@ -83,7 +83,6 @@
 	},
 	"enabledApiProposals": [
 		"chatProvider",
-		"chatParticipantAdditions",
 		"inlineCompletionsAdditions",
 		"languageModelThinkingPart"
 	],

@@ -429,7 +429,16 @@ export class CopilotParticipant {
 	 */
 	private async _buildDynamicTools(entry: SessionEntry): Promise<Tool<unknown>[]> {
 		const specs = await this.toolManager.buildDynamicTools('copilot');
-		return specs.map(spec => this._toCopilotTool(entry, spec));
+		// The Copilot CLI runtime activates its own built-in "skill" tool
+		// whenever skillDirectories is set — which we always set (see
+		// _resolveSkillDirectories) — so a same-named external tool from the
+		// vscode.lm.tools bridge always collides and the SDK fatally rejects
+		// the whole session ("External tool "skill" conflicts with a built-in
+		// tool..."). `feima.agents.tools.excludePatterns` already lists
+		// "skill" by default, but that's a user-overridable preference; this
+		// collision is a hard SDK constraint tied to our own skillDirectories
+		// usage, so it must not depend on that setting.
+		return specs.filter(spec => spec.name !== 'skill').map(spec => this._toCopilotTool(entry, spec));
 	}
 
 	private _toCopilotTool(entry: SessionEntry, spec: DynamicToolSpec): Tool<unknown> {

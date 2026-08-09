@@ -15,7 +15,7 @@ import { getEffectiveMcpServers } from '../common/mcp/vscodeMcpConfig';
 import { buildClientToolMcpServer, CLAUDE_TOOL_SERVER_NAME, type ClaudeTurnContext } from './clientToolMcpServer';
 import type { DynamicToolManager } from '../common/tools/dynamicToolManager';
 import { resolveBinary } from '../common/appServer/client';
-import { resolveWorkspaceCwd } from '../common/workspaceUtils';
+import { resolveWorkspaceFolders } from '../common/workspaceUtils';
 import { resolvePermissionTier } from '../common/permissionTier';
 import { parseAllowedActions, serializeAllowedActions } from '../common/sessionApprovals';
 import { resolveSystemPrompt } from '../common/systemPrompt';
@@ -163,7 +163,7 @@ export class ClaudeParticipant {
 		// vendor (e.g. a Copilot-backed model picked while chatting with @claude)
 		// routes through our local proxy into VS Code's LM API.
 		const requestedRouting: ClaudeRouting = request.model.vendor === CLAUDE_PROVIDER_ID ? 'native' : 'proxy';
-		const cwd = resolveWorkspaceCwd();
+		const { primary: cwd, additional: additionalDirectories } = resolveWorkspaceFolders();
 
 		// ── 1. Session management ────────────────────────────────────────────
 		const savedMeta = findMetaInHistory(context.history);
@@ -273,6 +273,7 @@ export class ClaudeParticipant {
 			savedSessionId,
 			storagePath: this.storagePath,
 			cwd,
+			additionalDirectories,
 			claudeBinaryPath,
 			editTracker: this._editTracker,
 			getCurrentStream: () => streamBox.current,

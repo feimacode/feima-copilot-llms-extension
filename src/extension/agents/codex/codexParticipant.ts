@@ -19,7 +19,7 @@ import { PendingRequestRegistry } from '../common/util/pendingRequestRegistry';
 import { resolvePermissionTier, type PermissionTier } from '../common/permissionTier';
 import { requestConfirmation, type ConfirmationOutcome } from '../common/confirmationTool';
 import { parseAllowedActions, serializeAllowedActions } from '../common/sessionApprovals';
-import { resolveWorkspaceCwd } from '../common/workspaceUtils';
+import { resolveWorkspaceCwd, resolveWorkspaceFolders } from '../common/workspaceUtils';
 import { ILogService } from '../../platform/log/common/logService';
 import type {
 	DynamicToolSpec,
@@ -192,6 +192,13 @@ function mapTierToApprovalPolicy(tier: PermissionTier): AskForApproval {
 	return tier === 'fullAuto' ? 'never' : 'untrusted';
 }
 
+/** Order-sensitive equality check for the additional-directories respawn guard —
+ *  both sides come from the same deterministic `workspaceFolders` iteration, so
+ *  order only differs when the actual set of open folders changed. */
+function sameDirs(a: string[], b: string[]): boolean {
+	return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
 // ─── Participant ────────────────────────────────────────────────────────────────
 
 export class CodexParticipant {
@@ -203,6 +210,12 @@ export class CodexParticipant {
 	 *  cannot be changed on a live process). */
 	private nativeConnCwd: string | undefined;
 	private proxyConnCwd: string | undefined;
+	/** Additional workspace folders (multi-root) each connection's app-server
+	 *  process was last spawned with — same respawn-on-change logic as
+	 *  nativeConnCwd/proxyConnCwd, since writable_roots is also a spawn-time
+	 *  config override (see AppServerConnection). */
+	private nativeConnAdditionalDirs: string[] = [];
+	private proxyConnAdditionalDirs: string[] = [];
 	/** Per-session state keyed by threadId. */
 	private readonly _sessions = new Map<string, SessionState>();
 	/** MCP server inventory — mirrors agent-host's _mcpInventory. */
@@ -251,34 +264,36 @@ export class CodexParticipant {
 		}
 	}
 
-	private async _ensureConnection(routing: 'native' | 'proxy', binaryPath: string, cwd: string | undefined): Promise<AppServerConnection> {
+	private async _ensureConnection(routing: 'native' | 'proxy', binaryPath: string, cwd: string | undefined, additionalDirectories: string[]): Promise<AppServerConnection> {
 		if (routing === 'native') {
-			if (this.nativeConn && this.nativeConnCwd !== cwd) {
-				this._log.debug(`cwd changed; respawning native codex app-server ${JSON.stringify({ from: this.nativeConnCwd, to: cwd })}`);
+			if (this.nativeConn && (this.nativeConnCwd !== cwd || !sameDirs(this.nativeConnAdditionalDirs, additionalDirectories))) {
+				this._log.debug(`cwd/additional dirs changed; respawning native codex app-server ${JSON.stringify({ fromCwd: this.nativeConnCwd, toCwd: cwd, fromAdditional: this.nativeConnAdditionalDirs, toAdditional: additionalDirectories })}`);
 				this.nativeConn.disconnect();
 				this.nativeConn = null;
 			}
 			if (!this.nativeConn) {
 				const mcpArgs = await buildMcpConfigArgs(this._globalStorageUri, this._log);
-				this.nativeConn = new AppServerConnection({ binaryPath, cwd, extraArgs: mcpArgs }, this._log);
+				this.nativeConn = new AppServerConnection({ binaryPath, cwd, additionalDirectories, extraArgs: mcpArgs }, this._log);
 				this.nativeConn.on('exit', this._onConnectionExit);
 				this._setupMcpHandlers(this.nativeConn);
 				this.nativeConnCwd = cwd;
+				this.nativeConnAdditionalDirs = additionalDirectories;
 			}
 			return this.nativeConn;
 		}
-		if (this.proxyConn && this.proxyConnCwd !== cwd) {
-			this._log.debug(`cwd changed; respawning proxy codex app-server ${JSON.stringify({ from: this.proxyConnCwd, to: cwd })}`);
+		if (this.proxyConn && (this.proxyConnCwd !== cwd || !sameDirs(this.proxyConnAdditionalDirs, additionalDirectories))) {
+			this._log.debug(`cwd/additional dirs changed; respawning proxy codex app-server ${JSON.stringify({ fromCwd: this.proxyConnCwd, toCwd: cwd, fromAdditional: this.proxyConnAdditionalDirs, toAdditional: additionalDirectories })}`);
 			this.proxyConn.disconnect();
 			this.proxyConn = null;
 		}
 		if (!this.proxyConn) {
 			const info = this.proxyManager.info;
 			const mcpArgs = await buildMcpConfigArgs(this._globalStorageUri, this._log);
-			this.proxyConn = new AppServerConnection({ binaryPath, cwd, proxyBaseUrl: info.responsesUrl, proxyApiKey: info.responsesNonce, extraArgs: mcpArgs }, this._log);
+			this.proxyConn = new AppServerConnection({ binaryPath, cwd, additionalDirectories, proxyBaseUrl: info.responsesUrl, proxyApiKey: info.responsesNonce, extraArgs: mcpArgs }, this._log);
 			this.proxyConn.on('exit', this._onConnectionExit);
 			this._setupMcpHandlers(this.proxyConn);
 			this.proxyConnCwd = cwd;
+			this.proxyConnAdditionalDirs = additionalDirectories;
 		}
 		return this.proxyConn;
 	}
@@ -482,8 +497,8 @@ export class CodexParticipant {
 		}
 
 		const binaryPath = resolveBinary(vscode.workspace.getConfiguration('feima.agents.codex').get<string>('binaryPath') ?? '');
-		const cwd = resolveWorkspaceCwd();
-		const conn = await this._ensureConnection(routing, binaryPath, cwd);
+		const { primary: cwd, additional: additionalDirectories } = resolveWorkspaceFolders();
+		const conn = await this._ensureConnection(routing, binaryPath, cwd, additionalDirectories);
 
 		if (!conn.isConnected()) {
 			stream.progress('Connecting to Codex...');
@@ -1218,8 +1233,7 @@ export class CodexParticipant {
 	}
 
 	private async _fallbackInvokeTool(toolName: string, args: Record<string, unknown>, token: vscode.CancellationToken, invokeErr?: unknown): Promise<string> {
-		const workspaceFolders = vscode.workspace.workspaceFolders;
-		const root = workspaceFolders?.[0]?.uri.fsPath;
+		const root = resolveWorkspaceCwd();
 
 		switch (toolName) {
 			case 'readFile': {

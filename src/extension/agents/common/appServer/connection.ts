@@ -22,11 +22,23 @@ import type {
 export interface ConnectionOptions {
 	binaryPath: string;
 	cwd?: string;
+	/** Other open workspace folders (multi-root workspaces) beyond `cwd`.
+	 *  Passed to the spawned app-server as a `sandbox_workspace_write.
+	 *  writable_roots` config override so codex's workspace-write sandbox
+	 *  doesn't block reads/edits in them. Only takes effect for turns
+	 *  started with `sandbox: 'workspace-write'`; harmless otherwise. */
+	additionalDirectories?: string[];
 	proxyBaseUrl?: string;
 	proxyApiKey?: string;
 	proxyWireApi?: 'responses' | 'messages';
 	/** Additional CLI args passed to the codex binary (e.g. MCP server config). */
 	extraArgs?: string[];
+}
+
+/** Render a TOML basic-string array literal for a `-c key=value` override. */
+function toTomlStringArray(values: string[]): string {
+	const escaped = values.map(v => `"${v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`);
+	return `[${escaped.join(',')}]`;
 }
 
 /** Extra connection-level fields exposed to the participant */
@@ -67,6 +79,9 @@ export class AppServerConnection extends EventEmitter {
 		// Build -c overrides and env for proxy mode
 		let clientEnv: NodeJS.ProcessEnv | undefined;
 		let extraArgs: string[] = options.extraArgs ? [...options.extraArgs] : [];
+		if (options.additionalDirectories && options.additionalDirectories.length > 0) {
+			extraArgs = ['-c', `sandbox_workspace_write.writable_roots=${toTomlStringArray(options.additionalDirectories)}`, ...extraArgs];
+		}
 		if (options.proxyBaseUrl) {
 			const wireApi = options.proxyWireApi ?? 'responses';
 			const envKey = wireApi === 'messages' ? 'ANTHROPIC_API_KEY' : 'OPENAI_API_KEY';

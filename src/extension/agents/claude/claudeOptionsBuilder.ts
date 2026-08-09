@@ -55,6 +55,10 @@ export interface OptionsBuilderInput {
 	storagePath: string;
 	/** Current working directory (from workspace folders) */
 	cwd?: string;
+	/** Other open workspace folders (multi-root workspaces) beyond `cwd`,
+	 *  passed to the SDK's `additionalDirectories` so Claude can read/edit
+	 *  files in them too, not just the primary folder. */
+	additionalDirectories?: string[];
 	/** SDK PermissionMode — default is 'default' (prompt user for dangerous tools) */
 	permissionMode?: PermissionMode;
 	/** MCP server configs to pass to the SDK */
@@ -152,6 +156,7 @@ export function buildClaudeOptions(input: OptionsBuilderInput): Options {
 
 	const options: Options = {
 		cwd,
+		...(input.additionalDirectories?.length ? { additionalDirectories: input.additionalDirectories } : {}),
 		abortController: new AbortController(),
 		// Use the user's locally-installed claude binary. We don't bundle the
 		// platform-specific binary package, so this must resolve from PATH/settings.

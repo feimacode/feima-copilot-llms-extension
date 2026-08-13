@@ -197,6 +197,16 @@
 				"command": "feima.agents.clearCodexToolCache",
 				"title": "%command.agents.clearCodexToolCache.title%",
 				"category": "%command.agents.category%"
+			},
+			{
+				"command": "feima.localModels.addEndpoint",
+				"title": "%command.localModels.addEndpoint.title%",
+				"category": "%command.localModels.category%"
+			},
+			{
+				"command": "feima.localModels.refresh",
+				"title": "%command.localModels.refresh.title%",
+				"category": "%command.localModels.category%"
 			}
 		],
 		"configuration": {

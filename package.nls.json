@@ -106,6 +106,10 @@
 	"command.agents.clearCodexToolCache.title": "Clear Codex Dynamic Tool Cache",
 	"command.agents.category": "Feima Agents",
 
+	"command.localModels.addEndpoint.title": "Add Model Endpoint",
+	"command.localModels.refresh.title": "Refresh Models",
+	"command.localModels.category": "Feima Local Models",
+
 	"settings.agents.codex.binaryPath.description": "Absolute path to the `codex` binary. Leave empty to auto-discover via PATH.",
 	"settings.agents.copilot.binaryPath.description": "Absolute path to the GitHub Copilot CLI binary. Leave empty to auto-discover via PATH.",
 	"settings.agents.claude.binaryPath.description": "Absolute path to the `claude` binary. Leave empty to auto-discover via PATH.",

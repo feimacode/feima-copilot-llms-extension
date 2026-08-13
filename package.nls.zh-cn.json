@@ -104,6 +104,10 @@
 	"command.agents.clearCodexToolCache.title": "清除 Codex 动态工具缓存",
 	"command.agents.category": "飞码智能体",
 
+	"command.localModels.addEndpoint.title": "添加模型端点",
+	"command.localModels.refresh.title": "刷新模型列表",
+	"command.localModels.category": "飞码本地模型",
+
 	"settings.agents.codex.binaryPath.description": "`codex` 二进制文件的绝对路径。留空则通过 PATH 自动发现。",
 	"settings.agents.copilot.binaryPath.description": "GitHub Copilot CLI 二进制文件的绝对路径。留空则通过 PATH 自动发现。",
 	"settings.agents.claude.binaryPath.description": "`claude` 二进制文件的绝对路径。留空则通过 PATH 自动发现。",

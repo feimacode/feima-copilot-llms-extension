@@ -32,6 +32,7 @@ Feima Copilot is a VS Code extension built around three things: **more models** 
 - 🧠 **Chain-of-Thought**: Full support for reasoning models, solving complex problems effortlessly
 - 🤖 **Agent Participants (NEW)**: Drive the real Claude Code, Codex, and Copilot CLI agents with `@claude`, `@codex`, `@copilot-cli` — see below
 - 🔌 **Local LLM Proxy**: Power any OpenAI- or Anthropic-compatible tool — even outside VS Code — with your Copilot or BYOK models
+- 🖥️ **Local & Enterprise Endpoints (NEW)**: Every model source in one picker — Feima-hosted, your Claude/Codex subscription, and now your own local runtimes (Ollama, LM Studio, vLLM, llama.cpp, SGLang, LiteLLM, [Olla](https://github.com/thushan/olla)) or an enterprise/private-cloud gateway — see below
 
 ### Why Choose Feima Copilot?
 
@@ -65,6 +66,26 @@ Feima Copilot is a VS Code extension built around three things: **more models** 
 | DeepSeek V4 Flash | DeepSeek | 1M token context, fast |
 | Kimi K3 | Moonshot | 1M context, vision, deep thinking (premium) |
 | HY3 | Tencent | 256K context, thinking support (free tier) |
+
+## 🖥️ Local & Enterprise Model Endpoints
+
+**One picker, every model source.** Alongside Feima-hosted models and your Claude/Codex subscriptions (below), Feima Copilot can surface models from anything you run yourself — a laptop running Ollama or LM Studio, a self-hosted vLLM/llama.cpp/SGLang/LiteLLM instance, an [Olla](https://github.com/thushan/olla) fleet, or an internal enterprise gateway — right in the same Copilot Chat model picker.
+
+- **Auto-discovery**: on startup, the extension quietly checks well-known local ports (Ollama, LM Studio, and friends) and adds anything it finds — nothing to configure for the common local case.
+- **Manual registration**: for an enterprise or private-cloud endpoint auto-discovery can't reach, run **Feima: Add Model Endpoint** and give it a base URL, protocol, and optional API key.
+- **Team-shared endpoints**: commit a `.feima/endpoints.json` (URLs only, never secrets) to your repo so anyone who opens the workspace gets your team's shared gateway offered automatically. Example:
+  ```json
+  {
+    "endpoints": [
+      { "baseEndpoint": "https://models.internal.example.com", "label": "Team Gateway" }
+    ]
+  }
+  ```
+- **Refresh on demand**: pulled a new local model or changed something? Run **Feima: Refresh Models** to re-discover immediately instead of waiting for the cache to expire.
+
+Capability metadata (context window, tool-calling support) is read from the endpoint itself when available, and clearly marked as *estimated* in the picker when it has to be inferred — never presented as fact when it's a guess.
+
+> **Note on the remote/WSL/SSH case**: auto-discovery probes `127.0.0.1`, which — when VS Code itself is running remotely (Remote-SSH, Remote-WSL, a dev container, Codespaces) — is the *remote* machine, not necessarily wherever you're actually running Ollama or LM Studio. In that setup, register the endpoint manually instead.
 
 ## 🤖 Agent Participants — Claude Code, Codex & Copilot CLI, natively in VS Code
 

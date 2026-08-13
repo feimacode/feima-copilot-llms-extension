@@ -16,6 +16,11 @@ import { FEIMA_REGION } from '../config/regions';
 import { initializeStatusBar, resetStatusBar } from './statusBar';
 import { getQuotaService } from './services/quotaService';
 import { registerAgents } from './agents/agentsContribution';
+import { LocalEndpointRegistry } from './models/local/localEndpointRegistry';
+import { LocalEndpointProvider } from './models/local/localEndpointProvider';
+import { discoverLocalPorts } from './models/local/discovery/portProbe';
+import { registerManualEndpointCommand } from './models/local/discovery/manualRegistration';
+import { registerLocalModelsRefreshCommand } from './models/local/refreshCommand';
 
 // Store auth service for disposal
 let authService: FeimaAuthenticationService | undefined;
@@ -142,6 +147,29 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			logService.info('   Vendor ID: feima');
 			logService.info('   Provider will be queried when Copilot Chat needs model list');
 			logService.info('===========================================');
+
+				// 5b. Register local/enterprise endpoint provider as its own category,
+				// alongside 'feima' -- see openspec/changes/add-local-model-endpoints.
+				logService.info('');
+				logService.info('=== LOCAL ENDPOINT PROVIDER REGISTRATION ===');
+				const localLog = logService.createSubLogger('LocalModels');
+				const localRegistry = new LocalEndpointRegistry(context, localLog);
+				const localProvider = new LocalEndpointProvider(localRegistry, localLog);
+				const localProviderDisposable = vscode.lm.registerLanguageModelChatProvider('feima-local', localProvider);
+				context.subscriptions.push(localProviderDisposable, localProvider);
+				context.subscriptions.push(registerManualEndpointCommand(localRegistry, localLog));
+				context.subscriptions.push(
+					registerLocalModelsRefreshCommand(localRegistry, localProvider, localLog, () => modelCatalog.refreshModels()),
+				);
+				logService.info('✅ Local endpoint provider registered (vendor ID: feima-local)');
+
+				// Discover well-known local runtimes in the background; a quiet
+				// machine (nothing found) is the expected common case, not an error
+				// (see specs/local-model-registry/spec.md "No local runtime present").
+				discoverLocalPorts(localRegistry, localLog)
+					.then(count => localLog.info(`[Init] Local port-probe discovery found ${count} endpoint(s)`))
+					.catch(error => localLog.error(error as Error, '[Init] Local port-probe discovery failed'));
+				logService.info('===========================================');
 		}
 
 		// 6. Register inline completion provider

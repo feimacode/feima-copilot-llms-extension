@@ -21,6 +21,9 @@ import { LocalEndpointProvider } from './models/local/localEndpointProvider';
 import { discoverLocalPorts } from './models/local/discovery/portProbe';
 import { registerManualEndpointCommand } from './models/local/discovery/manualRegistration';
 import { registerLocalModelsRefreshCommand } from './models/local/refreshCommand';
+import { AutoModelProvider } from './models/local/auto/autoModelProvider';
+import { AutoStrategyId } from './models/local/auto/types';
+import { registerFeimaHostedShortcutCommand } from './models/local/discovery/feimaHostedShortcut';
 
 // Store auth service for disposal
 let authService: FeimaAuthenticationService | undefined;
@@ -162,6 +165,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 					registerLocalModelsRefreshCommand(localRegistry, localProvider, localLog, () => modelCatalog.refreshModels()),
 				);
 				logService.info('✅ Local endpoint provider registered (vendor ID: feima-local)');
+
+				// 5c. Register the Auto router as its own picker entry, alongside
+				// 'feima' and 'feima-local' -- see openspec/changes/add-auto-model-routing.
+				// Pure delegator over localProvider; see AutoModelProvider's own doc
+				// comment for why it needs no endpoint logic of its own.
+				const getAutoStrategy = (): AutoStrategyId =>
+					vscode.workspace.getConfiguration('feima.localModels').get<AutoStrategyId>('autoStrategy', 'balanced');
+				const autoProvider = new AutoModelProvider(localProvider, localRegistry, getAutoStrategy, localLog.createSubLogger('Auto'));
+				const autoProviderDisposable = vscode.lm.registerLanguageModelChatProvider('feima-auto', autoProvider);
+				context.subscriptions.push(autoProviderDisposable, autoProvider);
+				context.subscriptions.push(registerFeimaHostedShortcutCommand(localRegistry, authService, localLog));
+				logService.info('✅ Auto router registered (vendor ID: feima-auto)');
 
 				// Discover well-known local runtimes in the background; a quiet
 				// machine (nothing found) is the expected common case, not an error

@@ -207,6 +207,11 @@
 				"command": "feima.localModels.refresh",
 				"title": "%command.localModels.refresh.title%",
 				"category": "%command.localModels.category%"
+			},
+			{
+				"command": "feima.localModels.addFeimaHostedEndpoint",
+				"title": "%command.localModels.addFeimaHostedEndpoint.title%",
+				"category": "%command.localModels.category%"
 			}
 		],
 		"configuration": {
@@ -252,6 +257,21 @@
 					"type": "boolean",
 					"default": true,
 					"description": "%settings.showQuotaInStatusBar.description%"
+				},
+				"feima.localModels.autoStrategy": {
+					"type": "string",
+					"enum": [
+						"local-first",
+						"balanced",
+						"most-capable"
+					],
+					"enumDescriptions": [
+						"Prefer endpoints on this machine; only use a network endpoint (enterprise gateway, remote Olla) when nothing local qualifies.",
+						"Weigh task fit and capability confidence, using locality only as a tie-breaker (default).",
+						"Always pick the most capable qualifying endpoint, regardless of locality or latency."
+					],
+					"default": "balanced",
+					"markdownDescription": "%settings.localModels.autoStrategy.description%"
 				},
 				"feima.warnWhenQuotaLow": {
 					"type": "number",

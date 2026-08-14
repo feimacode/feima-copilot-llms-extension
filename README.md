@@ -33,6 +33,7 @@ Feima Copilot is a VS Code extension built around three things: **more models** 
 - 🤖 **Agent Participants (NEW)**: Drive the real Claude Code, Codex, and Copilot CLI agents with `@claude`, `@codex`, `@copilot-cli` — see below
 - 🔌 **Local LLM Proxy**: Power any OpenAI- or Anthropic-compatible tool — even outside VS Code — with your Copilot or BYOK models
 - 🖥️ **Local & Enterprise Endpoints (NEW)**: Every model source in one picker — Feima-hosted, your Claude/Codex subscription, and now your own local runtimes (Ollama, LM Studio, vLLM, llama.cpp, SGLang, LiteLLM, [Olla](https://github.com/thushan/olla)) or an enterprise/private-cloud gateway — see below
+- 🧭 **Auto (NEW)**: Automatically routes each request to the best available local/enterprise endpoint — `local-first`, `balanced`, or `most-capable` — with disclosure on every response, instead of manually picking every time
 
 ### Why Choose Feima Copilot?
 
@@ -86,6 +87,22 @@ Feima Copilot is a VS Code extension built around three things: **more models** 
 Capability metadata (context window, tool-calling support) is read from the endpoint itself when available, and clearly marked as *estimated* in the picker when it has to be inferred — never presented as fact when it's a guess.
 
 > **Note on the remote/WSL/SSH case**: auto-discovery probes `127.0.0.1`, which — when VS Code itself is running remotely (Remote-SSH, Remote-WSL, a dev container, Codespaces) — is the *remote* machine, not necessarily wherever you're actually running Ollama or LM Studio. In that setup, register the endpoint manually instead.
+
+### Auto — pick a model automatically, from among your local/enterprise endpoints
+
+Rather than manually choosing which registered endpoint to use every time, select **Auto** in the model picker and it routes each request for you, disclosing which model was actually used and why on every response. Auto's pool is your local/enterprise endpoints only, for now — not Feima-hosted models, and not the Claude/Codex participants (they need `@claude`/`@codex`, not the model picker, since a CLI-driven agent session doesn't fit the same request/response shape).
+
+Choose how it picks via `feima.localModels.autoStrategy`:
+
+| Strategy | Behavior |
+|---|---|
+| `local-first` | Prefer endpoints on this machine; only reach for a network endpoint (enterprise gateway, remote Olla) when nothing local qualifies — and says so when it does. |
+| `balanced` (default) | Weighs task fit and capability confidence; locality is only a tie-breaker. |
+| `most-capable` | Always picks the strongest qualifying endpoint, regardless of locality or latency. |
+
+Auto sticks with the same endpoint across a conversation rather than re-deciding every message, and it never hides the underlying `feima`/`feima-local` picker entries — if a routing decision isn't what you wanted, picking a specific model directly always works.
+
+**Want your Feima-hosted models in Auto's pool too?** Run **Feima: Add My Feima-Hosted Models to Auto**. This is a convenience, not a second way to access Feima-hosted models — it snapshots your current access token into the local endpoint registry, which means it can go stale (Feima's real login uses a refreshing OAuth token; this shortcut doesn't). If it starts failing, just re-run the command. For everyday use, the main **Feima** entry in the picker already gives you continuous, always-fresh access — this shortcut exists purely so those same models can participate in Auto's routing pool.
 
 ## 🤖 Agent Participants — Claude Code, Codex & Copilot CLI, natively in VS Code
 

@@ -17,7 +17,7 @@ import { LocalEndpointRegistry } from './localEndpointRegistry';
 import { LocalChatEndpoint } from './localChatEndpoint';
 import { resolveModelMetadata } from './metadata/metadataResolver';
 import { probeKnownEndpoint } from './discovery/probe';
-import { LocalEndpointEntry } from './types';
+import { LocalEndpointEntry, MetadataConfidence } from './types';
 
 /** Same TTL as ModelCatalogService — see design.md "Aggregate Cache Consistency". */
 const CACHE_DURATION_MS = 5 * 60 * 1000;
@@ -28,6 +28,17 @@ interface AggregatedModel {
 	entryId: string;
 	rawModelId: string;
 	apiKey: string | undefined;
+	confidence: MetadataConfidence;
+}
+
+/** Minimal, read-only info about a cached candidate — see add-auto-model-routing design.md
+ *  for why this small accessor exists: the public `LanguageModelChatInformation` shape
+ *  doesn't losslessly carry back which registry entry produced it or how confident its
+ *  metadata is, and the Auto router (a sibling in the same extension, not a third party)
+ *  needs both for scoring without re-deriving them or parsing display strings. */
+export interface LocalCandidateSource {
+	readonly entryId: string;
+	readonly confidence: MetadataConfidence;
 }
 
 export class LocalEndpointProvider implements vscode.LanguageModelChatProvider {
@@ -119,7 +130,7 @@ export class LocalEndpointProvider implements vscode.LanguageModelChatProvider {
 					isUserSelectable: true,
 					capabilities: { imageInput: metadata.imageInput, toolCalling: metadata.toolCalling },
 				};
-				return { info, entryId: entry.id, rawModelId: model.id, apiKey };
+				return { info, entryId: entry.id, rawModelId: model.id, apiKey, confidence: metadata.confidence };
 			}));
 		} catch (error) {
 			this.log.error(error as Error, `[LocalEndpointProvider] Failed to fetch models for ${entry.baseEndpoint}`);
@@ -129,6 +140,12 @@ export class LocalEndpointProvider implements vscode.LanguageModelChatProvider {
 
 	private _lookup(modelId: string): AggregatedModel | undefined {
 		return this._cache?.find(c => c.info.id === modelId);
+	}
+
+	/** Read-only lookup for the Auto router (see `LocalCandidateSource` doc comment). Never triggers a fetch. */
+	getCandidateSource(modelId: string): LocalCandidateSource | undefined {
+		const cached = this._lookup(modelId);
+		return cached ? { entryId: cached.entryId, confidence: cached.confidence } : undefined;
 	}
 
 	async provideLanguageModelChatResponse(

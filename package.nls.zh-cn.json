@@ -96,6 +96,7 @@
 
 	"provider.codex.displayName": "Codex (OpenAI)",
 	"provider.claude.displayName": "Claude Code",
+	"provider.local.displayName": "本地与企业模型",
 
 	"participant.codex.description": "Codex AI 智能体 — 编辑文件、执行命令、探索代码库",
 	"participant.copilot.description": "GitHub Copilot CLI 智能体 — 通过 Copilot CLI 完成编码和终端任务",

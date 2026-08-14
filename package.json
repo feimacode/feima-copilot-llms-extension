@@ -94,6 +94,7 @@
 		"onLanguageModelChatProvider:feima",
 		"onLanguageModelChatProvider:codex",
 		"onLanguageModelChatProvider:feima-claude-code",
+		"onLanguageModelChatProvider:feima-local",
 		"onChatParticipant:codex.participant",
 		"onChatParticipant:copilot-cli.participant",
 		"onChatParticipant:claude.participant"
@@ -113,6 +114,10 @@
 			{
 				"vendor": "feima-claude-code",
 				"displayName": "%provider.claude.displayName%"
+			},
+			{
+				"vendor": "feima-local",
+				"displayName": "%provider.local.displayName%"
 			}
 		],
 		"chatParticipants": [

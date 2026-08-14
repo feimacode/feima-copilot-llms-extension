@@ -98,6 +98,7 @@
 
 	"provider.codex.displayName": "Codex (OpenAI)",
 	"provider.claude.displayName": "Claude Code",
+	"provider.local.displayName": "Local & Enterprise Models",
 
 	"participant.codex.description": "Codex AI agent — edits files, runs commands, and explores your codebase",
 	"participant.copilot.description": "GitHub Copilot CLI agent — coding and terminal tasks via Copilot CLI",

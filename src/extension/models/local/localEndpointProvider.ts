@@ -17,7 +17,7 @@ import { LocalEndpointRegistry } from './localEndpointRegistry';
 import { LocalChatEndpoint } from './localChatEndpoint';
 import { resolveModelMetadata } from './metadata/metadataResolver';
 import { probeKnownEndpoint } from './discovery/probe';
-import { LocalEndpointEntry, MetadataConfidence } from './types';
+import { LocalEndpointEntry, MetadataConfidence, idForEndpoint } from './types';
 
 /** Same TTL as ModelCatalogService — see design.md "Aggregate Cache Consistency". */
 const CACHE_DURATION_MS = 5 * 60 * 1000;
@@ -78,10 +78,14 @@ export class LocalEndpointProvider implements vscode.LanguageModelChatProvider {
 
 		await this.registry.ready();
 		const entries = this.registry.entries;
-		this.log.debug(`[LocalEndpointProvider] Aggregating models from ${entries.length} registered endpoint(s)`);
+		this.log.debug(`[LocalEndpointProvider] Aggregating models from ${entries.length} registered endpoint(s): ${entries.map(e => `${e.baseEndpoint} (${e.origin})`).join(', ')}`);
 
 		const perEntryResults = await Promise.all(entries.map(entry => this._fetchEntryModels(entry)));
+		for (const [i, result] of perEntryResults.entries()) {
+			this.log.debug(`[LocalEndpointProvider] ${entries[i].baseEndpoint} (${entries[i].origin}) contributed ${result.length} model(s): ${result.map(r => r.rawModelId).join(', ')}`);
+		}
 		const flat = perEntryResults.flat();
+		this._logPotentialDuplicates(entries, flat);
 
 		this._cache = flat;
 		this._lastFetch = now;
@@ -138,6 +142,31 @@ export class LocalEndpointProvider implements vscode.LanguageModelChatProvider {
 		}
 	}
 
+	/**
+	 * Diagnostic-only: warns when two different registry entries resolve the
+	 * same normalized loopback host and report the same raw model id, since
+	 * that's a duplicate-in-the-picker symptom (e.g. a workspace-shared entry
+	 * overlapping a personal one — those two scopes aren't deduplicated the
+	 * way personal entries are, see LocalEndpointRegistry._dedupePersonalEntries).
+	 */
+	private _logPotentialDuplicates(entries: readonly LocalEndpointEntry[], flat: AggregatedModel[]): void {
+		const entryById = new Map(entries.map(e => [e.id, e]));
+		const seen = new Map<string, string>();
+		for (const model of flat) {
+			const entry = entryById.get(model.entryId);
+			if (!entry) {
+				continue;
+			}
+			const key = `${idForEndpoint(entry.baseEndpoint)}::${model.rawModelId}`;
+			const priorEntryId = seen.get(key);
+			if (priorEntryId && priorEntryId !== entry.id) {
+				this.log.warn(`[LocalEndpointProvider] Model "${model.rawModelId}" is reported by both ${priorEntryId} and ${entry.id} — it will appear twice in the picker`);
+			} else {
+				seen.set(key, entry.id);
+			}
+		}
+	}
+
 	private _lookup(modelId: string): AggregatedModel | undefined {
 		return this._cache?.find(c => c.info.id === modelId);
 	}
@@ -155,6 +184,10 @@ export class LocalEndpointProvider implements vscode.LanguageModelChatProvider {
 		progress: vscode.Progress<vscode.LanguageModelResponsePart | vscode.LanguageModelToolCallPart>,
 		token: vscode.CancellationToken,
 	): Promise<void> {
+		// Widened locally only for reporting LanguageModelThinkingPart (proposed API,
+		// not part of the stable LanguageModelResponsePart union) — the public method
+		// signature above must stay exactly what LanguageModelChatProvider declares.
+		const thinkingProgress = progress as vscode.Progress<vscode.LanguageModelResponsePart | vscode.LanguageModelToolCallPart | vscode.LanguageModelThinkingPart>;
 		const cached = this._lookup(model.id);
 		if (!cached) {
 			throw new Error(vscode.l10n.t('Local model {0} is no longer registered', model.id));
@@ -166,12 +199,21 @@ export class LocalEndpointProvider implements vscode.LanguageModelChatProvider {
 
 		const endpoint = new LocalChatEndpoint(entry, cached.rawModelId, cached.apiKey, this.log);
 		const reportedToolCallIds = new Set<string>();
+		const thinkingId = `feima-local-thinking-${Date.now()}`;
 
 		const result = await endpoint.makeChatRequest(
 			messages,
 			async (_fullText, delta) => {
 				if (delta.text) {
 					progress.report(new vscode.LanguageModelTextPart(delta.text));
+				}
+				if (delta.reasoningContent) {
+					this.log.debug(`[LocalEndpointProvider] Emitting reasoning from ${entry.baseEndpoint}: ${delta.reasoningContent.length} chars`);
+					try {
+						thinkingProgress.report(new vscode.LanguageModelThinkingPart(delta.reasoningContent, thinkingId, {}));
+					} catch (err) {
+						this.log.warn(`[LocalEndpointProvider] Failed to report thinking part: ${err instanceof Error ? err.message : String(err)}`);
+					}
 				}
 				if (delta.toolCalls) {
 					for (const call of delta.toolCalls) {

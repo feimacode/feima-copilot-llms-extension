@@ -36,4 +36,12 @@ describe('idForEndpoint', () => {
 	it('produces different ids for different endpoints', () => {
 		assert.notStrictEqual(idForEndpoint('http://127.0.0.1:11434'), idForEndpoint('http://127.0.0.1:1234'));
 	});
+
+	it('treats localhost and 127.0.0.1 as the same endpoint', () => {
+		assert.strictEqual(idForEndpoint('http://localhost:11434'), idForEndpoint('http://127.0.0.1:11434'));
+	});
+
+	it('only normalizes localhost as a host, not as part of another host', () => {
+		assert.notStrictEqual(idForEndpoint('http://notlocalhost:11434'), idForEndpoint('http://127.0.0.1:11434'));
+	});
 });

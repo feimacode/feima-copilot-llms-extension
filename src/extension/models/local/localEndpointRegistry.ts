@@ -38,6 +38,7 @@ export class LocalEndpointRegistry {
 		private readonly log: ILogService,
 	) {
 		this._personalEntries = this.context.globalState.get<LocalEndpointEntry[]>(GLOBAL_STATE_KEY, []);
+		void this._dedupePersonalEntries();
 		this._workspaceLoadPromise = this._loadWorkspaceEntries();
 	}
 
@@ -120,6 +121,62 @@ export class LocalEndpointRegistry {
 
 	private async _savePersonalEntries(): Promise<void> {
 		await this.context.globalState.update(GLOBAL_STATE_KEY, this._personalEntries);
+	}
+
+	/**
+	 * Self-heal entries persisted before `idForEndpoint` normalized localhost/127.0.0.1 —
+	 * without this, an old "http://localhost:11434" entry and a fresh port-probed
+	 * "http://127.0.0.1:11434" entry both survive as separate ids and the same
+	 * models are aggregated (and shown in the picker) twice. Keeps the manual
+	 * entry over a port-probe one when both target the same normalized id.
+	 */
+	private async _dedupePersonalEntries(): Promise<void> {
+		const byNormalizedId = new Map<string, LocalEndpointEntry[]>();
+		for (const entry of this._personalEntries) {
+			const key = idForEndpoint(entry.baseEndpoint);
+			const group = byNormalizedId.get(key);
+			if (group) {
+				group.push(entry);
+			} else {
+				byNormalizedId.set(key, [entry]);
+			}
+		}
+
+		let changed = false;
+		const deduped: LocalEndpointEntry[] = [];
+		for (const [key, group] of byNormalizedId) {
+			if (group.length === 1) {
+				deduped.push(group[0]);
+				continue;
+			}
+			changed = true;
+			const kept = group.find(e => e.origin === 'manual') ?? group[0];
+			const dropped = group.filter(e => e !== kept);
+			this.log.warn(`[LocalEndpointRegistry] Deduplicated ${group.length} entries for ${key}, keeping ${kept.id} (${kept.origin}), dropping ${dropped.map(e => `${e.id} (${e.origin})`).join(', ')}`);
+			// Re-stamp the id to the normalized key too — entries persisted before
+			// idForEndpoint normalized localhost/127.0.0.1 keep their stale literal id
+			// otherwise, so upsertPersonalEntry's `e.id === id` lookup never matches on
+			// the next port-probe/manual re-registration and silently re-inserts the
+			// very duplicate that was just removed here (repeating on every activation).
+			if (kept.id !== key) {
+				const oldId = kept.id;
+				kept.id = key;
+				const apiKey = await this.context.secrets.get(SECRET_KEY_PREFIX + oldId);
+				if (apiKey) {
+					await this.context.secrets.store(SECRET_KEY_PREFIX + key, apiKey);
+					await this.context.secrets.delete(SECRET_KEY_PREFIX + oldId);
+				}
+			}
+			for (const entry of dropped) {
+				await this.context.secrets.delete(SECRET_KEY_PREFIX + entry.id);
+			}
+			deduped.push(kept);
+		}
+
+		if (changed) {
+			this._personalEntries = deduped;
+			await this._savePersonalEntries();
+		}
 	}
 
 	private async _loadWorkspaceEntries(): Promise<void> {

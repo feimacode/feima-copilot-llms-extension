@@ -80,21 +80,36 @@ export class LocalChatEndpoint {
 		toolMode?: vscode.LanguageModelChatToolMode,
 	): Promise<ChatResponse> {
 		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
-		const cancelListener = token.onCancellationRequested(() => controller.abort());
+		const startedAt = Date.now();
+		let timedOut = false;
+		const timeoutId = setTimeout(() => {
+			timedOut = true;
+			this.log.warn(`[LocalChatEndpoint] ${this._completionsUrl} exceeded the ${DEFAULT_TIMEOUT_MS}ms timeout with no completed response, aborting (model=${this.modelId})`);
+			controller.abort();
+		}, DEFAULT_TIMEOUT_MS);
+		const cancelListener = token.onCancellationRequested(() => {
+			this.log.debug(`[LocalChatEndpoint] Request to ${this._completionsUrl} cancelled by caller after ${Date.now() - startedAt}ms`);
+			controller.abort();
+		});
 
 		try {
 			const body = this.entry.apiFormat === 'anthropic-messages'
 				? buildAnthropicRequestBody(this.modelId, messages, tools, toolMode)
 				: buildOpenAICompatRequestBody(this.modelId, messages, tools, toolMode);
+			const serializedBody = JSON.stringify(body);
+			const toolsBytes = tools && tools.length > 0 ? JSON.stringify(tools).length : 0;
 
-			this.log.debug(`[LocalChatEndpoint] POST ${this._completionsUrl} (model=${this.modelId}, format=${this.entry.apiFormat})`);
+			this.log.info(`[LocalChatEndpoint] POST ${this._completionsUrl} (model=${this.modelId}, format=${this.entry.apiFormat}, tools=${tools?.length ?? 0}, bodyBytes=${serializedBody.length}, toolsBytes=${toolsBytes}, timeout=${DEFAULT_TIMEOUT_MS}ms)`);
+			if (tools && tools.length > 20) {
+				this.log.warn(`[LocalChatEndpoint] ${tools.length} tools (${toolsBytes} bytes of schema) sent to a local model — many local runtimes prefill this into the prompt on every turn, which can make small/quantized models take minutes or time out entirely; consider disabling unused tools for local model chats`);
+			}
 			const response = await fetch(this._completionsUrl, {
 				method: 'POST',
 				headers: this._headers(),
-				body: JSON.stringify(body),
+				body: serializedBody,
 				signal: controller.signal,
 			});
+			this.log.debug(`[LocalChatEndpoint] Response headers from ${this._completionsUrl} after ${Date.now() - startedAt}ms (status=${response.status}, content-type=${response.headers.get('content-type')})`);
 
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -108,17 +123,25 @@ export class LocalChatEndpoint {
 			}
 
 			if (this.entry.apiFormat === 'anthropic-messages') {
-				await parseAnthropicSSEStream(response.body, callback, token, this.log);
+				await parseAnthropicSSEStream(response.body, callback, token, this.log, startedAt);
 			} else {
-				await parseOpenAICompatSSEStream(response.body, callback, token, this.log);
+				await parseOpenAICompatSSEStream(response.body, callback, token, this.log, startedAt);
 			}
+			this.log.info(`[LocalChatEndpoint] Request to ${this._completionsUrl} completed after ${Date.now() - startedAt}ms`);
 			return { type: 'success' };
 		} catch (error) {
+			const elapsed = Date.now() - startedAt;
+			if (timedOut) {
+				const reason = vscode.l10n.t('Local model request to {0} timed out after {1}s with no response — the model may still be loading (large models can take minutes on first use) or is slower than the configured timeout', this.entry.baseEndpoint, Math.round(DEFAULT_TIMEOUT_MS / 1000));
+				this.log.error(`[LocalChatEndpoint] ${reason} (elapsed=${elapsed}ms)`);
+				return { type: 'error', reason };
+			}
 			if (token.isCancellationRequested) {
+				this.log.debug(`[LocalChatEndpoint] Request to ${this._completionsUrl} cancelled after ${elapsed}ms`);
 				return { type: 'cancelled' };
 			}
 			const reason = error instanceof Error ? error.message : String(error);
-			this.log.error(`[LocalChatEndpoint] Request error: ${reason}`);
+			this.log.error(`[LocalChatEndpoint] Request to ${this._completionsUrl} failed after ${elapsed}ms: ${reason}`);
 			return { type: 'error', reason };
 		} finally {
 			clearTimeout(timeoutId);
@@ -227,18 +250,31 @@ async function parseOpenAICompatSSEStream(
 	callback: FinishedCallback,
 	token: vscode.CancellationToken,
 	log: ILogService,
+	startedAt: number,
 ): Promise<void> {
 	const toolCallsMap = new Map<number, { id: string; name: string; arguments: string }>();
 	let fullText = '';
+	let firstChunkLogged = false;
+	let unrecognizedShapesLogged = 0;
 
 	for await (const line of iterateSSELines(body, token)) {
+		if (!firstChunkLogged) {
+			firstChunkLogged = true;
+			log.debug(`[LocalChatEndpoint] First SSE chunk received after ${Date.now() - startedAt}ms`);
+		}
 		if (line === '[DONE]') {
 			emitAccumulatedToolCalls(toolCallsMap, fullText, callback, log);
 			continue;
 		}
 		let parsed: {
 			choices?: Array<{
-				delta?: { content?: string; reasoning_content?: string; tool_calls?: Array<{ index?: number; id?: string; function?: { name?: string; arguments?: string } }> };
+				delta?: {
+					content?: string;
+					reasoning_content?: string;
+					reasoning?: string;
+					thinking?: string;
+					tool_calls?: Array<{ index?: number; id?: string; function?: { name?: string; arguments?: string } }>;
+				};
 				finish_reason?: string;
 			}>;
 			error?: { message?: string };
@@ -261,8 +297,12 @@ async function parseOpenAICompatSSEStream(
 			fullText += delta.content;
 			streamDelta.text = delta.content;
 		}
-		if (delta.reasoning_content) {
-			streamDelta.reasoningContent = delta.reasoning_content;
+		// Different runtimes/reasoning-parsers use different field names for
+		// reasoning tokens — accept the common variants defensively rather
+		// than silently dropping "thinking" output under an unrecognized key.
+		const reasoning = delta.reasoning_content ?? delta.reasoning ?? delta.thinking;
+		if (reasoning) {
+			streamDelta.reasoningContent = reasoning;
 		}
 		if (delta.tool_calls) {
 			for (const call of delta.tool_calls) {
@@ -276,6 +316,10 @@ async function parseOpenAICompatSSEStream(
 					toolCallsMap.set(idx, { id: call.id ?? '', name: call.function?.name ?? '', arguments: call.function?.arguments ?? '' });
 				}
 			}
+		}
+		if (!streamDelta.text && !streamDelta.reasoningContent && !delta.tool_calls && unrecognizedShapesLogged < 3) {
+			unrecognizedShapesLogged++;
+			log.debug(`[LocalChatEndpoint] Delta with no recognized content/reasoning/tool_calls field: ${JSON.stringify(delta)}`);
 		}
 		if (choice.finish_reason && toolCallsMap.size > 0) {
 			emitAccumulatedToolCalls(toolCallsMap, fullText, callback, log);
@@ -368,16 +412,22 @@ async function parseAnthropicSSEStream(
 	callback: FinishedCallback,
 	token: vscode.CancellationToken,
 	log: ILogService,
+	startedAt: number,
 ): Promise<void> {
 	let fullText = '';
 	const toolCallsMap = new Map<number, { id: string; name: string; arguments: string }>();
+	let firstChunkLogged = false;
 
 	for await (const line of iterateSSELines(body, token)) {
+		if (!firstChunkLogged) {
+			firstChunkLogged = true;
+			log.debug(`[LocalChatEndpoint] First SSE chunk received after ${Date.now() - startedAt}ms`);
+		}
 		let event: {
 			type?: string;
 			index?: number;
 			content_block?: { type?: string; id?: string; name?: string };
-			delta?: { type?: string; text?: string; partial_json?: string };
+			delta?: { type?: string; text?: string; partial_json?: string; thinking?: string };
 			error?: { message?: string };
 		};
 		try {
@@ -396,6 +446,8 @@ async function parseAnthropicSSEStream(
 			if (event.delta?.type === 'text_delta' && event.delta.text) {
 				fullText += event.delta.text;
 				await callback(fullText, { text: event.delta.text });
+			} else if (event.delta?.type === 'thinking_delta' && event.delta.thinking) {
+				await callback(fullText, { reasoningContent: event.delta.thinking });
 			} else if (event.delta?.type === 'input_json_delta' && event.delta.partial_json !== undefined) {
 				const existing = toolCallsMap.get(event.index ?? 0);
 				if (existing) {

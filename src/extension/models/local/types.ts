@@ -72,9 +72,16 @@ export function defaultCompletionsPath(apiFormat: LocalApiFormat): string {
 	}
 }
 
-/** Deterministic id from a base endpoint, so re-discovery of the same endpoint doesn't duplicate entries. */
+/**
+ * Deterministic id from a base endpoint, so re-discovery of the same endpoint
+ * doesn't duplicate entries. `localhost` and `127.0.0.1` are the same loopback
+ * address, so they're normalized to one id here — otherwise a manually-added
+ * "http://localhost:11434" and a port-probed "http://127.0.0.1:11434" register
+ * as two separate entries and the same models show up twice in the picker.
+ */
 export function idForEndpoint(baseEndpoint: string): string {
-	return baseEndpoint.trim().replace(/\/+$/, '').toLowerCase();
+	const normalized = baseEndpoint.trim().replace(/\/+$/, '').toLowerCase();
+	return normalized.replace(/^(https?:\/\/)localhost(:|\/|$)/, '$1127.0.0.1$2');
 }
 
 /** A model returned by an endpoint's model-list call, before metadata resolution. */

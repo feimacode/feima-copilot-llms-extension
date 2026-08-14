@@ -108,7 +108,10 @@
 	"command.localModels.addEndpoint.title": "添加模型端点",
 	"command.localModels.refresh.title": "刷新模型列表",
 	"command.localModels.addFeimaHostedEndpoint.title": "将我的飞码托管模型加入 Auto",
+	"command.localModels.view.testConnection.title": "测试连接",
+	"command.localModels.view.remove.title": "移除端点",
 	"command.localModels.category": "飞码本地模型",
+	"view.localModels.title": "本地与企业模型",
 	"settings.localModels.autoStrategy.description": "`Auto` 模型在你已注册的本地/企业端点之间如何选择。`local-first` 优先使用本机端点；`balanced` 权衡任务匹配度与置信度；`most-capable` 始终选择满足条件中能力最强的端点。",
 
 	"settings.agents.codex.binaryPath.description": "`codex` 二进制文件的绝对路径。留空则通过 PATH 自动发现。",

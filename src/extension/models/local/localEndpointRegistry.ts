@@ -27,6 +27,14 @@ export class LocalEndpointRegistry {
 	private readonly _onDidChangeEntries = new vscode.EventEmitter<void>();
 	readonly onDidChangeEntries = this._onDidChangeEntries.event;
 
+	/** Fired with the changed entry's id whenever `markHealth` is called — from
+	 *  this class's own probes or from any other caller (e.g. LocalEndpointProvider's
+	 *  normal aggregation fan-out) — so consumers like a status view can do a
+	 *  targeted refresh on *any* health update, not just their own actions.
+	 *  See add-endpoint-management-view design.md "A new onDidChangeHealth event". */
+	private readonly _onDidChangeHealth = new vscode.EventEmitter<string>();
+	readonly onDidChangeHealth = this._onDidChangeHealth.event;
+
 	private _personalEntries: LocalEndpointEntry[] = [];
 	private _workspaceEntries: LocalEndpointEntry[] = [];
 	/** In-memory-only liveness/confidence state — never persisted (design.md "hard config vs soft state"). */
@@ -107,6 +115,7 @@ export class LocalEndpointRegistry {
 
 	markHealth(id: string, health: LocalEndpointHealth): void {
 		this._health.set(id, health);
+		this._onDidChangeHealth.fire(id);
 	}
 
 	getHealth(id: string): LocalEndpointHealth | undefined {

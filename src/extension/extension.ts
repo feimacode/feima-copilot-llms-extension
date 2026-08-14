@@ -24,6 +24,8 @@ import { registerLocalModelsRefreshCommand } from './models/local/refreshCommand
 import { AutoModelProvider } from './models/local/auto/autoModelProvider';
 import { AutoStrategyId } from './models/local/auto/types';
 import { registerFeimaHostedShortcutCommand } from './models/local/discovery/feimaHostedShortcut';
+import { LocalEndpointTreeProvider } from './models/local/view/localEndpointTreeProvider';
+import { registerTreeCommands } from './models/local/view/treeCommands';
 
 // Store auth service for disposal
 let authService: FeimaAuthenticationService | undefined;
@@ -177,6 +179,25 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 				context.subscriptions.push(autoProviderDisposable, autoProvider);
 				context.subscriptions.push(registerFeimaHostedShortcutCommand(localRegistry, authService, localLog));
 				logService.info('✅ Auto router registered (vendor ID: feima-auto)');
+
+				// 5d. Register the endpoint management tree view -- see
+				// openspec/changes/add-endpoint-management-view. Read-mostly consumer
+				// of the registry/provider's existing public surface.
+				const treeProvider = new LocalEndpointTreeProvider(localRegistry, localProvider, localLog.createSubLogger('View'));
+				const treeView = vscode.window.createTreeView('feima.localModels.view', {
+					treeDataProvider: treeProvider,
+				});
+				context.subscriptions.push(treeView);
+				context.subscriptions.push(
+					treeView.onDidChangeVisibility(e => {
+						if (e.visible) {
+							const cts = new vscode.CancellationTokenSource();
+							void treeProvider.ensurePopulated(cts.token).finally(() => cts.dispose());
+						}
+					}),
+				);
+				context.subscriptions.push(...registerTreeCommands(localRegistry, localLog));
+				logService.info('✅ Local endpoint management view registered');
 
 				// Discover well-known local runtimes in the background; a quiet
 				// machine (nothing found) is the expected common case, not an error

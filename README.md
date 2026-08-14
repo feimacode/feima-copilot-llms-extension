@@ -83,6 +83,7 @@ Feima Copilot is a VS Code extension built around three things: **more models** 
   }
   ```
 - **Refresh on demand**: pulled a new local model or changed something? Run **Feima: Refresh Models** to re-discover immediately instead of waiting for the cache to expire.
+- **See what's registered**: the **Local & Enterprise Models** view in the Explorer sidebar lists every registered endpoint, grouped personal/team, with a live health indicator and its discovered models. Right-click an endpoint to remove it (personal entries only) or test its connection on demand — the view updates automatically as health changes, no manual refresh needed.
 
 Capability metadata (context window, tool-calling support) is read from the endpoint itself when available, and clearly marked as *estimated* in the picker when it has to be inferred — never presented as fact when it's a guess.
 

@@ -217,6 +217,18 @@
 				"command": "feima.localModels.addFeimaHostedEndpoint",
 				"title": "%command.localModels.addFeimaHostedEndpoint.title%",
 				"category": "%command.localModels.category%"
+			},
+			{
+				"command": "feima.localModels.view.testConnection",
+				"title": "%command.localModels.view.testConnection.title%",
+				"category": "%command.localModels.category%",
+				"icon": "$(pulse)"
+			},
+			{
+				"command": "feima.localModels.view.remove",
+				"title": "%command.localModels.view.remove.title%",
+				"category": "%command.localModels.category%",
+				"icon": "$(trash)"
 			}
 		],
 		"configuration": {
@@ -483,6 +495,41 @@
 					"markdownDescription": "%settings.agents.claude.systemPromptMode.description%"
 				}
 			}
+		},
+		"views": {
+			"explorer": [
+				{
+					"id": "feima.localModels.view",
+					"name": "%view.localModels.title%",
+					"contextualTitle": "%view.localModels.title%"
+				}
+			]
+		},
+		"menus": {
+			"view/title": [
+				{
+					"command": "feima.localModels.addEndpoint",
+					"when": "view == feima.localModels.view",
+					"group": "navigation@1"
+				},
+				{
+					"command": "feima.localModels.refresh",
+					"when": "view == feima.localModels.view",
+					"group": "navigation@2"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "feima.localModels.view.testConnection",
+					"when": "view == feima.localModels.view && viewItem =~ /Endpoint$/",
+					"group": "inline"
+				},
+				{
+					"command": "feima.localModels.view.remove",
+					"when": "view == feima.localModels.view && viewItem == personalEndpoint",
+					"group": "1_modification"
+				}
+			]
 		},
 		"icons": {
 			"feima-logo": {

@@ -177,6 +177,17 @@ export class LocalEndpointProvider implements vscode.LanguageModelChatProvider {
 		return cached ? { entryId: cached.entryId, confidence: cached.confidence } : undefined;
 	}
 
+	/**
+	 * Read-only lookup for the endpoint-management view (see
+	 * add-endpoint-management-view design.md "Reading models: one small
+	 * additive accessor, no new fetch trigger"). Returns whatever this
+	 * provider currently has cached for `entryId` — `[]` when the cache
+	 * hasn't been populated yet — and never itself triggers a fetch.
+	 */
+	getCachedModelsForEntry(entryId: string): vscode.LanguageModelChatInformation[] {
+		return this._cache?.filter(c => c.entryId === entryId).map(c => c.info) ?? [];
+	}
+
 	async provideLanguageModelChatResponse(
 		model: vscode.LanguageModelChatInformation,
 		messages: vscode.LanguageModelChatMessage[],

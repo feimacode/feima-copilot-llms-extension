@@ -110,7 +110,10 @@
 	"command.localModels.addEndpoint.title": "Add Model Endpoint",
 	"command.localModels.refresh.title": "Refresh Models",
 	"command.localModels.addFeimaHostedEndpoint.title": "Add My Feima-Hosted Models to Auto",
+	"command.localModels.view.testConnection.title": "Test Connection",
+	"command.localModels.view.remove.title": "Remove Endpoint",
 	"command.localModels.category": "Feima Local Models",
+	"view.localModels.title": "Local & Enterprise Models",
 	"settings.localModels.autoStrategy.description": "How the `Auto` model picks among your registered local/enterprise endpoints. `local-first` prefers this machine; `balanced` weighs task fit and confidence; `most-capable` always reaches for the strongest qualifying endpoint.",
 
 	"settings.agents.codex.binaryPath.description": "Absolute path to the `codex` binary. Leave empty to auto-discover via PATH.",

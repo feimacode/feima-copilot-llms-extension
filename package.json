@@ -2,7 +2,7 @@
 	"name": "copilot-more-llms",
 	"displayName": "%extension.displayName%",
 	"description": "%extension.description%",
-	"version": "0.2.4",
+	"version": "0.2.5",
 	"publisher": "feima",
 	"author": {
 		"name": "Feima",

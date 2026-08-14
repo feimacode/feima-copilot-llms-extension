@@ -1,7 +1,7 @@
 {
 	"extension.name": "copilot-cn-models",
 	"extension.displayName": "飞码扣(Feimacode)",
-	"extension.description": "飞码扣 —— 为 GitHub Copilot Chat 接入 DeepSeek、通义千问 Qwen、智谱 GLM、MiniMax、Kimi 等顶级大模型；用你自己的 Claude/Codex/Copilot CLI 订阅在 VS Code 中原生驱动智能体；还提供本地代理，让 Copilot/BYOK 模型驱动任意工具。",
+	"extension.description": "飞码扣 —— 为 GitHub Copilot Chat 接入 DeepSeek、通义千问 Qwen、智谱 GLM 5.3、MiniMax、Kimi K3 等顶级大模型；用你自己的 Claude/Codex/Copilot CLI 订阅在 VS Code 中原生驱动智能体；还提供本地代理，让 Copilot/BYOK 模型驱动任意工具。",
 	
 	"error.notAuthenticated": "未身份验证",
 	"error.invalidRequest.noMessages": "无效请求：没有消息。",

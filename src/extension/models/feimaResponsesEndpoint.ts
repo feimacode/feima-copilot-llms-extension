@@ -25,6 +25,7 @@ import { countTokens } from '../platform/tokenizer/tikTokenizer';
 import { getResolvedConfig } from '../../config/configService';
 import { toolResultContentToString } from './toolResultConverter';
 import { mapHttpErrorToChatResponse } from './httpErrorMapping';
+import { MAX_TOOL_NAME_LENGTH, shortenToolName } from './toolNameShortening';
 import { ApiUsage, ChatResponse, FinishedCallback, IFeimaEndpoint, ModelInfo, StreamDelta } from './feimaChatEndpoint';
 
 // ---------------------------------------------------------------------------
@@ -183,7 +184,7 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 			tools?: readonly vscode.LanguageModelChatTool[];
 			toolMode?: vscode.LanguageModelChatToolMode;
 		}
-	): ResponsesRequestBody {
+	): { body: ResponsesRequestBody; toolNameMap: Map<string, string> } {
 		const input: ResponsesInputItem[] = [];
 
 		if (getResolvedConfig().enforceEnglish) {
@@ -238,7 +239,7 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 					input.push({
 						type: 'function_call',
 						call_id: toolCallPart.callId,
-						name: toolCallPart.name,
+						name: shortenToolName(toolCallPart.name),
 						arguments: JSON.stringify(toolCallPart.input || {})
 					});
 				}
@@ -280,6 +281,8 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 			body.reasoning = { effort: 'medium', summary: 'auto' };
 		}
 
+		const toolNameMap = new Map<string, string>(); // shortened -> original
+
 		if (options.tools && options.tools.length > 0 && this.supportsToolCalls) {
 			body.tools = options.tools.map(tool => {
 				let parameters: object;
@@ -288,20 +291,25 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 				} else {
 					parameters = { type: 'object', properties: {} };
 				}
+				const shortName = shortenToolName(tool.name);
+				if (shortName !== tool.name) {
+					toolNameMap.set(shortName, tool.name);
+					this.log.debug(`[FeimaResponsesEndpoint] Tool name "${tool.name}" (${tool.name.length} chars) exceeds ${MAX_TOOL_NAME_LENGTH}, shortened to "${shortName}"`);
+				}
 				return {
 					type: 'function' as const,
-					name: tool.name,
+					name: shortName,
 					description: tool.description,
 					parameters
 				};
 			});
 
 			if (options.toolMode === vscode.LanguageModelChatToolMode.Required && options.tools.length === 1) {
-				body.tool_choice = { type: 'function', name: options.tools[0].name };
+				body.tool_choice = { type: 'function', name: shortenToolName(options.tools[0].name) };
 			}
 		}
 
-		return body;
+		return { body, toolNameMap };
 	}
 
 	/** Validate request before sending — identical contract to FeimaChatEndpoint.validateRequest. */
@@ -400,7 +408,7 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 			return { type: 'error', reason: 'Authentication failed: no token available' };
 		}
 
-		const requestBody = this.createRequestBody(messages, { tools, toolMode });
+		const { body: requestBody, toolNameMap } = this.createRequestBody(messages, { tools, toolMode });
 
 		try {
 			const baseHeaders = await this.getHeaders();
@@ -430,7 +438,7 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 				return { type: 'error', reason: vscode.l10n.t('No response body received') };
 			}
 
-			const usage = await this._parseResponsesSSEStream(response.body, callback, token);
+			const usage = await this._parseResponsesSSEStream(response.body, callback, token, toolNameMap);
 			return { type: 'success', usage };
 
 		} catch (error) {
@@ -470,7 +478,8 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 	private async _parseResponsesSSEStream(
 		body: ReadableStream<Uint8Array>,
 		callback: FinishedCallback,
-		token: vscode.CancellationToken
+		token: vscode.CancellationToken,
+		toolNameMap: Map<string, string>
 	): Promise<ApiUsage | undefined> {
 		const reader = body.getReader();
 		const decoder = new TextDecoder('utf-8');
@@ -545,9 +554,14 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 						const outputIndex = typeof event.output_index === 'number' ? event.output_index : -1;
 						if (item?.type === 'function_call') {
 							const tracked = toolCallsByOutputIndex.get(outputIndex);
+							const returnedName = item.name ?? tracked?.name ?? '';
 							const finalCall = {
 								id: item.call_id ?? tracked?.id ?? '',
-								name: item.name ?? tracked?.name ?? '',
+								// Reverse the shortening applied in createRequestBody — the
+								// model can only call names it was actually given, so a hit
+								// here always resolves to the real VS Code tool name; a miss
+								// means the name was never shortened (<=64 chars) already.
+								name: toolNameMap.get(returnedName) ?? returnedName,
 								arguments: item.arguments ?? tracked?.arguments ?? ''
 							};
 							toolCallsByOutputIndex.delete(outputIndex);

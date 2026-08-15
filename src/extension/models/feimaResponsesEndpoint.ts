@@ -76,6 +76,7 @@ interface ResponsesRequestBody {
 	tools?: ResponsesFunctionTool[];
 	tool_choice?: 'auto' | { type: 'function'; name: string };
 	reasoning?: { effort?: string; summary?: string };
+	include?: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -279,6 +280,13 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 
 		if (this.supportsThinking) {
 			body.reasoning = { effort: 'medium', summary: 'auto' };
+			// Required by real OpenAI-family reasoning models when store=false
+			// (always, for this client) — encrypted_content is the only way to
+			// carry reasoning state across a tool-calling loop without
+			// server-side storage. Matches vscode-copilot-chat's
+			// createResponsesRequestBody, which sets this unconditionally
+			// whenever reasoning is used.
+			body.include = ['reasoning.encrypted_content'];
 		}
 
 		const toolNameMap = new Map<string, string>(); // shortened -> original

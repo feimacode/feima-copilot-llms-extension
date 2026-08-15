@@ -13,7 +13,9 @@ import * as vscode from 'vscode';
 import { FeimaAuthenticationService } from '../platform/authentication/vscode/feimaAuthenticationService';
 import { ModelCatalogService } from './modelCatalog';
 import { FeimaLanguageModelWrapper } from './languageModelWrapper';
-import { FeimaChatEndpoint, ModelInfo } from './feimaChatEndpoint';
+import { FeimaChatEndpoint, IFeimaEndpoint, ModelInfo } from './feimaChatEndpoint';
+import { FeimaResponsesEndpoint } from './feimaResponsesEndpoint';
+import { usesResponsesApi } from './protocolSelection';
 import { ILogService } from '../platform/log/common/logService';
 
 /**
@@ -31,7 +33,7 @@ export class FeimaLanguageModelProvider implements vscode.LanguageModelChatProvi
 	readonly onDidChangeLanguageModelChatInformation = this._onDidChange.event;
 	private readonly _log: ILogService;
 	private readonly _wrapper: FeimaLanguageModelWrapper;
-	private readonly _endpointCache = new Map<string, FeimaChatEndpoint>();
+	private readonly _endpointCache = new Map<string, IFeimaEndpoint>();
 
 	constructor(
 		private readonly authService: FeimaAuthenticationService,
@@ -134,7 +136,7 @@ export class FeimaLanguageModelProvider implements vscode.LanguageModelChatProvi
 	 * Get or create endpoint for a model.
 	 * Endpoints are cached to avoid recreating them.
 	 */
-	private async _getEndpoint(modelId: string): Promise<FeimaChatEndpoint> {
+	private async _getEndpoint(modelId: string): Promise<IFeimaEndpoint> {
 		// Check cache first
 		let endpoint = this._endpointCache.get(modelId);
 		if (endpoint) {
@@ -167,14 +169,20 @@ export class FeimaLanguageModelProvider implements vscode.LanguageModelChatProvi
 				maxOutputTokens: catalogModel.capabilities.limits.max_output_tokens,
 				supportsToolCalls: catalogModel.capabilities.supports.tool_calls || false,
 				supportsVision: catalogModel.capabilities.supports.vision || false,
-				supportsThinking: catalogModel.capabilities.supports.thinking || false
+				supportsThinking: catalogModel.capabilities.supports.thinking || false,
+				// Absent/undefined from the catalog means "chat completions only" —
+				// the same default feima-api itself seeds for every model today.
+				supportedEndpoints: catalogModel.supported_endpoints ?? ['/chat/completions']
 			};
 
-			// Create and cache endpoint
-			endpoint = new FeimaChatEndpoint(modelInfo, this.authService, this._log);
+			// Responses format wins whenever declared, even alongside /chat/completions —
+			// matches vscode-copilot-chat's ChatEndpoint.useResponsesApi.
+			endpoint = usesResponsesApi(modelInfo)
+				? new FeimaResponsesEndpoint(modelInfo, this.authService, this._log)
+				: new FeimaChatEndpoint(modelInfo, this.authService, this._log);
 			this._endpointCache.set(modelId, endpoint);
-			
-			this._log.debug(`Created endpoint for model: ${modelId}`);
+
+			this._log.debug(`Created endpoint for model: ${modelId} (protocol: ${usesResponsesApi(modelInfo) ? 'responses' : 'chat_completions'})`);
 			return endpoint;
 		} catch (error) {
 			const reason = error instanceof Error ? error.message : String(error);

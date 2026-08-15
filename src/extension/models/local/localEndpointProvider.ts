@@ -227,17 +227,33 @@ export class LocalEndpointProvider implements vscode.LanguageModelChatProvider {
 					}
 				}
 				if (delta.toolCalls) {
+					// Arguments arrive already parsed and repaired (see toolCallRepair.ts) —
+					// no JSON.parse/try-catch needed here anymore.
 					for (const call of delta.toolCalls) {
 						if (reportedToolCallIds.has(call.id)) {
 							continue;
 						}
-						try {
-							const parameters = JSON.parse(call.arguments || '{}');
-							progress.report(new vscode.LanguageModelToolCallPart(call.id, call.name, parameters));
-							reportedToolCallIds.add(call.id);
-						} catch (err) {
-							this.log.error(err as Error, `[LocalEndpointProvider] Malformed tool call JSON from ${entry.baseEndpoint} for ${call.name}`);
+						if (call.confidence === 'estimated') {
+							this.log.warn(`[LocalEndpointProvider] Tool call ${call.name} (${call.id}) from ${entry.baseEndpoint} required repair to parse`);
 						}
+						progress.report(new vscode.LanguageModelToolCallPart(call.id, call.name, call.parameters));
+						reportedToolCallIds.add(call.id);
+					}
+				}
+				if (delta.failedToolCalls) {
+					// Repair could not produce valid JSON at all — disclose it in the
+					// response text rather than fabricating a tool call with unusable
+					// parameters or silently dropping it (design.md "Disclosure mechanism":
+					// provideLanguageModelChatResponse has no "tool failed" part type).
+					for (const call of delta.failedToolCalls) {
+						if (reportedToolCallIds.has(call.id)) {
+							continue;
+						}
+						this.log.error(new Error('Unrepairable tool call'), `[LocalEndpointProvider] Tool call ${call.name} (${call.id}) from ${entry.baseEndpoint} could not be parsed even after repair`);
+						progress.report(new vscode.LanguageModelTextPart(
+							vscode.l10n.t('\n⚠️ The tool call `{0}` returned arguments that could not be parsed and was skipped.\n', call.name),
+						));
+						reportedToolCallIds.add(call.id);
 					}
 				}
 				return undefined;

@@ -36,6 +36,14 @@ export interface FeimaModelAPIResponse {
 	preview?: boolean;
 	is_chat_default?: boolean;
 	is_chat_fallback?: boolean;
+	/**
+	 * Which specific wire-protocol paths this model answers to, e.g.
+	 * ["/chat/completions"] or ["/chat/completions", "/responses"].
+	 * Drives protocol selection in feimaLanguageModelProvider — Responses
+	 * format is used whenever "/responses" is present, matching the
+	 * upstream Copilot Chat `ModelSupportedEndpoint` pattern.
+	 */
+	supported_endpoints?: string[];
 	capabilities: {
 		type: 'chat' | 'completion' | 'embeddings';
 		family: string;

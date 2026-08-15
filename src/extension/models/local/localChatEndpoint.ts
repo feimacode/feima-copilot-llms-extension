@@ -12,6 +12,16 @@
  *  Deliberately simpler than FeimaChatEndpoint: no quota/wallet/billing
  *  concerns, no provider-specific request quirks — this is a generic client
  *  for whatever the registry entry says it speaks, not a Feima-specific one.
+ *
+ *  Tool-call arguments from local/quantized models are unreliable in ways
+ *  Feima-hosted models mostly aren't — malformed JSON is routine here, not a
+ *  rare bug signal (contrast FeimaLanguageModelWrapper's deliberate
+ *  fail-hard on the same failure). `emitAccumulatedToolCalls` below repairs
+ *  what it can via toolCallRepair.ts and discloses what it can't, rather
+ *  than silently dropping the call — see
+ *  openspec/changes/add-local-tool-call-repair/design.md for the full
+ *  rationale, including why the Feima-hosted path was deliberately left
+ *  untouched.
  *--------------------------------------------------------------------------------------------*/
 
 import * as crypto from 'crypto';
@@ -20,12 +30,21 @@ import fetch from 'node-fetch';
 import { ILogService } from '../../platform/log/common/logService';
 import { countTokens } from '../../platform/tokenizer/tikTokenizer';
 import { LocalEndpointEntry } from './types';
+import { RepairConfidence, repairToolCallArguments } from './toolCallRepair';
 
 export type FinishedCallback = (fullText: string, delta: StreamDelta) => Promise<number | undefined>;
 
+/**
+ * Arguments are pre-parsed and pre-repaired by the time a tool call reaches
+ * a StreamDelta — see toolCallRepair.ts and design.md "Disclosure mechanism".
+ * A call whose arguments never became valid JSON is never included here; it
+ * appears in `failedToolCalls` instead so the caller can disclose it rather
+ * than fabricate a tool call with unusable parameters.
+ */
 export interface StreamDelta {
 	text?: string;
-	toolCalls?: Array<{ id: string; name: string; arguments: string }>;
+	toolCalls?: Array<{ id: string; name: string; parameters: object; confidence: RepairConfidence }>;
+	failedToolCalls?: Array<{ id: string; name: string; rawArguments: string }>;
 	reasoningContent?: string;
 }
 
@@ -332,6 +351,14 @@ async function parseOpenAICompatSSEStream(
 	emitAccumulatedToolCalls(toolCallsMap, fullText, callback, log);
 }
 
+/**
+ * Finalizes accumulated tool calls: drops unnamed calls, synthesizes a
+ * missing id, then repairs and parses each call's arguments (see
+ * toolCallRepair.ts). A call whose arguments never became valid JSON is
+ * reported via `failedToolCalls` instead of `toolCalls`, so the caller can
+ * disclose the failure rather than silently drop it or fabricate a call
+ * with unusable parameters (see design.md "Disclosure mechanism").
+ */
 function emitAccumulatedToolCalls(
 	toolCallsMap: Map<number, { id: string; name: string; arguments: string }>,
 	fullText: string,
@@ -341,17 +368,33 @@ function emitAccumulatedToolCalls(
 	if (toolCallsMap.size === 0) {
 		return;
 	}
-	const completed: Array<{ id: string; name: string; arguments: string }> = [];
+	const toolCalls: Array<{ id: string; name: string; parameters: object; confidence: RepairConfidence }> = [];
+	const failedToolCalls: Array<{ id: string; name: string; rawArguments: string }> = [];
+
 	for (const call of toolCallsMap.values()) {
 		if (!call.name) {
 			log.warn(`[LocalChatEndpoint] Dropping tool call with no name (malformed local-model output)`);
 			continue;
 		}
-		completed.push(call.id ? call : { ...call, id: `call_${crypto.randomUUID()}` });
+		const id = call.id ? call.id : `call_${crypto.randomUUID()}`;
+		const repaired = repairToolCallArguments(call.arguments);
+		if (repaired) {
+			if (repaired.confidence === 'estimated') {
+				log.warn(`[LocalChatEndpoint] Tool call ${call.name} (${id}) needed repair to parse — arguments preview: ${call.arguments.slice(0, 200)}`);
+			}
+			toolCalls.push({ id, name: call.name, parameters: repaired.parameters, confidence: repaired.confidence });
+		} else {
+			log.error(new Error('Unrepairable tool call arguments'), `[LocalChatEndpoint] Tool call ${call.name} (${id}) could not be parsed even after repair — arguments preview: ${call.arguments.slice(0, 200)}`);
+			failedToolCalls.push({ id, name: call.name, rawArguments: call.arguments });
+		}
 	}
 	toolCallsMap.clear();
-	if (completed.length > 0) {
-		void callback(fullText, { toolCalls: completed });
+
+	if (toolCalls.length > 0 || failedToolCalls.length > 0) {
+		void callback(fullText, {
+			...(toolCalls.length > 0 ? { toolCalls } : {}),
+			...(failedToolCalls.length > 0 ? { failedToolCalls } : {}),
+		});
 	}
 }
 

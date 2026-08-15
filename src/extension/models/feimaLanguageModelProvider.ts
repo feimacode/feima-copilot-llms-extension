@@ -170,6 +170,9 @@ export class FeimaLanguageModelProvider implements vscode.LanguageModelChatProvi
 				supportsToolCalls: catalogModel.capabilities.supports.tool_calls || false,
 				supportsVision: catalogModel.capabilities.supports.vision || false,
 				supportsThinking: catalogModel.capabilities.supports.thinking || false,
+				// Absent from the catalog means "unconfirmed" — treated the same as
+				// explicitly empty (no reasoning effort sent) until a model declares it.
+				supportedReasoningEffort: catalogModel.capabilities.supports.reasoning_effort ?? [],
 				// Absent/undefined from the catalog means "chat completions only" —
 				// the same default feima-api itself seeds for every model today.
 				supportedEndpoints: catalogModel.supported_endpoints ?? ['/chat/completions']

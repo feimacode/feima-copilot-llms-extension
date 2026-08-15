@@ -60,6 +60,14 @@ export interface FeimaModelAPIResponse {
 			vision?: boolean;
 			structured_outputs?: boolean;
 			thinking?: boolean;
+			/**
+			 * Accepted reasoning effort levels (e.g. ["low", "medium", "high"]),
+			 * distinct from `thinking` — a model can produce reasoning tokens
+			 * (thinking: true) without accepting the Responses API's `reasoning`
+			 * parameter shape at all (empty/absent here). Matches GitHub Copilot
+			 * Chat's own model metadata field of the same name.
+			 */
+			reasoning_effort?: string[];
 		};
 	};
 	billing?: {

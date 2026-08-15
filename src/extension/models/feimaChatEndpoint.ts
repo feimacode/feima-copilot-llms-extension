@@ -122,6 +122,15 @@ export interface ModelInfo {
 	supportsToolCalls: boolean;
 	supportsVision: boolean;
 	supportsThinking: boolean;
+	/**
+	 * Accepted reasoning effort levels (e.g. ["low", "medium", "high"]).
+	 * Distinct from supportsThinking — see modelCatalog.ts's
+	 * capabilities.supports.reasoning_effort for why the two aren't the same.
+	 * Used by FeimaResponsesEndpoint to decide whether to send `reasoning`/
+	 * `include` at all; empty for models where it's unconfirmed or known
+	 * unsupported.
+	 */
+	supportedReasoningEffort: string[];
 	/** Which wire-protocol paths this model answers to (e.g. ["/chat/completions", "/responses"]). */
 	supportedEndpoints: string[];
 }

@@ -123,6 +123,7 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 	get supportsToolCalls(): boolean { return this.modelInfo.supportsToolCalls; }
 	get supportsVision(): boolean { return this.modelInfo.supportsVision; }
 	get supportsThinking(): boolean { return this.modelInfo.supportsThinking; }
+	get supportedReasoningEffort(): string[] { return this.modelInfo.supportedReasoningEffort; }
 
 	get apiUrl(): string {
 		const apiBase = getResolvedConfig().apiBaseUrl || '';
@@ -278,7 +279,14 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 			max_output_tokens: this.maxOutputTokens
 		};
 
-		if (this.supportsThinking) {
+		// Gated on supportedReasoningEffort, NOT supportsThinking — a model can
+		// produce reasoning tokens without accepting the Responses API's
+		// `reasoning` parameter shape at all (matches vscode-copilot-chat's
+		// `endpoint.supportsReasoningEffort?.length` check in
+		// createResponsesRequestBody; sending `reasoning` to a model that
+		// doesn't declare support for it is exactly what caused gpt-5.6-luna's
+		// persistent "invalid_prompt" 400s from OpenCode Zen).
+		if (this.supportedReasoningEffort.length > 0) {
 			body.reasoning = { effort: 'medium', summary: 'auto' };
 			// Required by real OpenAI-family reasoning models when store=false
 			// (always, for this client) — encrypted_content is the only way to

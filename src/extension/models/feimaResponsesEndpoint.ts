@@ -410,6 +410,18 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 
 		const { body: requestBody, toolNameMap } = this.createRequestBody(messages, { tools, toolMode });
 
+		// Structural summary (types/roles/call_ids, not full content) so an
+		// upstream "invalid_prompt"-style rejection can be diagnosed from
+		// logs alone — mirrors responsesProxy.ts's equivalent input-item log.
+		this.log.debug(`[FeimaResponsesEndpoint] input items (${requestBody.input.length}): ${requestBody.input.map((item, idx) => {
+			if (item.type === 'function_call') { return `${idx}:function_call(call_id=${item.call_id}, name=${item.name})`; }
+			if (item.type === 'function_call_output') { return `${idx}:function_call_output(call_id=${item.call_id})`; }
+			return `${idx}:message(${item.role})`;
+		}).join(', ')}`);
+		if (requestBody.tools) {
+			this.log.debug(`[FeimaResponsesEndpoint] tools (${requestBody.tools.length}): ${requestBody.tools.map(t => t.name).join(', ')}`);
+		}
+
 		try {
 			const baseHeaders = await this.getHeaders();
 			const timeoutMs = getResolvedConfig().requestTimeout * 1000;

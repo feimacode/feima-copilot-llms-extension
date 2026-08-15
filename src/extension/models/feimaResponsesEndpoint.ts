@@ -284,9 +284,7 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 		// produce reasoning tokens without accepting the Responses API's
 		// `reasoning` parameter shape at all (matches vscode-copilot-chat's
 		// `endpoint.supportsReasoningEffort?.length` check in
-		// createResponsesRequestBody; sending `reasoning` to a model that
-		// doesn't declare support for it is exactly what caused gpt-5.6-luna's
-		// persistent "invalid_prompt" 400s from OpenCode Zen).
+		// createResponsesRequestBody).
 		if (this.supportedReasoningEffort.length > 0) {
 			body.reasoning = { effort: 'medium', summary: 'auto' };
 			// Required by real OpenAI-family reasoning models when store=false
@@ -295,6 +293,15 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 			// server-side storage. Matches vscode-copilot-chat's
 			// createResponsesRequestBody, which sets this unconditionally
 			// whenever reasoning is used.
+			//
+			// gpt-5.6-luna's persistent "invalid_prompt" 400s turned out to be
+			// caused server-side, not here: feima-api's /v1/responses handler
+			// was silently dropping `store: false` (truthy-check on a bool)
+			// and falling back to the provider's `store: true` default, which
+			// upstream OpenAI/Codex rejects when combined with
+			// `include: ["reasoning.encrypted_content"]`. Fixed in feima-api
+			// (app/api/responses.py, commit ab3531d) — this client was already
+			// sending the correct `store: false` the whole time.
 			body.include = ['reasoning.encrypted_content'];
 		}
 
@@ -443,14 +450,6 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 		if (requestBody.tools) {
 			this.log.debug(`[FeimaResponsesEndpoint] tools (${requestBody.tools.length}): ${requestBody.tools.map(t => t.name).join(', ')}`);
 		}
-
-		// TEMPORARY full-payload dump for diagnosing the persistent
-		// gpt-5.6-luna invalid_prompt 400 — structural summaries above
-		// weren't enough to reproduce it with synthetic data. Remove once
-		// diagnosed; this can be large and isn't meant to ship long-term.
-		const fullPayloadJson = JSON.stringify(requestBody);
-		const DUMP_LIMIT = 200000;
-		this.log.debug(`[FeimaResponsesEndpoint] FULL REQUEST BODY (${fullPayloadJson.length} chars${fullPayloadJson.length > DUMP_LIMIT ? `, truncated to ${DUMP_LIMIT}` : ''}): ${fullPayloadJson.slice(0, DUMP_LIMIT)}`);
 
 		try {
 			const baseHeaders = await this.getHeaders();

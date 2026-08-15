@@ -444,6 +444,14 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 			this.log.debug(`[FeimaResponsesEndpoint] tools (${requestBody.tools.length}): ${requestBody.tools.map(t => t.name).join(', ')}`);
 		}
 
+		// TEMPORARY full-payload dump for diagnosing the persistent
+		// gpt-5.6-luna invalid_prompt 400 — structural summaries above
+		// weren't enough to reproduce it with synthetic data. Remove once
+		// diagnosed; this can be large and isn't meant to ship long-term.
+		const fullPayloadJson = JSON.stringify(requestBody);
+		const DUMP_LIMIT = 200000;
+		this.log.debug(`[FeimaResponsesEndpoint] FULL REQUEST BODY (${fullPayloadJson.length} chars${fullPayloadJson.length > DUMP_LIMIT ? `, truncated to ${DUMP_LIMIT}` : ''}): ${fullPayloadJson.slice(0, DUMP_LIMIT)}`);
+
 		try {
 			const baseHeaders = await this.getHeaders();
 			const timeoutMs = getResolvedConfig().requestTimeout * 1000;

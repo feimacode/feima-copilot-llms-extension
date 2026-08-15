@@ -64,6 +64,7 @@ interface ResponsesFunctionTool {
 	name: string;
 	description?: string;
 	parameters: object;
+	strict: boolean;
 }
 
 interface ResponsesRequestBody {
@@ -316,7 +317,12 @@ export class FeimaResponsesEndpoint implements IFeimaEndpoint {
 					type: 'function' as const,
 					name: shortName,
 					description: tool.description,
-					parameters
+					parameters,
+					// VS Code/MCP tool schemas aren't authored for OpenAI's strict
+					// JSON-schema mode (which requires additionalProperties: false
+					// and every property in `required`) — explicit false matches
+					// vscode-copilot-chat's createResponsesRequestBody exactly.
+					strict: false
 				};
 			});
 

@@ -196,7 +196,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 						}
 					}),
 				);
-				context.subscriptions.push(...registerTreeCommands(localRegistry, localLog));
+				context.subscriptions.push(...registerTreeCommands(localRegistry, localProvider, localLog));
+				context.subscriptions.push(
+					vscode.commands.registerCommand('feima.localModels.show', () =>
+						vscode.commands.executeCommand('feima.localModels.view.focus'),
+					),
+				);
 				logService.info('✅ Local endpoint management view registered');
 
 				// Discover well-known local runtimes in the background; a quiet

@@ -17,10 +17,11 @@
 
 import * as vscode from 'vscode';
 import { ILogService } from '../../platform/log/common/logService';
-import { LocalEndpointEntry, LocalEndpointEntryInput, LocalEndpointHealth, idForEndpoint } from './types';
+import { LocalEndpointEntry, LocalEndpointEntryInput, LocalEndpointHealth, ModelOverride, idForEndpoint } from './types';
 import { readWorkspaceEndpoints } from './discovery/workspaceConfig';
 
 const GLOBAL_STATE_KEY = 'feima.localModels.personalEntries';
+const GLOBAL_STATE_KEY_OVERRIDES = 'feima.localModels.modelOverrides';
 const SECRET_KEY_PREFIX = 'feima.localModels.apiKey.';
 
 export class LocalEndpointRegistry {
@@ -35,8 +36,13 @@ export class LocalEndpointRegistry {
 	private readonly _onDidChangeHealth = new vscode.EventEmitter<string>();
 	readonly onDidChangeHealth = this._onDidChangeHealth.event;
 
+	/** Fired with the affected entry's id whenever a model override is added, changed, or removed. */
+	private readonly _onDidChangeModelOverrides = new vscode.EventEmitter<string>();
+	readonly onDidChangeModelOverrides = this._onDidChangeModelOverrides.event;
+
 	private _personalEntries: LocalEndpointEntry[] = [];
 	private _workspaceEntries: LocalEndpointEntry[] = [];
+	private _modelOverrides: ModelOverride[] = [];
 	/** In-memory-only liveness/confidence state — never persisted (design.md "hard config vs soft state"). */
 	private readonly _health = new Map<string, LocalEndpointHealth>();
 	private _workspaceLoadPromise: Promise<void> | null = null;
@@ -46,6 +52,7 @@ export class LocalEndpointRegistry {
 		private readonly log: ILogService,
 	) {
 		this._personalEntries = this.context.globalState.get<LocalEndpointEntry[]>(GLOBAL_STATE_KEY, []);
+		this._modelOverrides = this.context.globalState.get<ModelOverride[]>(GLOBAL_STATE_KEY_OVERRIDES, []);
 		void this._dedupePersonalEntries();
 		this._workspaceLoadPromise = this._loadWorkspaceEntries();
 	}
@@ -109,8 +116,75 @@ export class LocalEndpointRegistry {
 		await this._savePersonalEntries();
 		await this.context.secrets.delete(SECRET_KEY_PREFIX + id);
 		this._health.delete(id);
+		await this._removeAllModelOverrides(id);
 		this.log.info(`[LocalEndpointRegistry] Removed entry ${id}`);
 		this._onDidChangeEntries.fire();
+	}
+
+	/**
+	 * Edit an existing personal entry. When `baseEndpoint` is unchanged the id
+	 * stays stable and this is just `upsertPersonalEntry`. When it changes, the
+	 * derived id changes too (see `idForEndpoint`) — this carries the API key
+	 * and any model overrides forward to the new id and removes the old entry,
+	 * instead of orphaning it (the gap plain `upsertPersonalEntry`-as-edit has).
+	 */
+	async updatePersonalEntry(currentId: string, input: LocalEndpointEntryInput): Promise<LocalEndpointEntry> {
+		const newId = idForEndpoint(input.baseEndpoint);
+		if (newId === currentId) {
+			return this.upsertPersonalEntry(input);
+		}
+
+		const carriedKey = input.apiKey ?? await this.getApiKey(currentId);
+		const entry = await this.upsertPersonalEntry({ ...input, apiKey: carriedKey });
+		for (const override of this.getModelOverrides(currentId)) {
+			await this.upsertModelOverride({ ...override, entryId: newId });
+		}
+		await this.removePersonalEntry(currentId);
+		this.log.info(`[LocalEndpointRegistry] Edited entry: id changed ${currentId} -> ${newId}`);
+		return entry;
+	}
+
+	getModelOverrides(entryId: string): readonly ModelOverride[] {
+		return this._modelOverrides.filter(o => o.entryId === entryId);
+	}
+
+	getModelOverride(entryId: string, modelId: string): ModelOverride | undefined {
+		return this._modelOverrides.find(o => o.entryId === entryId && o.modelId === modelId);
+	}
+
+	async upsertModelOverride(override: ModelOverride): Promise<void> {
+		const index = this._modelOverrides.findIndex(o => o.entryId === override.entryId && o.modelId === override.modelId);
+		if (index >= 0) {
+			this._modelOverrides[index] = override;
+		} else {
+			this._modelOverrides.push(override);
+		}
+		await this._saveModelOverrides();
+		this.log.info(`[LocalEndpointRegistry] Set model override ${override.entryId}::${override.modelId} (manual=${override.manual})`);
+		this._onDidChangeModelOverrides.fire(override.entryId);
+	}
+
+	async removeModelOverride(entryId: string, modelId: string): Promise<void> {
+		const before = this._modelOverrides.length;
+		this._modelOverrides = this._modelOverrides.filter(o => !(o.entryId === entryId && o.modelId === modelId));
+		if (this._modelOverrides.length === before) {
+			return;
+		}
+		await this._saveModelOverrides();
+		this.log.info(`[LocalEndpointRegistry] Removed model override ${entryId}::${modelId}`);
+		this._onDidChangeModelOverrides.fire(entryId);
+	}
+
+	private async _removeAllModelOverrides(entryId: string): Promise<void> {
+		const before = this._modelOverrides.length;
+		this._modelOverrides = this._modelOverrides.filter(o => o.entryId !== entryId);
+		if (this._modelOverrides.length !== before) {
+			await this._saveModelOverrides();
+		}
+	}
+
+	private async _saveModelOverrides(): Promise<void> {
+		await this.context.globalState.update(GLOBAL_STATE_KEY_OVERRIDES, this._modelOverrides);
 	}
 
 	markHealth(id: string, health: LocalEndpointHealth): void {

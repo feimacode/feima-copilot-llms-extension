@@ -41,6 +41,13 @@ export interface ModelTreeNode {
 	readonly kind: 'model';
 	readonly info: vscode.LanguageModelChatInformation;
 	readonly confidence: MetadataConfidence | undefined;
+	readonly scope: EndpointScope;
+	readonly entryId: string;
+	readonly rawModelId: string;
+	/** Has a user-authored override, whether or not the endpoint also reports this id live. */
+	readonly isOverride: boolean;
+	/** Override exists AND the endpoint's own model-list response doesn't report this id. */
+	readonly isManualOnly: boolean;
 }
 
 export type EndpointTreeNode = GroupTreeNode | EntryTreeNode | ModelTreeNode;
@@ -90,11 +97,21 @@ export class LocalEndpointTreeProvider implements vscode.TreeDataProvider<Endpoi
 			return entries.map(entry => ({ kind: 'entry', scope: element.scope, entry }));
 		}
 		if (element.kind === 'entry') {
-			return this.localProvider.getCachedModelsForEntry(element.entry.id).map(info => ({
-				kind: 'model',
-				info,
-				confidence: this.localProvider.getCandidateSource(info.id)?.confidence,
-			}));
+			const entryId = element.entry.id;
+			return this.localProvider.getCachedModelsForEntry(entryId).map(info => {
+				const rawModelId = info.id.slice(entryId.length + 2);
+				const override = this.registry.getModelOverride(entryId, rawModelId);
+				return {
+					kind: 'model',
+					info,
+					confidence: this.localProvider.getCandidateSource(info.id)?.confidence,
+					scope: element.scope,
+					entryId,
+					rawModelId,
+					isOverride: override !== undefined,
+					isManualOnly: override?.manual === true,
+				};
+			});
 		}
 		return [];
 	}
@@ -140,8 +157,17 @@ export class LocalEndpointTreeProvider implements vscode.TreeDataProvider<Endpoi
 
 		// model
 		const item = new vscode.TreeItem(element.info.name, vscode.TreeItemCollapsibleState.None);
-		item.description = element.confidence ?? '';
-		item.contextValue = 'endpointModel';
+		const marker = element.isManualOnly ? 'manual' : element.isOverride ? 'edited' : element.confidence;
+		item.description = marker ?? '';
+		if (element.scope !== 'personal') {
+			item.contextValue = 'endpointModelReadOnly';
+		} else if (element.isManualOnly) {
+			item.contextValue = 'endpointModelManual';
+		} else if (element.isOverride) {
+			item.contextValue = 'endpointModelOverridden';
+		} else {
+			item.contextValue = 'endpointModel';
+		}
 		return item;
 	}
 }

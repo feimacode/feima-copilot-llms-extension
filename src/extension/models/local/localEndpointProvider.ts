@@ -17,7 +17,7 @@ import { LocalEndpointRegistry } from './localEndpointRegistry';
 import { LocalChatEndpoint } from './localChatEndpoint';
 import { resolveModelMetadata } from './metadata/metadataResolver';
 import { probeKnownEndpoint } from './discovery/probe';
-import { LocalEndpointEntry, MetadataConfidence, idForEndpoint } from './types';
+import { CONSERVATIVE_DEFAULT_METADATA, LocalEndpointEntry, MetadataConfidence, ResolvedModelMetadata, mergeModelOverride, idForEndpoint } from './types';
 
 /** Same TTL as ModelCatalogService — see design.md "Aggregate Cache Consistency". */
 const CACHE_DURATION_MS = 5 * 60 * 1000;
@@ -56,6 +56,13 @@ export class LocalEndpointProvider implements vscode.LanguageModelChatProvider {
 		// invalidate the aggregate immediately so new endpoints appear without
 		// a VS Code restart (spec: "Registry entry added mid-session").
 		registry.onDidChangeEntries(() => {
+			this.invalidateCache();
+			this._onDidChange.fire();
+		});
+		// Model overrides change what's shown/reported for an entry's models
+		// without the entry itself changing — needs its own invalidation hook
+		// alongside the one above (see types.ts ModelOverride doc comment).
+		registry.onDidChangeModelOverrides(() => {
 			this.invalidateCache();
 			this._onDidChange.fire();
 		});
@@ -117,29 +124,60 @@ export class LocalEndpointProvider implements vscode.LanguageModelChatProvider {
 			}
 			this.registry.markHealth(entry.id, { lastCheckedAt: Date.now(), reachable: true });
 
-			return await Promise.all(probeResult.models.map(async model => {
-				const metadata = await resolveModelMetadata(entry, model, this.log);
-				const label = entry.label ?? entry.baseEndpoint;
-				const info: vscode.LanguageModelChatInformation = {
-					// Namespaced so identically-named models from two different
-					// endpoints never collide in the picker.
-					id: `${entry.id}::${model.id}`,
-					name: model.name ?? model.id,
-					family: 'feima-local',
-					version: '1',
-					maxInputTokens: metadata.maxInputTokens,
-					maxOutputTokens: metadata.maxOutputTokens,
-					tooltip: `${label} — ${metadata.source}`,
-					detail: metadata.confidence === 'confirmed' ? label : `${label} (estimated capabilities)`,
-					isUserSelectable: true,
-					capabilities: { imageInput: metadata.imageInput, toolCalling: metadata.toolCalling },
-				};
-				return { info, entryId: entry.id, rawModelId: model.id, apiKey, confidence: metadata.confidence };
+			const label = entry.label ?? entry.baseEndpoint;
+			const probed = await Promise.all(probeResult.models.map(async model => {
+				const resolved = await resolveModelMetadata(entry, model, this.log);
+				const metadata = mergeModelOverride(resolved, this.registry.getModelOverride(entry.id, model.id));
+				return this._toAggregatedModel(entry, label, model.id, model.name, metadata, apiKey);
 			}));
+
+			// Manually-declared models the endpoint's own model-list response
+			// doesn't report (e.g. a gateway with no listing endpoint) — see
+			// types.ts ModelOverride doc comment. Only synthesized when the
+			// endpoint is reachable at all; an unreachable entry still
+			// contributes zero models, manual ones included.
+			const probedIds = new Set(probeResult.models.map(m => m.id));
+			const manualOnly = this.registry.getModelOverrides(entry.id)
+				.filter(o => o.manual && !probedIds.has(o.modelId))
+				.map(o => this._toAggregatedModel(entry, label, o.modelId, o.name, {
+					maxInputTokens: o.maxInputTokens ?? CONSERVATIVE_DEFAULT_METADATA.maxInputTokens,
+					maxOutputTokens: o.maxOutputTokens ?? CONSERVATIVE_DEFAULT_METADATA.maxOutputTokens,
+					toolCalling: o.toolCalling ?? CONSERVATIVE_DEFAULT_METADATA.toolCalling,
+					imageInput: o.imageInput ?? CONSERVATIVE_DEFAULT_METADATA.imageInput,
+					confidence: 'confirmed',
+					source: 'Manually added',
+				}, apiKey));
+
+			return [...probed, ...manualOnly];
 		} catch (error) {
 			this.log.error(error as Error, `[LocalEndpointProvider] Failed to fetch models for ${entry.baseEndpoint}`);
 			return [];
 		}
+	}
+
+	private _toAggregatedModel(
+		entry: LocalEndpointEntry,
+		label: string,
+		rawModelId: string,
+		modelName: string | undefined,
+		metadata: ResolvedModelMetadata,
+		apiKey: string | undefined,
+	): AggregatedModel {
+		const info: vscode.LanguageModelChatInformation = {
+			// Namespaced so identically-named models from two different
+			// endpoints never collide in the picker.
+			id: `${entry.id}::${rawModelId}`,
+			name: modelName ?? rawModelId,
+			family: 'feima-local',
+			version: '1',
+			maxInputTokens: metadata.maxInputTokens,
+			maxOutputTokens: metadata.maxOutputTokens,
+			tooltip: `${label} — ${metadata.source}`,
+			detail: metadata.confidence === 'confirmed' ? label : `${label} (estimated capabilities)`,
+			isUserSelectable: true,
+			capabilities: { imageInput: metadata.imageInput, toolCalling: metadata.toolCalling },
+		};
+		return { info, entryId: entry.id, rawModelId, apiKey, confidence: metadata.confidence };
 	}
 
 	/**

@@ -121,3 +121,38 @@ export const CONSERVATIVE_DEFAULT_METADATA: Omit<ResolvedModelMetadata, 'source'
 	imageInput: false,
 	confidence: 'unconfirmed',
 };
+
+/**
+ * A user-authored correction/addition layered on top of live-probed model
+ * data — never a substitute for it. Merged in at aggregation time (see
+ * `mergeModelOverride`), never persisted as a cached model list itself; this
+ * keeps the "registry stores connection recipes, not model lists" principle
+ * intact (see module doc comment) while still letting a user fix wrong
+ * auto-detected metadata or declare a model an endpoint doesn't self-report.
+ */
+export interface ModelOverride {
+	entryId: string;
+	modelId: string;
+	name?: string;
+	maxInputTokens?: number;
+	maxOutputTokens?: number;
+	toolCalling?: boolean;
+	imageInput?: boolean;
+	/** True when the endpoint's own model-list response doesn't include this id. */
+	manual: boolean;
+}
+
+/** Applies a user override on top of resolved metadata. Undefined override is a no-op. */
+export function mergeModelOverride(metadata: ResolvedModelMetadata, override: ModelOverride | undefined): ResolvedModelMetadata {
+	if (!override) {
+		return metadata;
+	}
+	return {
+		maxInputTokens: override.maxInputTokens ?? metadata.maxInputTokens,
+		maxOutputTokens: override.maxOutputTokens ?? metadata.maxOutputTokens,
+		toolCalling: override.toolCalling ?? metadata.toolCalling,
+		imageInput: override.imageInput ?? metadata.imageInput,
+		confidence: 'confirmed',
+		source: 'Manually set',
+	};
+}

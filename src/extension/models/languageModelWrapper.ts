@@ -6,7 +6,7 @@
 
 import * as vscode from 'vscode';
 import { ILogService } from '../platform/log/common/logService';
-import { FeimaChatEndpoint, FinishedCallback, StreamDelta } from './feimaChatEndpoint';
+import { FinishedCallback, IFeimaEndpoint, StreamDelta } from './feimaChatEndpoint';
 import { getConfigService } from '../../config/configService';
 import { FEIMA_INSUFFICIENT_BALANCE_KEY } from '../contextKeys';
 
@@ -37,7 +37,7 @@ export class FeimaLanguageModelWrapper {
 	 * Pattern from feima-code: call endpoint.makeChatRequest with callback.
 	 */
 	async provideLanguageModelResponse(
-		endpoint: FeimaChatEndpoint,
+		endpoint: IFeimaEndpoint,
 		messages: vscode.LanguageModelChatMessage[],
 		options: {
 			tools?: readonly vscode.LanguageModelChatTool[];
@@ -226,7 +226,7 @@ export class FeimaLanguageModelWrapper {
 	 * Delegates to endpoint.
 	 */
 	async provideTokenCount(
-		endpoint: FeimaChatEndpoint,
+		endpoint: IFeimaEndpoint,
 		text: string | vscode.LanguageModelChatMessage
 	): Promise<number> {
 		return endpoint.provideTokenCount(text);

@@ -16,6 +16,7 @@
 - 📦 [安装指南](https://ivenxu.github.io/feima-copilot-llms-extension/guides/installation/) | [安装指南（中文）](https://docs.feimacode.com/zh/guides/installation/)
 - 🔧 [配置选项](https://ivenxu.github.io/feima-copilot-llms-extension/guides/configuration/) | [配置选项（中文）](https://docs.feimacode.com/zh/guides/configuration/)
 - 🤖 [智能体参与者](https://ivenxu.github.io/feima-copilot-llms-extension/guides/agent-participants/) | [智能体参与者（中文）](https://docs.feimacode.com/zh/guides/agent-participants/)
+- 🖥️ [本地与企业端点](https://ivenxu.github.io/feima-copilot-llms-extension/guides/local-endpoints/) | [本地与企业端点（中文）](https://docs.feimacode.com/zh/guides/local-endpoints/)
 - 🔌 [本地 LLM 代理](https://ivenxu.github.io/feima-copilot-llms-extension/guides/llm-proxy/) | [本地 LLM 代理（中文）](https://docs.feimacode.com/zh/guides/llm-proxy/)
 - 💻 [开发指南](https://ivenxu.github.io/feima-copilot-llms-extension/dev/setup/) | [开发指南（中文）](https://docs.feimacode.com/zh/dev/setup/)
 
@@ -32,6 +33,8 @@
 - 🧠 **深度思考**: 支持思维链推理，复杂问题迎刃而解
 - 🤖 **智能体参与者（全新）**: 通过 `@claude`、`@codex`、`@copilot-cli` 驱动真正的 Claude Code、Codex 和 Copilot CLI 智能体 —— 详见下文
 - 🔌 **本地 LLM 代理**: 让任意兼容 OpenAI 或 Anthropic 的工具（甚至在 VS Code 之外）都能使用你的 Copilot 或 BYOK 模型
+- 🖥️ **本地与企业端点（全新）**: 一个选择器覆盖所有模型来源 —— 飞码托管模型、你的 Claude/Codex 订阅，现在还有你自己的本地运行时（Ollama、LM Studio、vLLM、llama.cpp、SGLang、LiteLLM、[Olla](https://github.com/thushan/olla)）或企业/私有云网关 —— 详见下文
+- 🧭 **Feima Auto（全新）**: 自动将每个请求路由到最合适的本地/企业端点 —— `local-first`、`balanced` 或 `most-capable` —— 每次响应都会说明路由依据，无需每次手动选择
 
 ### 为什么选择飞码扣？
 
@@ -67,6 +70,45 @@
 | GLM 5.1 | 智谱AI | 202K 上下文，强大推理 |
 | Kimi K3 | 月之暗面 | 1M 上下文，视觉，深度思考（专业） |
 | HY3 | 腾讯混元 | 256K 上下文，思维链支持（免费额度） |
+
+## 🖥️ 本地与企业模型端点
+
+**一个选择器，覆盖所有模型来源。** 除了飞码托管模型和你的 Claude/Codex 订阅（见上文），飞码扣还能呈现你自己运行的任何模型 —— 一台运行 Ollama 或 LM Studio 的笔记本电脑、一个自建的 vLLM/llama.cpp/SGLang/LiteLLM 实例、一个 [Olla](https://github.com/thushan/olla) 集群，或是内部的企业/私有云网关 —— 全部出现在同一个 Copilot Chat 模型选择器中。
+
+- **自动发现**：启动时，扩展会静默探测常见的本地端口（Ollama、LM Studio 等），并自动添加找到的一切 —— 常见本地场景无需任何配置。
+- **手动注册**：对于自动发现无法触达的企业或私有云端点，运行 **Feima Local Models: Add Model Endpoint**，填入基础 URL、协议和可选的 API key。
+- **团队共享端点**：将 `.feima/endpoints.json`（只含 URL，绝不含密钥）提交到仓库，团队成员打开工作区即可自动获得共享网关。示例：
+  ```json
+  {
+    "endpoints": [
+      { "baseEndpoint": "https://models.internal.example.com", "label": "Team Gateway" }
+    ]
+  }
+  ```
+- **按需刷新**：拉取了新模型或改动了配置？运行 **Feima Local Models: Refresh Models** 立即重新发现，无需等待缓存过期。
+- **查看已注册内容**：Explorer 侧边栏中的**本地与企业模型**视图列出每个已注册端点（按个人/团队分组），带实时健康指示和已发现的模型 —— 右键端点可移除（仅限个人条目）或按需测试连接，视图会随健康状态变化自动更新，无需手动刷新。
+
+能力元数据（上下文窗口、工具调用支持）会在端点自身可提供时读取，无法确认时会在选择器中明确标注为*估计值* —— 绝不会把猜测当作事实呈现。
+
+> **关于远程 / WSL / SSH 场景的说明**：自动发现探测的是 `127.0.0.1`，当 VS Code 本身运行在远程环境（Remote-SSH、Remote-WSL、开发容器、Codespaces）时，这指向的是*远程*机器，未必是你实际运行 Ollama 或 LM Studio 的那台机器。这种情况下请改为手动注册端点。
+
+### Feima Auto —— 在本地/企业端点之间自动选择模型
+
+与其每次手动选择使用哪个已注册端点，不如在模型选择器中选择 **Feima Auto**，它会为每个请求自动路由，并在每次响应中说明实际使用了哪个模型、以及原因。（这是飞码自己的路由器，与 VS Code 自带的内置 "Auto" 条目是两回事，后者只能看到 GitHub 托管的模型。）目前 Feima Auto 的候选池仅限于你的本地/企业端点 —— 默认不含飞码托管模型，也不含 Claude/Codex 参与者（它们需要 `@claude`/`@codex`，而不是模型选择器，因为由 CLI 驱动的智能体会话与模型选择器的请求/响应形态不同）。
+
+通过 `feima.localModels.autoStrategy` 设置来选择路由策略：
+
+| 策略 | 行为 |
+|---|---|
+| `local-first` | 优先使用本机端点；仅当没有本地端点满足条件时才会转向网络端点（企业网关、远程 Olla）—— 并会说明原因。 |
+| `balanced`（默认） | 权衡任务匹配度与能力置信度，本地性仅作为决胜因素。 |
+| `most-capable` | 始终选择满足条件中能力最强的端点，不考虑本地性或延迟。 |
+
+Feima Auto 会在同一次对话中持续使用同一个端点，而不是每条消息都重新决策，也不会隐藏底层的 `feima`/`feima-local` 选择器条目 —— 如果路由结果不是你想要的，直接手动选择某个具体模型始终可行。
+
+**想让飞码托管模型也加入 Feima Auto 的候选池？** 运行 **Feima Local Models: Add My Feima-Hosted Models to Auto**，输入一个飞码 API key（从你的 [Feima 控制台](https://feimacode.com/use-api-keys) 获取）。这会把飞码托管模型注册为一个本地端点，与你的其他端点并列，目的仅仅是让它们能参与 Feima Auto 的路由池 —— 日常直接使用时，选择器中的主 **Feima** 条目仍是最简单的选择。
+
+📖 深入了解：[本地与企业模型端点指南](https://docs.feimacode.com/zh/guides/local-endpoints/)
 
 ## 🤖 智能体参与者 —— 在 VS Code 中原生使用 Claude Code、Codex 和 Copilot CLI
 

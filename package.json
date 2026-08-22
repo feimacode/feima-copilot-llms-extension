@@ -94,6 +94,8 @@
 		"onLanguageModelChatProvider:feima",
 		"onLanguageModelChatProvider:codex",
 		"onLanguageModelChatProvider:feima-claude-code",
+		"onLanguageModelChatProvider:feima-local",
+		"onLanguageModelChatProvider:feima-auto",
 		"onChatParticipant:codex.participant",
 		"onChatParticipant:copilot-cli.participant",
 		"onChatParticipant:claude.participant"
@@ -113,6 +115,14 @@
 			{
 				"vendor": "feima-claude-code",
 				"displayName": "%provider.claude.displayName%"
+			},
+			{
+				"vendor": "feima-local",
+				"displayName": "%provider.local.displayName%"
+			},
+			{
+				"vendor": "feima-auto",
+				"displayName": "%provider.auto.displayName%"
 			}
 		],
 		"chatParticipants": [
@@ -197,6 +207,64 @@
 				"command": "feima.agents.clearCodexToolCache",
 				"title": "%command.agents.clearCodexToolCache.title%",
 				"category": "%command.agents.category%"
+			},
+			{
+				"command": "feima.localModels.show",
+				"title": "%command.localModels.show.title%",
+				"category": "%command.localModels.category%"
+			},
+			{
+				"command": "feima.localModels.addEndpoint",
+				"title": "%command.localModels.addEndpoint.title%",
+				"category": "%command.localModels.category%",
+				"icon": "$(add)"
+			},
+			{
+				"command": "feima.localModels.refresh",
+				"title": "%command.localModels.refresh.title%",
+				"category": "%command.localModels.category%",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "feima.localModels.addFeimaHostedEndpoint",
+				"title": "%command.localModels.addFeimaHostedEndpoint.title%",
+				"category": "%command.localModels.category%"
+			},
+			{
+				"command": "feima.localModels.view.testConnection",
+				"title": "%command.localModels.view.testConnection.title%",
+				"category": "%command.localModels.category%",
+				"icon": "$(pulse)"
+			},
+			{
+				"command": "feima.localModels.view.remove",
+				"title": "%command.localModels.view.remove.title%",
+				"category": "%command.localModels.category%",
+				"icon": "$(trash)"
+			},
+			{
+				"command": "feima.localModels.view.editEndpoint",
+				"title": "%command.localModels.view.editEndpoint.title%",
+				"category": "%command.localModels.category%",
+				"icon": "$(edit)"
+			},
+			{
+				"command": "feima.localModels.view.addModel",
+				"title": "%command.localModels.view.addModel.title%",
+				"category": "%command.localModels.category%",
+				"icon": "$(add)"
+			},
+			{
+				"command": "feima.localModels.view.editModel",
+				"title": "%command.localModels.view.editModel.title%",
+				"category": "%command.localModels.category%",
+				"icon": "$(edit)"
+			},
+			{
+				"command": "feima.localModels.view.removeModelOverride",
+				"title": "%command.localModels.view.removeModelOverride.title%",
+				"category": "%command.localModels.category%",
+				"icon": "$(discard)"
 			}
 		],
 		"configuration": {
@@ -242,6 +310,21 @@
 					"type": "boolean",
 					"default": true,
 					"description": "%settings.showQuotaInStatusBar.description%"
+				},
+				"feima.localModels.autoStrategy": {
+					"type": "string",
+					"enum": [
+						"local-first",
+						"balanced",
+						"most-capable"
+					],
+					"enumDescriptions": [
+						"Prefer endpoints on this machine; only use a network endpoint (enterprise gateway, remote Olla) when nothing local qualifies.",
+						"Weigh task fit and capability confidence, using locality only as a tie-breaker (default).",
+						"Always pick the most capable qualifying endpoint, regardless of locality or latency."
+					],
+					"default": "balanced",
+					"markdownDescription": "%settings.localModels.autoStrategy.description%"
 				},
 				"feima.warnWhenQuotaLow": {
 					"type": "number",
@@ -448,6 +531,71 @@
 					"markdownDescription": "%settings.agents.claude.systemPromptMode.description%"
 				}
 			}
+		},
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "feima-local-models",
+					"title": "%view.localModels.title%",
+					"icon": "assets/icons/local-models.svg"
+				}
+			]
+		},
+		"views": {
+			"feima-local-models": [
+				{
+					"id": "feima.localModels.view",
+					"name": "%view.localModels.endpoints.title%",
+					"contextualTitle": "%view.localModels.title%",
+					"visibility": "hidden"
+				}
+			]
+		},
+		"menus": {
+			"view/title": [
+				{
+					"command": "feima.localModels.addEndpoint",
+					"when": "view == feima.localModels.view",
+					"group": "navigation@1"
+				},
+				{
+					"command": "feima.localModels.refresh",
+					"when": "view == feima.localModels.view",
+					"group": "navigation@2"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "feima.localModels.view.testConnection",
+					"when": "view == feima.localModels.view && viewItem =~ /Endpoint$/",
+					"group": "inline"
+				},
+				{
+					"command": "feima.localModels.view.editEndpoint",
+					"when": "view == feima.localModels.view && viewItem == personalEndpoint",
+					"group": "inline"
+				},
+				{
+					"command": "feima.localModels.view.remove",
+					"when": "view == feima.localModels.view && viewItem == personalEndpoint",
+					"group": "1_modification"
+				},
+				{
+					"command": "feima.localModels.view.addModel",
+					"when": "view == feima.localModels.view && viewItem == personalEndpoint",
+					"group": "1_modification"
+				},
+				{
+					"command": "feima.localModels.view.editModel",
+					"when": "view == feima.localModels.view && viewItem =~ /^endpointModel(Overridden|Manual)?$/",
+					"group": "inline"
+				},
+				{
+					"command": "feima.localModels.view.removeModelOverride",
+					"when": "view == feima.localModels.view && viewItem =~ /^endpointModel(Overridden|Manual)$/",
+					"group": "1_modification"
+				}
+			]
 		},
 		"icons": {
 			"feima-logo": {

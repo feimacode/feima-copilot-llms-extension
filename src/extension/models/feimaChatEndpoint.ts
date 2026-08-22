@@ -13,6 +13,7 @@ import { getResolvedConfig } from '../../config/configService';
 import { parseQuotaHeader } from '../statusBar';
 import { getQuotaService } from '../services/quotaService';
 import { toolResultContentToString } from './toolResultConverter';
+import { mapHttpErrorToChatResponse } from './httpErrorMapping';
 
 /**
  * Callback invoked as stream progresses with deltas.
@@ -121,6 +122,35 @@ export interface ModelInfo {
 	supportsToolCalls: boolean;
 	supportsVision: boolean;
 	supportsThinking: boolean;
+	/**
+	 * Accepted reasoning effort levels (e.g. ["low", "medium", "high"]).
+	 * Distinct from supportsThinking — see modelCatalog.ts's
+	 * capabilities.supports.reasoning_effort for why the two aren't the same.
+	 * Used by FeimaResponsesEndpoint to decide whether to send `reasoning`/
+	 * `include` at all; empty for models where it's unconfirmed or known
+	 * unsupported.
+	 */
+	supportedReasoningEffort: string[];
+	/** Which wire-protocol paths this model answers to (e.g. ["/chat/completions", "/responses"]). */
+	supportedEndpoints: string[];
+}
+
+/**
+ * Common surface FeimaLanguageModelWrapper needs from either protocol's
+ * endpoint class (FeimaChatEndpoint or FeimaResponsesEndpoint), so the
+ * wrapper — and everything above it — never needs to know which wire
+ * format actually served a given model.
+ */
+export interface IFeimaEndpoint {
+	readonly model: string;
+	makeChatRequest(
+		messages: vscode.LanguageModelChatMessage[],
+		callback: FinishedCallback,
+		token: vscode.CancellationToken,
+		tools?: readonly vscode.LanguageModelChatTool[],
+		toolMode?: vscode.LanguageModelChatToolMode
+	): Promise<ChatResponse>;
+	provideTokenCount(text: string | vscode.LanguageModelChatMessage): Promise<number>;
 }
 
 /**
@@ -132,7 +162,7 @@ export interface ModelInfo {
  * - Request body creation
  * - Request headers
  */
-export class FeimaChatEndpoint {
+export class FeimaChatEndpoint implements IFeimaEndpoint {
 	private _cachedToken: string | null = null;
 
 	constructor(
@@ -645,61 +675,7 @@ export class FeimaChatEndpoint {
 			if (!response.ok) {
 				const errorText = await response.text();
 				this.log.error(`[FeimaChatEndpoint] Request failed: HTTP ${response.status}: ${errorText}`);
-				
-				// P2 #17: Validate error response JSON if present
-				if (errorText && errorText.startsWith('{')) {
-					try {
-						const errorJson = JSON.parse(errorText);
-						if (errorJson.code || errorJson.message) {
-							this.log.debug(`[FeimaChatEndpoint] Error details: ${errorJson.code || errorJson.message}`);
-						}
-					} catch (_) {
-						// Not valid JSON, continue
-					}
-				}
-				
-				// P2 #23: Error type differentiation
-				if (response.status === 401) {
-					this.log.warn(
-						`[FeimaChatEndpoint] Unauthorized (HTTP 401) for model ${this.modelInfo.id}. ` +
-						`Token is invalid or expired server-side.`
-					);
-					return { type: 'unauthorized', reason: vscode.l10n.t('Authentication token is invalid or expired') };
-				} else if (response.status === 403) {
-					// P2 #24 & Issue #6: Track/log blocked request for analytics
-					const retryAfter = response.headers.get('Retry-After');
-					this.log.warn(
-						`[FeimaChatEndpoint] Extension BLOCKED (HTTP 403) for model ${this.modelInfo.id}. ` +
-						`Retry-After: ${retryAfter || 'not specified'}, ` +
-						`Timestamp: ${new Date().toISOString()}`
-					);
-					return { type: 'blocked', reason: vscode.l10n.t('The extension has been temporarily blocked due to too many requests') };
-				} else if (response.status === 402) {
-					this.log.warn(
-						`[FeimaChatEndpoint] Insufficient balance (HTTP 402) for model ${this.modelInfo.id}`
-					);
-					return { type: 'insufficientBalance', reason: 'Insufficient balance' };
-				} else if (response.status === 429) {
-					// Try to detect quota vs rate limit from headers or body
-					const isQuota = errorText.includes('quota') || response.headers.get('x-error-type') === 'quota_exceeded';
-					const retryAfter = response.headers.get('Retry-After');
-					// Issue #6: Log rate limit events with context
-					if (isQuota) {
-						this.log.info(`[FeimaChatEndpoint] Quota exceeded for model ${this.modelInfo.id}, retry after: ${retryAfter || 'unspecified'}`);
-						return { type: 'quotaExceeded', reason: vscode.l10n.t('Request quota exceeded') };
-					} else {
-						this.log.info(`[FeimaChatEndpoint] Rate limited for model ${this.modelInfo.id}, retry after: ${retryAfter || 'unspecified'}`);
-						return { type: 'rateLimited', reason: vscode.l10n.t('Too many requests, please retry later') };
-					}
-				} else if (response.status === 499) {
-					// 499 = proxy-level "client closed request" — benign when the
-					// cancellation token is already set (user cancelled), otherwise
-					// a transient upstream disconnect; treat as cancelled either way.
-					this.log.debug(`[FeimaChatEndpoint] Request cancelled (HTTP 499) for model ${this.modelInfo.id}, token cancelled: ${token.isCancellationRequested}`);
-					return { type: 'cancelled' };
-				} else {
-					return { type: 'error', reason: vscode.l10n.t('HTTP {0}: {1}', response.status.toString(), errorText) };
-				}
+				return mapHttpErrorToChatResponse(response, errorText, this.modelInfo.id, token, this.log, '[FeimaChatEndpoint]');
 			}
 
 			if (!response.body) {

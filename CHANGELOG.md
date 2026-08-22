@@ -5,6 +5,21 @@ All notable changes to the Feima Copilot LLM Extension will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Local & Enterprise Model Endpoints** — bring your own Ollama, LM Studio, vLLM, llama.cpp, SGLang, LiteLLM, or [Olla](https://github.com/thushan/olla) fleet, or an internal enterprise/private-cloud gateway, into the same Copilot Chat model picker as Feima-hosted models
+  - Auto-discovery of well-known local ports on startup, manual registration (`Feima Local Models: Add Model Endpoint`) for endpoints discovery can't reach, and team-shared `.feima/endpoints.json` (URLs only, never secrets)
+  - New **Local & Enterprise Models** view in the Explorer sidebar — live per-endpoint health indicators, model overrides, and an endpoint editor for correcting or adding model metadata
+  - `Feima Local Models: Refresh Models` plus per-endpoint test-connection/remove/edit commands
+- **Feima Auto** — a new picker entry that automatically routes each request to the best available registered local/enterprise endpoint (`local-first`, `balanced`, or `most-capable`, via the `feima.localModels.autoStrategy` setting), disclosing which endpoint was used and why on every response
+  - Sticks with the same endpoint across a conversation instead of re-deciding every message
+  - `Feima Local Models: Add My Feima-Hosted Models to Auto` — registers your Feima-hosted models (using a Feima API key) as local endpoints so Auto can route to them too
+- Lenient repair for malformed tool-call JSON from local/enterprise models, plus a Responses API endpoint option for providers that support it
+
+### Changed
+- Renamed the local/enterprise router's picker entry from "Auto" to **"Feima Auto"**, to avoid confusion with VS Code's own built-in Auto (which only sees GitHub-hosted models)
+
 ## [0.2.5] - 2026-08-14
 
 ### Added

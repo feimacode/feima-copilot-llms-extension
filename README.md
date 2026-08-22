@@ -16,6 +16,7 @@ A VS Code extension that turns GitHub Copilot into a model provider (DeepSeek, Q
 - 📦 [Installation Guide](https://docs.feimacode.com/guides/installation/) | [安装指南](https://docs.feimacode.com/zh/guides/installation/)
 - 🔧 [Configuration Options](https://docs.feimacode.com/guides/configuration/) | [配置选项](https://docs.feimacode.com/zh/guides/configuration/)
 - 🤖 [Agent Participants](https://docs.feimacode.com/guides/agent-participants/) | [智能体参与者](https://docs.feimacode.com/zh/guides/agent-participants/)
+- 🖥️ [Local & Enterprise Endpoints](https://docs.feimacode.com/guides/local-endpoints/) | [本地与企业端点](https://docs.feimacode.com/zh/guides/local-endpoints/)
 - 🔌 [LLM Proxy](https://docs.feimacode.com/guides/llm-proxy/) | [本地代理](https://docs.feimacode.com/zh/guides/llm-proxy/)
 - 💻 [Development Guide](https://docs.feimacode.com/dev/setup/) | [开发指南](https://docs.feimacode.com/zh/dev/setup/)
 
@@ -32,6 +33,8 @@ Feima Copilot is a VS Code extension built around three things: **more models** 
 - 🧠 **Chain-of-Thought**: Full support for reasoning models, solving complex problems effortlessly
 - 🤖 **Agent Participants (NEW)**: Drive the real Claude Code, Codex, and Copilot CLI agents with `@claude`, `@codex`, `@copilot-cli` — see below
 - 🔌 **Local LLM Proxy**: Power any OpenAI- or Anthropic-compatible tool — even outside VS Code — with your Copilot or BYOK models
+- 🖥️ **Local & Enterprise Endpoints (NEW)**: Every model source in one picker — Feima-hosted, your Claude/Codex subscription, and now your own local runtimes (Ollama, LM Studio, vLLM, llama.cpp, SGLang, LiteLLM, [Olla](https://github.com/thushan/olla)) or an enterprise/private-cloud gateway — see below
+- 🧭 **Feima Auto (NEW)**: Automatically routes each request to the best available local/enterprise endpoint — `local-first`, `balanced`, or `most-capable` — with disclosure on every response, instead of manually picking every time
 
 ### Why Choose Feima Copilot?
 
@@ -66,6 +69,45 @@ Feima Copilot is a VS Code extension built around three things: **more models** 
 | DeepSeek V4 Flash | DeepSeek | 1M token context, fast |
 | Kimi K3 | Moonshot | 1M context, vision, deep thinking (premium) |
 | HY3 | Tencent | 256K context, thinking support (free tier) |
+
+## 🖥️ Local & Enterprise Model Endpoints
+
+**One picker, every model source.** Alongside Feima-hosted models and your Claude/Codex subscriptions (below), Feima Copilot can surface models from anything you run yourself — a laptop running Ollama or LM Studio, a self-hosted vLLM/llama.cpp/SGLang/LiteLLM instance, an [Olla](https://github.com/thushan/olla) fleet, or an internal enterprise gateway — right in the same Copilot Chat model picker.
+
+- **Auto-discovery**: on startup, the extension quietly checks well-known local ports (Ollama, LM Studio, and friends) and adds anything it finds — nothing to configure for the common local case.
+- **Manual registration**: for an enterprise or private-cloud endpoint auto-discovery can't reach, run **Feima Local Models: Add Model Endpoint** and give it a base URL, protocol, and optional API key.
+- **Team-shared endpoints**: commit a `.feima/endpoints.json` (URLs only, never secrets) to your repo so anyone who opens the workspace gets your team's shared gateway offered automatically. Example:
+  ```json
+  {
+    "endpoints": [
+      { "baseEndpoint": "https://models.internal.example.com", "label": "Team Gateway" }
+    ]
+  }
+  ```
+- **Refresh on demand**: pulled a new local model or changed something? Run **Feima Local Models: Refresh Models** to re-discover immediately instead of waiting for the cache to expire.
+- **See what's registered**: the **Local & Enterprise Models** view in the Explorer sidebar lists every registered endpoint, grouped personal/team, with a live health indicator and its discovered models. Right-click an endpoint to remove it (personal entries only) or test its connection on demand — the view updates automatically as health changes, no manual refresh needed.
+
+Capability metadata (context window, tool-calling support) is read from the endpoint itself when available, and clearly marked as *estimated* in the picker when it has to be inferred — never presented as fact when it's a guess.
+
+> **Note on the remote/WSL/SSH case**: auto-discovery probes `127.0.0.1`, which — when VS Code itself is running remotely (Remote-SSH, Remote-WSL, a dev container, Codespaces) — is the *remote* machine, not necessarily wherever you're actually running Ollama or LM Studio. In that setup, register the endpoint manually instead.
+
+### Feima Auto — pick a model automatically, from among your local/enterprise endpoints
+
+Rather than manually choosing which registered endpoint to use every time, select **Feima Auto** in the model picker and it routes each request for you, disclosing which model was actually used and why on every response. (This is Feima's own router, distinct from VS Code's built-in "Auto" entry, which only sees GitHub-hosted models.) Its pool is your local/enterprise endpoints only, for now — not Feima-hosted models by default, and not the Claude/Codex participants (they need `@claude`/`@codex`, not the model picker, since a CLI-driven agent session doesn't fit the same request/response shape).
+
+Choose how it picks via `feima.localModels.autoStrategy`:
+
+| Strategy | Behavior |
+|---|---|
+| `local-first` | Prefer endpoints on this machine; only reach for a network endpoint (enterprise gateway, remote Olla) when nothing local qualifies — and says so when it does. |
+| `balanced` (default) | Weighs task fit and capability confidence; locality is only a tie-breaker. |
+| `most-capable` | Always picks the strongest qualifying endpoint, regardless of locality or latency. |
+
+Feima Auto sticks with the same endpoint across a conversation rather than re-deciding every message, and it never hides the underlying `feima`/`feima-local` picker entries — if a routing decision isn't what you wanted, picking a specific model directly always works.
+
+**Want your Feima-hosted models in Feima Auto's pool too?** Run **Feima Local Models: Add My Feima-Hosted Models to Auto** and enter a Feima API key (from your [Feima dashboard](https://feimacode.com/use-api-keys)). This registers Feima's hosted models as a local endpoint alongside your others, purely so they can participate in Feima Auto's routing pool — for everyday direct use, the main **Feima** entry in the picker remains the simplest option.
+
+📖 Learn more: [Local & Enterprise Model Endpoints Guide](https://docs.feimacode.com/guides/local-endpoints/)
 
 ## 🤖 Agent Participants — Claude Code, Codex & Copilot CLI, natively in VS Code
 

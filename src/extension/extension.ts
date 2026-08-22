@@ -16,6 +16,16 @@ import { FEIMA_REGION } from '../config/regions';
 import { initializeStatusBar, resetStatusBar } from './statusBar';
 import { getQuotaService } from './services/quotaService';
 import { registerAgents } from './agents/agentsContribution';
+import { LocalEndpointRegistry } from './models/local/localEndpointRegistry';
+import { LocalEndpointProvider } from './models/local/localEndpointProvider';
+import { discoverLocalPorts } from './models/local/discovery/portProbe';
+import { registerManualEndpointCommand } from './models/local/discovery/manualRegistration';
+import { registerLocalModelsRefreshCommand } from './models/local/refreshCommand';
+import { AutoModelProvider } from './models/local/auto/autoModelProvider';
+import { AutoStrategyId } from './models/local/auto/types';
+import { registerFeimaHostedShortcutCommand } from './models/local/discovery/feimaHostedShortcut';
+import { LocalEndpointTreeProvider } from './models/local/view/localEndpointTreeProvider';
+import { registerTreeCommands } from './models/local/view/treeCommands';
 
 // Store auth service for disposal
 let authService: FeimaAuthenticationService | undefined;
@@ -142,6 +152,65 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			logService.info('   Vendor ID: feima');
 			logService.info('   Provider will be queried when Copilot Chat needs model list');
 			logService.info('===========================================');
+
+				// 5b. Register local/enterprise endpoint provider as its own category,
+				// alongside 'feima' -- see openspec/changes/add-local-model-endpoints.
+				logService.info('');
+				logService.info('=== LOCAL ENDPOINT PROVIDER REGISTRATION ===');
+				const localLog = logService.createSubLogger('LocalModels');
+				const localRegistry = new LocalEndpointRegistry(context, localLog);
+				const localProvider = new LocalEndpointProvider(localRegistry, localLog);
+				const localProviderDisposable = vscode.lm.registerLanguageModelChatProvider('feima-local', localProvider);
+				context.subscriptions.push(localProviderDisposable, localProvider);
+				context.subscriptions.push(registerManualEndpointCommand(localRegistry, localLog));
+				context.subscriptions.push(
+					registerLocalModelsRefreshCommand(localRegistry, localProvider, localLog, () => modelCatalog.refreshModels()),
+				);
+				logService.info('✅ Local endpoint provider registered (vendor ID: feima-local)');
+
+				// 5c. Register the Auto router as its own picker entry, alongside
+				// 'feima' and 'feima-local' -- see openspec/changes/add-auto-model-routing.
+				// Pure delegator over localProvider; see AutoModelProvider's own doc
+				// comment for why it needs no endpoint logic of its own.
+				const getAutoStrategy = (): AutoStrategyId =>
+					vscode.workspace.getConfiguration('feima.localModels').get<AutoStrategyId>('autoStrategy', 'balanced');
+				const autoProvider = new AutoModelProvider(localProvider, localRegistry, getAutoStrategy, localLog.createSubLogger('Auto'));
+				const autoProviderDisposable = vscode.lm.registerLanguageModelChatProvider('feima-auto', autoProvider);
+				context.subscriptions.push(autoProviderDisposable, autoProvider);
+				context.subscriptions.push(registerFeimaHostedShortcutCommand(context, localRegistry, localLog));
+				logService.info('✅ Auto router registered (vendor ID: feima-auto)');
+
+				// 5d. Register the endpoint management tree view -- see
+				// openspec/changes/add-endpoint-management-view. Read-mostly consumer
+				// of the registry/provider's existing public surface.
+				const treeProvider = new LocalEndpointTreeProvider(localRegistry, localProvider, localLog.createSubLogger('View'));
+				const treeView = vscode.window.createTreeView('feima.localModels.view', {
+					treeDataProvider: treeProvider,
+				});
+				context.subscriptions.push(treeView);
+				context.subscriptions.push(
+					treeView.onDidChangeVisibility(e => {
+						if (e.visible) {
+							const cts = new vscode.CancellationTokenSource();
+							void treeProvider.ensurePopulated(cts.token).finally(() => cts.dispose());
+						}
+					}),
+				);
+				context.subscriptions.push(...registerTreeCommands(localRegistry, localProvider, localLog));
+				context.subscriptions.push(
+					vscode.commands.registerCommand('feima.localModels.show', () =>
+						vscode.commands.executeCommand('feima.localModels.view.focus'),
+					),
+				);
+				logService.info('✅ Local endpoint management view registered');
+
+				// Discover well-known local runtimes in the background; a quiet
+				// machine (nothing found) is the expected common case, not an error
+				// (see specs/local-model-registry/spec.md "No local runtime present").
+				discoverLocalPorts(localRegistry, localLog)
+					.then(count => localLog.info(`[Init] Local port-probe discovery found ${count} endpoint(s)`))
+					.catch(error => localLog.error(error as Error, '[Init] Local port-probe discovery failed'));
+				logService.info('===========================================');
 		}
 
 		// 6. Register inline completion provider

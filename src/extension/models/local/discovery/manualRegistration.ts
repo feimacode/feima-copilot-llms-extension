@@ -29,9 +29,11 @@ export function registerManualEndpointCommand(
 		}
 		if (choice === 'feima-hosted') {
 			// Delegates to the dedicated shortcut rather than the generic form —
-			// it authenticates via the existing Feima session, not a hand-typed
-			// key, which the generic webview flow deliberately has no access to
-			// (see feimaHostedShortcut.ts's "convenience, not integration" note).
+			// it asks for a Feima API key and fetches the model roster/metadata
+			// from copilot-alternatives' template, rather than the user hand-typing
+			// a base URL. It still registers through this same `registry`, just via
+			// its own upsertPersonalEntry/upsertModelOverride calls instead of
+			// openEndpointEditor's generic webview form. See feimaHostedShortcut.ts.
 			await vscode.commands.executeCommand(FEIMA_HOSTED_SHORTCUT_COMMAND);
 			return;
 		}

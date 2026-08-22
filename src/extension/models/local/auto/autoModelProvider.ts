@@ -55,6 +55,7 @@ export class AutoModelProvider implements vscode.LanguageModelChatProvider {
 		options: { silent: boolean },
 		token: vscode.CancellationToken,
 	): Promise<vscode.LanguageModelChatInformation[]> {
+		this.log.info(`[AutoModelProvider] provideLanguageModelChatInformation called (silent=${options.silent})`);
 		const candidates = await buildCandidates(this.localProvider, this.registry, token);
 		// Declare generous capabilities so VS Code never preemptively strips tools
 		// or truncates history before a request even reaches the router — the
@@ -66,17 +67,32 @@ export class AutoModelProvider implements vscode.LanguageModelChatProvider {
 		const strategy = this.getStrategy();
 		const info: vscode.LanguageModelChatInformation = {
 			id: AUTO_MODEL_ID,
-			name: vscode.l10n.t('Auto'),
+			// "Feima Auto", not just "Auto" — VS Code's own native Auto (GitHub-hosted
+			// models only) lives in a different vendor category, but a bare "Auto"
+			// still reads as ambiguous in a flattened/searched picker or in disclosure
+			// text, so the name itself carries the distinction, not just the vendor
+			// category heading (see proposal.md's "not VS Code's own native Auto").
+			name: vscode.l10n.t('Feima Auto'),
 			family: 'feima-auto',
 			version: '1',
 			maxInputTokens,
 			maxOutputTokens,
-			tooltip: vscode.l10n.t('Automatically routes each request to the best available local or enterprise endpoint'),
+			tooltip: vscode.l10n.t('Feima\'s own router — automatically picks the best available local or enterprise endpoint from your registered entries. Not GitHub Copilot\'s built-in Auto, which only sees GitHub-hosted models.'),
 			detail: vscode.l10n.t('Strategy: {0}', strategy),
 			isUserSelectable: true,
 			capabilities: { toolCalling: true, imageInput: false },
 		};
-		return options.silent ? [] : [info];
+		// `silent` means "don't prompt the user for auth/setup," not "return
+		// nothing" (see vscode.d.ts PrepareLanguageModelChatModelOptions: "If
+		// silent is true, all models may not be resolved due to lack of info
+		// such as API keys"). Auto never needs to prompt for anything — it's a
+		// pure delegator over already-registered candidates — so it must
+		// resolve the same way regardless of `silent`, exactly like
+		// LocalEndpointProvider does. Unconditionally suppressing the result
+		// when silent (the previous behavior here) hid Auto from the picker's
+		// normal background population pass, which calls with silent=true.
+		this.log.info(`[AutoModelProvider] Returning ${candidates.length} candidate(s), Auto entry included`);
+		return [info];
 	}
 
 	async provideLanguageModelChatResponse(

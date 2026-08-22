@@ -113,6 +113,11 @@ export class ModelCatalogService {
 	private _embeddingModels: EmbeddingModel[] = [];
 	private _lastFetch: number = 0;
 	private readonly _cacheDuration = 5 * 60 * 1000; // 5 minutes
+	// Coalesces concurrent callers (e.g. VS Code's own proactive
+	// provideLanguageModelChatInformation query racing our activation-time
+	// refreshModels()) onto a single in-flight HTTP request instead of each
+	// firing its own /models call.
+	private _fetchPromise: Promise<void> | undefined;
 	private readonly _log: ILogService;
 	// P2 #10: Track token change listener for cleanup
 	private _tokenChangeListener: vscode.Disposable | undefined;
@@ -223,6 +228,19 @@ export class ModelCatalogService {
 			return;
 		}
 
+		// A fetch is already in flight (e.g. VS Code's own model query racing
+		// our own refresh) — join it instead of issuing a duplicate request.
+		if (this._fetchPromise) {
+			return this._fetchPromise;
+		}
+
+		this._fetchPromise = this._doFetch(now).finally(() => {
+			this._fetchPromise = undefined;
+		});
+		return this._fetchPromise;
+	}
+
+	private async _doFetch(now: number): Promise<void> {
 		// Check authentication
 		const isAuthenticated = await this.authService.isAuthenticated();
 		if (!isAuthenticated) {

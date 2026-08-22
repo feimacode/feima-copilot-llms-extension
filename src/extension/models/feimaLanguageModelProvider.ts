@@ -82,10 +82,6 @@ export class FeimaLanguageModelProvider implements vscode.LanguageModelChatProvi
 			// Fetch chat models from catalog service
 			const chatModels = await this.modelCatalog.getChatModels();
 			this._log.debug(`Fetched ${chatModels.length} chat models from catalog`);
-			
-			if (chatModels.length > 0) {
-				this._log.debug(`First chat model: ${JSON.stringify(chatModels[0], null, 2)}`);
-			}
 
 			// Transform to VS Code format
 			// Filter models enabled for picker
@@ -118,11 +114,6 @@ export class FeimaLanguageModelProvider implements vscode.LanguageModelChatProvi
 					}
 				};
 			});
-			this._log.debug(`Transformed to ${vsCodeModels.length} VS Code models`);
-			if (vsCodeModels.length > 0) {
-				this._log.debug(`First VS Code model: ${JSON.stringify(vsCodeModels[0], null, 2)}`);
-			}
-
 			this._log.info(`Returning ${vsCodeModels.length} models to VS Code`);
 
 			return vsCodeModels;

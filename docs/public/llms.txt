@@ -10,6 +10,7 @@
 - [Authentication](https://docs.feimacode.com/guides/authentication/): OAuth2 sign-in flow and account management
 - [API Keys](https://docs.feimacode.com/guides/api-keys/): Using Feima as a standalone API provider
 - [Using Models](https://docs.feimacode.com/guides/using-models/): Switching between AI models in Copilot Chat
+- [Local & Enterprise Model Endpoints](https://docs.feimacode.com/guides/local-endpoints/): Register your own Ollama/LM Studio/vLLM/enterprise gateway in the model picker, and route between them automatically with Feima Auto
 - [Agent Participants](https://docs.feimacode.com/guides/agent-participants/): Use the real Claude Code, Codex, and Copilot CLI agents from inside VS Code chat
 - [Agent Participants Setup](https://docs.feimacode.com/guides/agent-participants-setup/): Install and configure the Claude Code, Codex, and Copilot CLI agent participants
 - [MCP Servers & Tools](https://docs.feimacode.com/guides/agent-mcp-tools/): Control which MCP servers and VS Code tools are shared with the agent participants
@@ -29,6 +30,7 @@
 - [认证](https://docs.feimacode.com/zh/guides/authentication/): OAuth2 登录流程与账户管理
 - [API 密钥](https://docs.feimacode.com/zh/guides/api-keys/): 将飞码作为独立 API 服务使用
 - [使用模型](https://docs.feimacode.com/zh/guides/using-models/): 在 Copilot Chat 中切换 AI 模型
+- [本地与企业模型端点](https://docs.feimacode.com/zh/guides/local-endpoints/): 将 Ollama/LM Studio/vLLM/企业网关注册到模型选择器，并用 Feima Auto 自动路由
 - [配置](https://docs.feimacode.com/zh/guides/configuration/): 扩展设置项参考
 - [计费](https://docs.feimacode.com/zh/guides/billing/): 套餐、积分、按量付费说明
 - [常见问题](https://docs.feimacode.com/zh/guides/faq/): 常见问题解答

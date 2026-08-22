@@ -23,7 +23,7 @@ export async function pickEndpointTemplate(): Promise<EndpointTemplateChoice | u
 	const items: (vscode.QuickPickItem & { template?: LocalRuntimeTemplate; sentinel?: 'custom' | 'feima-hosted' })[] = [
 		{
 			label: FEIMA_HOSTED_LABEL,
-			detail: vscode.l10n.t('Use your signed-in Feima account — no URL or key to enter'),
+			detail: vscode.l10n.t('Adds your Feima-hosted models — asks for your Feima API key, no URL to enter'),
 			sentinel: 'feima-hosted',
 		},
 		{ label: '', kind: vscode.QuickPickItemKind.Separator },

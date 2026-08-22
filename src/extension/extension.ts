@@ -177,7 +177,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 				const autoProvider = new AutoModelProvider(localProvider, localRegistry, getAutoStrategy, localLog.createSubLogger('Auto'));
 				const autoProviderDisposable = vscode.lm.registerLanguageModelChatProvider('feima-auto', autoProvider);
 				context.subscriptions.push(autoProviderDisposable, autoProvider);
-				context.subscriptions.push(registerFeimaHostedShortcutCommand(localRegistry, authService, localLog));
+				context.subscriptions.push(registerFeimaHostedShortcutCommand(context, localRegistry, localLog));
 				logService.info('✅ Auto router registered (vendor ID: feima-auto)');
 
 				// 5d. Register the endpoint management tree view -- see

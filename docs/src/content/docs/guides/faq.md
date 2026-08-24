@@ -39,7 +39,7 @@ head:
             "name": "How much does Feima cost?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Feima uses pay-per-request pricing. You get a free tier with weekly credits, and can purchase credit packs that never expire. No monthly subscription required."
+              "text": "Feima uses pay-per-request pricing. You get a free starter bundle of credits when you sign up, and can purchase credit packs that never expire. No monthly subscription required."
             }
           },
           {
@@ -311,7 +311,6 @@ See the [Billing Guide](/guides/billing) for detailed billing information.
 
 **A: Multiple ways to get free credits.**
 
-- **Weekly grant**: Automatically receive 50 credits every week
 - **Referral program**: Invite friends to register, both parties receive rewards
 - **Participate in promotions**: Regular activities to earn extra credits
 
@@ -333,7 +332,6 @@ See the [Billing Guide](/guides/billing) for detailed billing information.
 
 **A: Multiple solutions.**
 
-- **Wait for weekly grant**: Automatically receive 50 credits every week
 - **Invite friends**: Receive reward credits
 - **Purchase credits**: Visit [feimacode.com/pricing](https://feimacode.com/pricing)
 

@@ -391,7 +391,7 @@ Each model has different context limits:
 ### Rate Limits
 
 API requests are rate limited:
-- Free tier: 100 requests
+- Free tier: 200 requests (starter bundle)
 - Paid tiers: Higher limits based on your plan
 - Check your status bar for remaining requests
 

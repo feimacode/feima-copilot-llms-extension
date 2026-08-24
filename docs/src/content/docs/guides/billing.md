@@ -31,7 +31,7 @@ Feima uses a weighted request-based billing model that considers both the AI mod
 
 > ⏰ **IMPORTANT: Promotional Credits Expire After 30 Days**
 > 
-> All credits earned through starter bundles, weekly previews, referrals, bug reports, feature requests, blog posts, and video content **expire 30 days** from receipt. Check your [profile](https://feimacode.com/profile) regularly to see expiration dates and use your credits before they expire!
+> All credits earned through starter bundles, referrals, bug reports, feature requests, blog posts, and video content **expire 30 days** from receipt. Check your [profile](https://feimacode.com/profile) regularly to see expiration dates and use your credits before they expire!
 
 ## Billing Formula
 
@@ -199,13 +199,8 @@ Check your balance regularly:
 Feima offers multiple ways to earn free credits beyond your initial starter bundle:
 
 ### 🎁 Starter Bundle
-- **Amount**: 500 credits (during public preview)
+- **Amount**: 200 credits (during public preview)
 - **How**: Simply sign up for a Feima account
-- **Credits expire**: 30 days from receipt
-
-### 📅 Weekly Preview Credits
-- **Amount**: 50 credits per week
-- **How**: Automatically added every Monday during the public preview period
 - **Credits expire**: 30 days from receipt
 
 ### 👥 Referral Program

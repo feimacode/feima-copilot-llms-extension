@@ -59,6 +59,9 @@
 | GLM-4.7 | 智谱AI | 200K 上下文，高级推理 |
 | GLM 5.2 | 智谱AI | 1M 上下文，高级推理 |
 | GLM 5.3 | 智谱AI | 1M 上下文，高级推理 |
+| GLM 5.3 Flash | 智谱AI | 1M 上下文，快速响应（免费额度） |
+| Grok 4.6 | xAI | 500K 上下文，视觉，可配置推理（专业） |
+| GPT 5.6 Luna | OpenAI | 1M 上下文，视觉，推理，经济高效 |
 | MiniMax M2.5 | MiniMax | 200K 上下文，思维链推理 |
 | MiniMax M3 | MiniMax | 1M 上下文，高级推理 |
 | Kimi K2.6 | Moonshot | 256K 上下文，思维链推理，视觉 |

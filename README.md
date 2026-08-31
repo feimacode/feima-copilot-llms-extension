@@ -49,6 +49,7 @@ Feima Copilot is a VS Code extension built around three things: **more models** 
 | Model | Provider | Features |
 |-------|----------|----------|
 | Qwen3.8 Max | Alibaba Cloud | ~1M context, deep chain-of-thought reasoning (Pro) |
+| Qwen3.8 Flash | Alibaba Cloud | ~1M context, ultra-fast (free tier) |
 | Qwen3.7 Max | Alibaba Cloud | ~1M context, chain-of-thought reasoning |
 | Qwen3.6 Plus | Alibaba Cloud | 1M token context, 80K chain-of-thought, vision |
 | Qwen3.6 Flash | Alibaba Cloud | 1M token context, thinking support (default) |
@@ -72,6 +73,7 @@ Feima Copilot is a VS Code extension built around three things: **more models** 
 | DeepSeek V4 Flash | DeepSeek | 1M token context, fast |
 | Kimi K3 | Moonshot | 1M context, vision, deep thinking (premium) |
 | HY3 | Tencent | 256K context, thinking support (free tier) |
+| HY4 Preview | Tencent | 1M context, thinking support (free tier) |
 
 ## 🖥️ Local & Enterprise Model Endpoints
 

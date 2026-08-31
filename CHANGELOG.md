@@ -5,7 +5,7 @@ All notable changes to the Feima Copilot LLM Extension will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.2]
 
 ### Added
 - **Local & Enterprise Model Endpoints** — bring your own Ollama, LM Studio, vLLM, llama.cpp, SGLang, LiteLLM, or [Olla](https://github.com/thushan/olla) fleet, or an internal enterprise/private-cloud gateway, into the same Copilot Chat model picker as Feima-hosted models
@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Sticks with the same endpoint across a conversation instead of re-deciding every message
   - `Feima Local Models: Add My Feima-Hosted Models to Auto` — registers your Feima-hosted models (using a Feima API key) as local endpoints so Auto can route to them too
 - Lenient repair for malformed tool-call JSON from local/enterprise models, plus a Responses API endpoint option for providers that support it
+- **Qwen3.8 Flash** — Alibaba Cloud, ~1M context, ultra-fast (free tier)
+- **HY4 Preview** — Tencent Hunyuan, 1M context, thinking support (free tier)
 
 ### Changed
 - Renamed the local/enterprise router's picker entry from "Auto" to **"Feima Auto"**, to avoid confusion with VS Code's own built-in Auto (which only sees GitHub-hosted models)

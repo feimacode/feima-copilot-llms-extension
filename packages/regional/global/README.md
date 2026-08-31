@@ -29,6 +29,7 @@ Before you begin, make sure you have:
 | **Qwen3.6 Flash** | Alibaba Cloud | Fast responses, thinking support (default) |
 | **Qwen3.7 Max** | Alibaba Cloud | Complex reasoning with deep thinking, ~1M context |
 | **Qwen3.8 Max** | Alibaba Cloud | Flagship deep-thinking reasoning, ~1M context (Pro tier) |
+| **Qwen3.8 Flash** | Alibaba Cloud | Ultra-fast, ~1M context (free tier) |
 | **Qwen3.6 Plus** | Alibaba Cloud | Vision-capable, 80K thinking chain, 1M context |
 | **Qwen3.7 Plus** | Alibaba Cloud | ~1M context, vision, deep thinking |
 | **GLM-5** | Zhipu AI | Advanced reasoning |
@@ -49,6 +50,7 @@ Before you begin, make sure you have:
 | **GLM 5.1** | Zhipu AI | 202K context, powerful reasoning |
 | **Kimi K3** | Moonshot | 1M context, vision, deep thinking (premium) |
 | **HY3** | Tencent | 256K context, thinking support (free tier) |
+| **HY4 Preview** | Tencent | 1M context, thinking support (free tier) |
 
 ## 📦 Installation
 
